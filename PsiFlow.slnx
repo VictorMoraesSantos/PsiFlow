@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/ApiGateways/" />
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Messaging/BuildingBlocks.Messaging.csproj" Id="296999fc-ec52-4983-8264-099aeeb2d753" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks/BuildingBlocks.csproj" Id="6b3ce70b-f375-4e3e-b020-d268926420ac" />
+  </Folder>
+  <Folder Name="/Core/" />
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/Auth/">
+    <Project Path="src/Services/Auth/Auth.API/Auth.API.csproj" />
+    <Project Path="src/Services/Auth/Auth.Application/Auth.Application.csproj" />
+    <Project Path="src/Services/Auth/Auth.Domain/Auth.Domain.csproj" />
+    <Project Path="src/Services/Auth/Auth.Infrastructure/Auth.Infrastructure.csproj" />
+  </Folder>
+</Solution>
