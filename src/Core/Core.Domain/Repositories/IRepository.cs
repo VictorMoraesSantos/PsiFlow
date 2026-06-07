@@ -1,4 +1,4 @@
-﻿using Core.Domain.Entities;
+﻿using Core.Domain.Aggregates;
 using System.Linq.Expressions;
 
 namespace Core.Domain.Repositories

@@ -1,10 +1,10 @@
 using Auth.Domain.Enums;
 using Auth.Domain.Errors;
 using Auth.Domain.ValueObjects;
-using Core.Domain.Entities;
+using Core.Domain.Aggregates;
 using Core.Domain.Exceptions;
 
-namespace Auth.Domain.Entities
+namespace Auth.Domain.Aggregates
 {
     public class Permission : BaseEntity<PermissionId>
     {

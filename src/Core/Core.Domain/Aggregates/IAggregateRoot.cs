@@ -1,4 +1,4 @@
-﻿namespace Core.Domain.Entities
+﻿namespace Core.Domain.Aggregates
 {
     public interface IAggregateRoot
     {

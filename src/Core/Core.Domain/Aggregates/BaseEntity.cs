@@ -1,6 +1,6 @@
 ﻿using Core.Domain.Events;
 
-namespace Core.Domain.Entities
+namespace Core.Domain.Aggregates
 {
     public interface IBaseEntity<T>
     {

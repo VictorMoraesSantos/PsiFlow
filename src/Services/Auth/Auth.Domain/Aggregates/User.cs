@@ -1,9 +1,9 @@
 ﻿using Auth.Domain.ValueObjects;
-using Core.Domain.Entities;
+using Core.Domain.Aggregates;
 using Core.Domain.Events;
 using Microsoft.AspNetCore.Identity;
 
-namespace Auth.Domain.Entities
+namespace Auth.Domain.Aggregates
 {
     public class User : IdentityUser<UserId>, IBaseEntity<UserId>
     {

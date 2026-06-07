@@ -1,4 +1,4 @@
-using Auth.Domain.Entities;
+using Auth.Domain.Aggregates;
 using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Configuration;
 using Microsoft.AspNetCore.Identity;
