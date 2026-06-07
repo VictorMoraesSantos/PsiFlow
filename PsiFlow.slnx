@@ -4,7 +4,12 @@
     <Project Path="src/BuildingBlocks/BuildingBlocks.Messaging/BuildingBlocks.Messaging.csproj" Id="296999fc-ec52-4983-8264-099aeeb2d753" />
     <Project Path="src/BuildingBlocks/BuildingBlocks/BuildingBlocks.csproj" Id="6b3ce70b-f375-4e3e-b020-d268926420ac" />
   </Folder>
-  <Folder Name="/Core/" />
+  <Folder Name="/Core/">
+    <Project Path="src/Core/Core.API/Core.API.csproj" Id="1089055d-eff0-43a1-8ab9-64d116ee244f" />
+    <Project Path="src/Core/Core.Application/Core.Application.csproj" Id="ca3dafb3-d142-4448-ad72-ccd7b7ea6ba9" />
+    <Project Path="src/Core/Core.Domain/Core.Domain.csproj" Id="672cf2b9-2579-4eb3-bc4b-212e8ee5e7d9" />
+    <Project Path="src/Core/Core.Infrastructure/Core.Infrastructure.csproj" Id="3c7a8d52-4f9c-4a80-b246-427bd1cdb7eb" />
+  </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/Auth/">
     <Project Path="src/Services/Auth/Auth.API/Auth.API.csproj" />
@@ -12,4 +17,5 @@
     <Project Path="src/Services/Auth/Auth.Domain/Auth.Domain.csproj" />
     <Project Path="src/Services/Auth/Auth.Infrastructure/Auth.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/" />
 </Solution>
