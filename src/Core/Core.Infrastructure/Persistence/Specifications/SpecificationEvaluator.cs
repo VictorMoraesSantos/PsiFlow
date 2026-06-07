@@ -24,5 +24,12 @@ namespace Core.Infrastructure.Persistence.Specifications
 
             return query;
         }
+
+        public static IQueryable<T> GetCountQuery<T>(IQueryable<T> inputQuery, Specification<T> spec) where T : class
+        {
+            return spec.Criteria != null
+                ? inputQuery.Where(spec.Criteria)
+                : inputQuery;
+        }
     }
 }

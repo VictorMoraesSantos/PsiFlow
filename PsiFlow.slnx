@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/ApiGateways/" />
   <Folder Name="/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Logging/BuildingBlocks.Logging.csproj" Id="5c129c54-89f3-4c60-b9e9-d5711eb14544" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Messaging/BuildingBlocks.Messaging.csproj" Id="296999fc-ec52-4983-8264-099aeeb2d753" />
     <Project Path="src/BuildingBlocks/BuildingBlocks/BuildingBlocks.csproj" Id="6b3ce70b-f375-4e3e-b020-d268926420ac" />
   </Folder>
@@ -9,6 +10,14 @@
     <Project Path="src/Core/Core.Application/Core.Application.csproj" Id="ca3dafb3-d142-4448-ad72-ccd7b7ea6ba9" />
     <Project Path="src/Core/Core.Domain/Core.Domain.csproj" Id="672cf2b9-2579-4eb3-bc4b-212e8ee5e7d9" />
     <Project Path="src/Core/Core.Infrastructure/Core.Infrastructure.csproj" Id="3c7a8d52-4f9c-4a80-b246-427bd1cdb7eb" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/2026-06-04-mvp-validation-design.md" />
+    <File Path="docs/documentacao-produto-saas-psicologas.md" />
+    <File Path="docs/system-design.md" />
+  </Folder>
+  <Folder Name="/docs/sprints/">
+    <File Path="docs/sprints/sprint-01-auth.md" />
   </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/Auth/">
