@@ -1,60 +1,66 @@
-﻿using Auth.Application.Contracts;
+using Auth.Application.Contracts;
 using Auth.Application.DTOs.Users;
+using Auth.Application.Mapping;
+using Auth.Domain.Aggregates;
+using Auth.Domain.Filters;
+using Auth.Domain.Repositories;
+using Auth.Domain.ValueObjects;
 using BuildingBlocks.Results;
-using System.Security.Claims;
 
 namespace Auth.Application.Services
 {
     public class UserService : IUserService
     {
-        public Task<Result> ChangeCurrentUserPasswordAsync(ClaimsPrincipal user, ChangeCurrentUserPasswordDTO dto)
+        private readonly IUserRepository _repository;
+        public UserService(IUserRepository repository)
         {
-            throw new NotImplementedException();
+            _repository = repository;
         }
 
-        public Task<Result> DeleteCurrentUserAsync(ClaimsPrincipal user)
+        public async Task<Result<UserSummaryDTO>> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var user = await _repository.GetById(id, cancellationToken);
+            if (user is null) return Result.Failure<UserSummaryDTO>(Domain.Errors.UserErrors.NotFound(id));
+            return Result.Success(user.ToSummary());
         }
 
-        public Task<Result> DeleteUserAsync(string userId)
+        public async Task<Result<UserSummaryDTO>> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(email)) return Result.Failure<UserSummaryDTO>(Domain.Errors.ContactErrors.EmailRequired);
+            var user = await _repository.FindByEmailAsync(email.Trim().ToLowerInvariant(), cancellationToken);
+            if (user is null) return Result.Failure<UserSummaryDTO>(Domain.Errors.UserErrors.NotFound(0));
+            return Result.Success(user.ToSummary());
         }
 
-        public Task<Result> GetAllUsersAsync()
+        public async Task<Result<IEnumerable<UserSummaryDTO>>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var users = await _repository.GetAll(cancellationToken);
+            return Result.Success(users.Where(u => u is not null).Select(u => u!.ToSummary()));
         }
 
-        public Task<Result> GetAllUsersDetailsAsync()
+        public async Task<Result<(IEnumerable<UserSummaryDTO> Items, int TotalCount)>> GetByFilterAsync(UserFilter filter, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var (items, total) = await _repository.FindByFilter(filter, cancellationToken);
+            return Result.Success((items.Select(u => u.ToSummary()), total));
         }
 
-        public Task<Result> GetCurrentUserDetailsAsync(ClaimsPrincipal user)
+        public async Task<Result> UpdateCurrentUserProfileAsync(int userId, UpdateCurrentUserProfileDTO dto, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var user = await _repository.GetById(userId, cancellationToken);
+            if (user is null) return Result.Failure(Domain.Errors.UserErrors.NotFound(userId));
+            user.UpdateProfile(new Name(dto.FullName), new Contact(dto.Email, dto.Phone));
+            await _repository.Update(user, cancellationToken);
+            return Result.Success();
         }
 
-        public Task<Result> GetUserDetailsAsync(string userId)
+        public async Task<Result> DeleteCurrentUserAsync(int userId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<Result> IsUserEmailUniqueAsync(string email)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Result> UpdateCurrentUserProfileAsync(ClaimsPrincipal user, UpdateCurrentUserProfileDTO dto)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Result> UpdateUserProfileAsync(UpdateUserDTO dto)
-        {
-            throw new NotImplementedException();
+            var user = await _repository.GetById(userId, cancellationToken);
+            if (user is null) return Result.Failure(Domain.Errors.UserErrors.NotFound(userId));
+            user.MarkAsDeleted();
+            user.Deactivate();
+            await _repository.Update(user, cancellationToken);
+            return Result.Success();
         }
     }
 }

@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "agenda.api": "StartDebugging",
+        "auth.api": "StartDebugging",
+        "clinicalrecords.api": "StartDebugging",
+        "notifications.api": "StartDebugging",
+        "onlinesession.api": "StartDebugging",
+        "patients.api": "StartDebugging",
+        "sessions.api": "StartDebugging"
+      }
+    }
+  }
+}

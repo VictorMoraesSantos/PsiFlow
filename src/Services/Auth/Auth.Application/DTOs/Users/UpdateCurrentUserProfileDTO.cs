@@ -1,7 +1,4 @@
 namespace Auth.Application.DTOs.Users
 {
-    public record UpdateCurrentUserProfileDTO(
-        string FirstName,
-        string LastName,
-        string Email);
+    public record UpdateCurrentUserProfileDTO(string FullName, string Email, string? Phone);
 }

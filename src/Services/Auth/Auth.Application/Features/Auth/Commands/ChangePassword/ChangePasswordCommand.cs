@@ -1,4 +1,4 @@
-﻿using BuildingBlocks.CQRS.Requests.Commands;
+using BuildingBlocks.CQRS.Requests.Commands;
 using System.Security.Claims;
 
 namespace Auth.Application.Features.Auth.Commands.ChangePassword

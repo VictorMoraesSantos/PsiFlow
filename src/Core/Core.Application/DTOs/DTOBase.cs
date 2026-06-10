@@ -2,8 +2,11 @@
 
 namespace Core.Application.DTO
 {
-    public record DTOBase(
-        [property: JsonPropertyOrder(-3)] int Id,
+    public record DTOBase<TId>(
+        [property: JsonPropertyOrder(-3)] TId Id,
         [property: JsonPropertyOrder(-2)] DateTime CreatedAt,
-        [property: JsonPropertyOrder(-1)] DateTime? UpdatedAt);
+        [property: JsonPropertyOrder(-1)] DateTime? UpdatedAt)
+    {
+        protected DTOBase() : this(default!, default, default) { }
+    }
 }

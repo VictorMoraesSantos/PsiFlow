@@ -1,8 +1,10 @@
+using Auth.Application;
+using Auth.Application.Settings;
 using Auth.Domain.Aggregates;
 using Auth.Domain.Repositories;
 using Auth.Infrastructure.Persistence.Data;
+using Auth.Infrastructure.Persistence.Seeds;
 using Auth.Infrastructure.Repositories;
-using BuildingBlocks.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +12,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Users.Infrastructure.Settings;
 
 namespace Auth.Infrastructure
 {
@@ -18,42 +19,36 @@ namespace Auth.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext(configuration);
+            services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddRepositories();
             services.AddIdentityServices(configuration);
-            services.AddMessaging(configuration);
-            //services.AddEmailService(configuration);
+            services.AddApplication();
+            services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+            services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<JwtSettings>>().Value);
             return services;
         }
 
         public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IConsentRepository, ConsentRepository>();
+            services.AddScoped<IMfaChallengeRepository, MfaChallengeRepository>();
+            services.AddScoped<IOutboxRepository, OutboxRepository>();
             services.AddScoped<IPermissionRepository, PermissionRepository>();
             services.AddScoped<IPermissionGroupRepository, PermissionGroupRepository>();
             return services;
         }
 
-        public static IServiceCollection AddDbContext(this IServiceCollection services, IConfiguration configuration)
-        {
-            string connectionString = configuration.GetConnectionString("Database")!;
-
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(connectionString));
-
-            return services;
-        }
-
         public static IServiceCollection AddIdentityServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
+            var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+            if (string.IsNullOrWhiteSpace(jwtSettings.Key))
+                jwtSettings.Key = "PsiFlow-Dev-Key-CHANGE-IN-PRODUCTION-please-32-bytes!!";
+            if (string.IsNullOrWhiteSpace(jwtSettings.Issuer)) jwtSettings.Issuer = "psiflow-auth";
+            if (string.IsNullOrWhiteSpace(jwtSettings.Audience)) jwtSettings.Audience = "psiflow-api";
 
+            services.AddSingleton(jwtSettings);
             services.AddAuthorization();
-
-            services.AddIdentity<User, IdentityRole<int>>()
-                    .AddEntityFrameworkStores<ApplicationDbContext>()
-                    .AddDefaultTokenProviders();
-
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -69,42 +64,27 @@ namespace Auth.Infrastructure
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtSettings.Issuer,
                     ValidAudience = jwtSettings.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+                    ClockSkew = TimeSpan.FromSeconds(30)
                 };
             });
 
-            services.Configure<IdentityOptions>(options =>
+            services.AddIdentity<User, IdentityRole<int>>(options =>
             {
-                // Default Lockout settings.
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
-                // Default Password settings.
-                options.Password.RequireDigit = false;
+                options.Password.RequireDigit = true;
                 options.Password.RequireLowercase = true;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequiredLength = 6;
-                options.Password.RequiredUniqueChars = 1;
-                // Default LogIn settings.
-                options.SignIn.RequireConfirmedEmail = false;
-                options.SignIn.RequireConfirmedPhoneNumber = false;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequiredLength = 10;
                 options.User.RequireUniqueEmail = true;
-            });
-
-            services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-            services.AddHttpClient();
-            services.AddAuthorization();
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
             return services;
         }
-
-        //public static IServiceCollection AddEmailService(this IServiceCollection services, IConfiguration configuration)
-        //{
-        //    services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
-        //    services.AddScoped<IEmailService, EmailService>();
-        //    return services;
-        //}
-
     }
 }

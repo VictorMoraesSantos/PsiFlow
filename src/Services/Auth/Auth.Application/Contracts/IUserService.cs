@@ -1,20 +1,17 @@
-﻿using Auth.Application.DTOs.Users;
+using Auth.Application.DTOs.Auth;
+using Auth.Application.DTOs.Users;
+using Auth.Domain.Filters;
 using BuildingBlocks.Results;
-using System.Security.Claims;
 
 namespace Auth.Application.Contracts
 {
     public interface IUserService
     {
-        Task<Result> GetCurrentUserDetailsAsync(ClaimsPrincipal user);
-        Task<Result> UpdateCurrentUserProfileAsync(ClaimsPrincipal user, UpdateCurrentUserProfileDTO dto);
-        Task<Result> ChangeCurrentUserPasswordAsync(ClaimsPrincipal user, ChangeCurrentUserPasswordDTO dto);
-        Task<Result> DeleteCurrentUserAsync(ClaimsPrincipal user);
-        Task<Result> GetUserDetailsAsync(string userId);
-        Task<Result> GetAllUsersAsync();
-        Task<Result> GetAllUsersDetailsAsync();
-        Task<Result> IsUserEmailUniqueAsync(string email);
-        Task<Result> UpdateUserProfileAsync(UpdateUserDTO dto);
-        Task<Result> DeleteUserAsync(string userId);
+        Task<Result<UserSummaryDTO>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<Result<UserSummaryDTO>> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
+        Task<Result<IEnumerable<UserSummaryDTO>>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<Result<(IEnumerable<UserSummaryDTO> Items, int TotalCount)>> GetByFilterAsync(UserFilter filter, CancellationToken cancellationToken = default);
+        Task<Result> UpdateCurrentUserProfileAsync(int userId, UpdateCurrentUserProfileDTO dto, CancellationToken cancellationToken = default);
+        Task<Result> DeleteCurrentUserAsync(int userId, CancellationToken cancellationToken = default);
     }
 }

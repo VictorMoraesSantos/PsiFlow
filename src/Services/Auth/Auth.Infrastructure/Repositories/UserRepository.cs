@@ -1,8 +1,7 @@
-using Auth.Domain.Aggregates;
+﻿using Auth.Domain.Aggregates;
 using Auth.Domain.Filters;
 using Auth.Domain.Filters.Specifications;
 using Auth.Domain.Repositories;
-using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Data;
 using Core.Infrastructure.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
@@ -10,30 +9,21 @@ using System.Linq.Expressions;
 
 namespace Auth.Infrastructure.Repositories
 {
-    public class UserRepository(ApplicationDbContext _dbContext) : IUserRepository
+    public class UserRepository(ApplicationDbContext dbContext) : IUserRepository
     {
-        public async Task<User?> GetById(UserId id, CancellationToken cancellationToken = default)
-        {
-            var entity = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-            return entity;
-        }
+        public async Task<User?> GetById(int id, CancellationToken cancellationToken = default) =>
+            await dbContext.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-        public async Task<IEnumerable<User?>> GetAll(CancellationToken cancellationToken = default)
-        {
-            var entities = await _dbContext.Users.AsNoTracking().ToListAsync(cancellationToken);
-            return entities;
-        }
+        public async Task<IEnumerable<User?>> GetAll(CancellationToken cancellationToken = default) =>
+            await dbContext.Users.AsNoTracking().ToListAsync(cancellationToken);
 
-        public async Task<IEnumerable<User?>> Find(Expression<Func<User, bool>> predicate, CancellationToken cancellationToken = default)
-        {
-            var entities = await _dbContext.Users.AsNoTracking().Where(predicate).ToListAsync();
-            return entities;
-        }
+        public async Task<IEnumerable<User?>> Find(Expression<Func<User, bool>> predicate, CancellationToken cancellationToken = default) =>
+            await dbContext.Users.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
 
         public async Task<(IEnumerable<User> Items, int TotalCount)> FindByFilter(UserFilter filter, CancellationToken cancellationToken = default)
         {
             var spec = new UserSpecification(filter);
-            IQueryable<User> query = _dbContext.Users.AsNoTracking();
+            IQueryable<User> query = dbContext.Users.AsNoTracking();
             IQueryable<User> countQuery = spec.Criteria != null ? query.Where(spec.Criteria) : query;
             int totalCount = await countQuery.CountAsync(cancellationToken);
             IQueryable<User> finalQuery = SpecificationEvaluator.GetQuery(query, spec);
@@ -41,28 +31,25 @@ namespace Auth.Infrastructure.Repositories
             return (items, totalCount);
         }
 
-        public async Task Create(User entity, CancellationToken cancellationToken = default)
-        {
-            await _dbContext.Users.AddAsync(entity, cancellationToken);
-            await _dbContext.SaveChangesAsync();
-        }
+        public async Task Create(User entity, CancellationToken cancellationToken = default) =>
+            await dbContext.Users.AddAsync(entity, cancellationToken);
 
-        public async Task CreateRange(IEnumerable<User> entities, CancellationToken cancellationToken = default)
-        {
-            await _dbContext.Users.AddRangeAsync(entities, cancellationToken);
-            await _dbContext.SaveChangesAsync();
-        }
+        public async Task CreateRange(IEnumerable<User> entities, CancellationToken cancellationToken = default) =>
+            await dbContext.Users.AddRangeAsync(entities, cancellationToken);
 
-        public async Task Update(User entity, CancellationToken cancellationToken = default)
-        {
-            _dbContext.Users.Update(entity);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
+        public async Task Update(User entity, CancellationToken cancellationToken = default) =>
+            dbContext.Users.Update(entity);
 
-        public async Task Delete(User entity, CancellationToken cancellationToken = default)
-        {
-            _dbContext.Users.Remove(entity);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
+        public async Task Delete(User entity, CancellationToken cancellationToken = default) =>
+            dbContext.Users.Remove(entity);
+
+        public async Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+            await dbContext.Users.FirstOrDefaultAsync(x => x.Email != null && x.Email == email.ToLowerInvariant(), cancellationToken);
+
+        public async Task<User?> FindByRefreshTokenHashAsync(string refreshTokenHash, CancellationToken cancellationToken = default) =>
+            await dbContext.Users.FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
+
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
+            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

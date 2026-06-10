@@ -1,36 +1,48 @@
-﻿using Auth.Domain.ValueObjects;
+﻿using Auth.Domain.Events;
+using Auth.Domain.ValueObjects;
 using Core.Domain.Aggregates;
 using Core.Domain.Events;
 using Microsoft.AspNetCore.Identity;
 
 namespace Auth.Domain.Aggregates
 {
-    public class User : IdentityUser<UserId>, IBaseEntity<UserId>
+    public class User : IdentityUser<int>, IBaseEntity<int>
     {
         private readonly List<IDomainEvent> _domainEvents = new();
-        public Name Name { get; private set; }
-        public Contact Contact { get; private set; }
-        public int RestaurantId { get; private set; }
-        public int UnitId { get; set; }
+        public Name Name { get; private set; } = null!;
+        public Contact Contact { get; private set; } = null!;
+        public int TenantId { get; private set; }
+        public string Role { get; private set; } = "patient";
+        public string? Crp { get; private set; }
         public DateTime? Birthday { get; private set; }
         public DateTime? LastLoginAt { get; private set; }
         public bool IsActive { get; private set; } = true;
         public string? RefreshTokenHash { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
+        public string? ConsentTermsVersion { get; private set; }
+        public string? ConsentPrivacyVersion { get; private set; }
+        public DateTime? ConsentAcceptedAt { get; private set; }
 
-        protected User()
-        {
-        }
+        protected User() { }
 
-        public User(Name name, Contact contact, int restaurantId, int unitId)
+        public User(Name name, Contact contact, string role, int? tenantId, string? crp, string termsVersion, string privacyVersion)
         {
             Name = name;
             Contact = contact;
             Email = contact.Email;
             UserName = contact.Email;
+            NormalizedEmail = contact.Email.ToUpperInvariant();
+            NormalizedUserName = contact.Email.ToUpperInvariant();
+            EmailConfirmed = true;
+            Role = role;
+            Crp = crp;
+            TenantId = tenantId ?? 0;
+            ConsentTermsVersion = termsVersion;
+            ConsentPrivacyVersion = privacyVersion;
+            ConsentAcceptedAt = DateTime.UtcNow;
         }
 
-        public DateTime CreatedAt { get; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; private set; }
         public bool IsDeleted { get; private set; }
         public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -67,6 +79,21 @@ namespace Auth.Domain.Aggregates
             MarkAsUpdated();
         }
 
+        public void AttachTenant(int tenantId)
+        {
+            TenantId = tenantId;
+            MarkAsUpdated();
+        }
+
+        public void RecordConsent(string termsVersion, string privacyVersion)
+        {
+            ConsentTermsVersion = termsVersion;
+            ConsentPrivacyVersion = privacyVersion;
+            ConsentAcceptedAt = DateTime.UtcNow;
+            MarkAsUpdated();
+            AddDomainEvent(new ConsentAcceptedDomainEvent(Id, TenantId, termsVersion, privacyVersion, DateTime.UtcNow));
+        }
+
         public void Deactivate()
         {
             IsActive = false;
@@ -82,6 +109,13 @@ namespace Auth.Domain.Aggregates
         public void UpdateLastLogin()
         {
             LastLoginAt = DateTime.UtcNow;
+            MarkAsUpdated();
+        }
+
+        public void SetRefreshToken(string tokenHash, DateTime expiry)
+        {
+            RefreshTokenHash = tokenHash;
+            RefreshTokenExpiryTime = expiry;
             MarkAsUpdated();
         }
     }

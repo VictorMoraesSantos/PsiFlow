@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 namespace Core.Application.Interfaces
 {
     public interface IReadService<TRead, TId>
-        where TRead : DTOBase
+        where TRead : DTOBase<TId>
     {
         Task<Result<TRead?>> GetByIdAsync(TId id, CancellationToken cancellationToken = default);
         Task<Result<IEnumerable<TRead?>>> GetAllAsync(CancellationToken cancellationToken = default);
@@ -15,7 +15,7 @@ namespace Core.Application.Interfaces
     }
 
     public interface IReadService<TRead, TId, TFilter> : IReadService<TRead, TId>
-        where TRead : DTOBase
+        where TRead : DTOBase<TId>
     {
         Task<Result<(IEnumerable<TRead> Items, PaginationData Pagination)>> GetByFilterAsync(TFilter filter, CancellationToken cancellationToken);
     }

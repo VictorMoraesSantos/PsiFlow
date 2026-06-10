@@ -1,5 +1,4 @@
-﻿using Auth.Domain.Aggregates;
-using Auth.Domain.ValueObjects;
+using Auth.Domain.Aggregates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,11 +9,7 @@ namespace Auth.Infrastructure.Persistence.Configuration
         public void Configure(EntityTypeBuilder<User> builder)
         {
             builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id)
-                .HasConversion(
-                    id => id.Value,
-                    value => new UserId(value))
-                .IsRequired();
+            builder.Property(x => x.Id).ValueGeneratedNever();
         }
     }
 }

@@ -20,11 +20,79 @@
     <File Path="docs/sprints/sprint-01-auth.md" />
   </Folder>
   <Folder Name="/Services/" />
+  <Folder Name="/Services/Agenda/">
+    <Project Path="src/Services/Agenda/Agenda.API/Agenda.API.csproj" />
+    <Project Path="src/Services/Agenda/Agenda.Application/Agenda.Application.csproj" />
+    <Project Path="src/Services/Agenda/Agenda.Domain/Agenda.Domain.csproj" />
+    <Project Path="src/Services/Agenda/Agenda.Infrastructure/Agenda.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/Services/Auth/">
     <Project Path="src/Services/Auth/Auth.API/Auth.API.csproj" />
     <Project Path="src/Services/Auth/Auth.Application/Auth.Application.csproj" />
     <Project Path="src/Services/Auth/Auth.Domain/Auth.Domain.csproj" />
     <Project Path="src/Services/Auth/Auth.Infrastructure/Auth.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/Services/ClinicalRecords/">
+    <Project Path="src/Services/ClinicalRecords/ClinicalRecords.API/ClinicalRecords.API.csproj" />
+    <Project Path="src/Services/ClinicalRecords/ClinicalRecords.Application/ClinicalRecords.Application.csproj" />
+    <Project Path="src/Services/ClinicalRecords/ClinicalRecords.Domain/ClinicalRecords.Domain.csproj" />
+    <Project Path="src/Services/ClinicalRecords/ClinicalRecords.Infrastructure/ClinicalRecords.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/Notifications/">
+    <Project Path="src/Services/Notifications/Notifications.API/Notifications.API.csproj" />
+    <Project Path="src/Services/Notifications/Notifications.Application/Notifications.Application.csproj" />
+    <Project Path="src/Services/Notifications/Notifications.Domain/Notifications.Domain.csproj" />
+    <Project Path="src/Services/Notifications/Notifications.Infrastructure/Notifications.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/OnlineSession/">
+    <Project Path="src/Services/OnlineSession/OnlineSession.API/OnlineSession.API.csproj" />
+    <Project Path="src/Services/OnlineSession/OnlineSession.Application/OnlineSession.Application.csproj" />
+    <Project Path="src/Services/OnlineSession/OnlineSession.Domain/OnlineSession.Domain.csproj" />
+    <Project Path="src/Services/OnlineSession/OnlineSession.Infrastructure/OnlineSession.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/Patients/">
+    <Project Path="src/Services/Patients/Patients.API/Patients.API.csproj" />
+    <Project Path="src/Services/Patients/Patients.Application/Patients.Application.csproj" />
+    <Project Path="src/Services/Patients/Patients.Domain/Patients.Domain.csproj" />
+    <Project Path="src/Services/Patients/Patients.Infrastructure/Patients.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/Sessions/">
+    <Project Path="src/Services/Sessions/Sessions.API/Sessions.API.csproj" />
+    <Project Path="src/Services/Sessions/Sessions.Application/Sessions.Application.csproj" />
+    <Project Path="src/Services/Sessions/Sessions.Domain/Sessions.Domain.csproj" />
+    <Project Path="src/Services/Sessions/Sessions.Infrastructure/Sessions.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
+  <Folder Name="/tests/Services/Auth/">
+    <Project Path="tests/Services/Auth/Auth.Tests.Architecture/Auth.Tests.Architecture.csproj" />
+    <Project Path="tests/Services/Auth/Auth.Tests.Unit/Auth.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/" />
+  <Folder Name="/tests/Services/Agenda/">
+    <Project Path="tests/Services/Agenda/Agenda.Tests.Architecture/Agenda.Tests.Architecture.csproj" />
+    <Project Path="tests/Services/Agenda/Agenda.Tests.Unit/Agenda.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/ClinicalRecords/">
+    <Project Path="tests/Services/ClinicalRecords/ClinicalRecords.Tests.Architecture/ClinicalRecords.Tests.Architecture.csproj" />
+    <Project Path="tests/Services/ClinicalRecords/ClinicalRecords.Tests.Unit/ClinicalRecords.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/Notifications/">
+    <Project Path="tests/Services/Notifications/Notifications.Tests.Architecture/Notifications.Tests.Architecture.csproj" />
+    <Project Path="tests/Services/Notifications/Notifications.Tests.Unit/Notifications.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/OnlineSession/">
+    <Project Path="tests/Services/OnlineSession/OnlineSession.Tests.Architecture/OnlineSession.Tests.Architecture.csproj" />
+    <Project Path="tests/Services/OnlineSession/OnlineSession.Tests.Unit/OnlineSession.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/Patients/">
+    <Project Path="tests/Services/Patients/Patients.Tests.Architecture/Patients.Tests.Architecture.csproj" />
+    <Project Path="tests/Services/Patients/Patients.Tests.Unit/Patients.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/Sessions/">
+    <Project Path="tests/Services/Sessions/Sessions.Tests.Architecture/Sessions.Tests.Architecture.csproj" />
+    <Project Path="tests/Services/Sessions/Sessions.Tests.Unit/Sessions.Tests.Unit.csproj" />
+  </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
 </Solution>

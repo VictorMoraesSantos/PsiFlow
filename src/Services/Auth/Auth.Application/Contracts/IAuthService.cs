@@ -1,20 +1,18 @@
-﻿using Auth.Application.DTOs.Auth;
+using Auth.Application.DTOs.Auth;
 using BuildingBlocks.Results;
 
 namespace Auth.Application.Contracts
 {
     public interface IAuthService
     {
-        Task<Result> LoginAsync(LoginDTO dto);
-        Task<Result> ExternalLoginAsync(ExternalLoginDTO dto);
-        Task<Result> RegisterAsync(SignUpDTO dto);
-        Task<Result> LogoutAsync(LogoutDTO dto);
-        Task<Result> UpdateRefreshTokenAsync(UpdateRefreshTokenDTO dto);
-        Task<Result> RevokeRefreshTokenAsync(RevokeRefreshTokenDTO dto);
-        Task<Result> SendEmailConfirmationAsync(SendEmailConfirmationDTO dto);
-        Task<Result> ConfirmEmailAsync(ConfirmEmailDTO dto);
-        Task<Result> SendPasswordResetAsync(SendPasswordResetDTO dto);
-        Task<Result> ResetPasswordAsync(ResetPasswordDTO dto);
-        Task<Result> ChangePasswordAsync(ChangePasswordDTO dto);
+        Task<Result<RegisterResult>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
+        Task<Result<TokenResponse>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
+        Task<Result<TokenResponse>> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default);
+        Task<Result> LogoutAsync(int userId, CancellationToken cancellationToken = default);
+        Task<Result<MeResponse>> MeAsync(int userId, CancellationToken cancellationToken = default);
+        Task<Result> RecordConsentAsync(int userId, ConsentRequest request, CancellationToken cancellationToken = default);
+        Task<Result> ChangePasswordAsync(int userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
+        Task<Result> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
+        Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
     }
 }

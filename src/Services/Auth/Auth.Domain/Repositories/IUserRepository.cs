@@ -1,10 +1,12 @@
-﻿using Auth.Domain.Aggregates;
+using Auth.Domain.Aggregates;
 using Auth.Domain.Filters;
-using Auth.Domain.ValueObjects;
 using Core.Domain.Repositories;
 
 namespace Auth.Domain.Repositories
 {
-    public interface IUserRepository : IRepository<User, UserId, UserFilter>
-    { }
+    public interface IUserRepository : IRepository<User, int, UserFilter>
+    {
+        Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
+        Task<User?> FindByRefreshTokenHashAsync(string refreshTokenHash, CancellationToken cancellationToken = default);
+    }
 }

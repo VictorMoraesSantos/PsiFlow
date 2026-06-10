@@ -1,4 +1,4 @@
-﻿using Auth.Domain.Errors;
+using Auth.Domain.Errors;
 using Core.Domain.Exceptions;
 
 namespace Auth.Domain.ValueObjects
@@ -13,5 +13,6 @@ namespace Auth.Domain.ValueObjects
             Value = value;
         }
         public override string ToString() => Value.ToString();
+        public static implicit operator int(PermissionGroupId id) => id.Value;
     }
 }

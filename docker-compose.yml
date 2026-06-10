@@ -1,0 +1,178 @@
+name: psiflow
+
+x-api-env: &api-env
+  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_URLS: http://+:8080
+  ASPNETCORE_HTTP_PORTS: 8080
+  JwtSettings__Key: 'SuperSecretKeyForJWTAuthentication2024!@#$%'
+  JwtSettings__Issuer: PsiFlowAPI
+  JwtSettings__Audience: PsiFlowApp
+  JwtSettings__ExpiryMinutes: 60
+  RabbitMQSettings__Host: rabbitmq
+  RabbitMQSettings__Port: 5672
+  RabbitMQSettings__User: psiflow
+  RabbitMQSettings__Password: psiflow_dev_password
+  RabbitMQSettings__VirtualHost: /
+  RabbitMQSettings__ClientProvidedName: PsiFlow
+  ConnectionStrings__Redis: redis:6379
+  Serilog__WriteTo__2__Args__serverUrl: http://seq
+
+x-api-common: &api-common
+  environment:
+    <<: *api-env
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+    seq:
+      condition: service_started
+  networks:
+    - psiflow
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: psiflow-postgres
+    environment:
+      POSTGRES_USER: psiflow
+      POSTGRES_PASSWORD: psiflow_dev_password
+    volumes:
+      - psiflow_postgres:/var/lib/postgresql/data
+      - ./deploy/docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psiflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - psiflow
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: psiflow-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - psiflow
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: psiflow-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: psiflow
+      RABBITMQ_DEFAULT_PASS: psiflow_dev_password
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    networks:
+      - psiflow
+    restart: unless-stopped
+
+  seq:
+    image: datalust/seq:2024.3
+    container_name: psiflow-seq
+    environment:
+      ACCEPT_EULA: Y
+    volumes:
+      - psiflow_seq:/data
+    networks:
+      - psiflow
+    restart: unless-stopped
+
+  agenda.api:
+    <<: *api-common
+    image: ${DOCKER_REGISTRY-}agendaapi
+    container_name: psiflow-agenda-api
+    build:
+      context: .
+      dockerfile: src/Services/Agenda/Agenda.API/Dockerfile
+    environment:
+      <<: *api-env
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=psiflow_agenda;Username=psiflow;Password=psiflow_dev_password
+
+  auth.api:
+    <<: *api-common
+    image: ${DOCKER_REGISTRY-}authapi
+    container_name: psiflow-auth-api
+    build:
+      context: .
+      dockerfile: src/Services/Auth/Auth.API/Dockerfile
+    environment:
+      <<: *api-env
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=psiflow_auth;Username=psiflow;Password=psiflow_dev_password;Include Error Detail=true
+
+  clinicalrecords.api:
+    <<: *api-common
+    image: ${DOCKER_REGISTRY-}clinicalrecordsapi
+    container_name: psiflow-clinical-records-api
+    build:
+      context: .
+      dockerfile: src/Services/ClinicalRecords/ClinicalRecords.API/Dockerfile
+    environment:
+      <<: *api-env
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=psiflow_clinical_records;Username=psiflow;Password=psiflow_dev_password
+      CLINICAL_MASTER_KEY_BASE64: dev-only-replace-with-32-byte-base64-key
+
+  notifications.api:
+    <<: *api-common
+    image: ${DOCKER_REGISTRY-}notificationsapi
+    container_name: psiflow-notifications-api
+    build:
+      context: .
+      dockerfile: src/Services/Notifications/Notifications.API/Dockerfile
+    environment:
+      <<: *api-env
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=psiflow_notifications;Username=psiflow;Password=psiflow_dev_password
+      EMAIL_PROVIDER: Fake
+
+  onlinesession.api:
+    <<: *api-common
+    image: ${DOCKER_REGISTRY-}onlinesessionapi
+    container_name: psiflow-online-session-api
+    build:
+      context: .
+      dockerfile: src/Services/OnlineSession/OnlineSession.API/Dockerfile
+    environment:
+      <<: *api-env
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=psiflow_online_session;Username=psiflow;Password=psiflow_dev_password
+
+  patients.api:
+    <<: *api-common
+    image: ${DOCKER_REGISTRY-}patientsapi
+    container_name: psiflow-patients-api
+    build:
+      context: .
+      dockerfile: src/Services/Patients/Patients.API/Dockerfile
+    environment:
+      <<: *api-env
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=psiflow_patients;Username=psiflow;Password=psiflow_dev_password
+
+  sessions.api:
+    <<: *api-common
+    image: ${DOCKER_REGISTRY-}sessionsapi
+    container_name: psiflow-sessions-api
+    build:
+      context: .
+      dockerfile: src/Services/Sessions/Sessions.API/Dockerfile
+    environment:
+      <<: *api-env
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=psiflow_sessions;Username=psiflow;Password=psiflow_dev_password
+
+volumes:
+  psiflow_postgres:
+  psiflow_seq:
+
+networks:
+  psiflow:
+    driver: bridge
