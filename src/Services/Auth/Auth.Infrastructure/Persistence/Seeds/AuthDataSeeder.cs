@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Auth.Infrastructure.Persistence.Seeds
 {
@@ -23,7 +24,15 @@ namespace Auth.Infrastructure.Persistence.Seeds
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            await context.Database.MigrateAsync(cancellationToken);
+
+            var canConnect = await context.Database.CanConnectAsync(cancellationToken);
+            if (canConnect && !await HasTableAsync(context, "auth", "permission_groups", cancellationToken))
+            {
+                _logger.LogWarning("Dropping empty database before recreating schema.");
+                await context.Database.EnsureDeletedAsync(cancellationToken);
+                NpgsqlConnection.ClearAllPools();
+            }
+            await context.Database.EnsureCreatedAsync(cancellationToken);
 
             if (!await context.PermissionGroups.AnyAsync(cancellationToken))
             {
@@ -33,6 +42,33 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 }
                 await context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Seed de grupos de permissao aplicado.");
+            }
+        }
+
+        private static async Task<bool> HasTableAsync(ApplicationDbContext context, string schema, string table, CancellationToken cancellationToken)
+        {
+            var conn = context.Database.GetDbConnection();
+            var openedHere = false;
+            if (conn.State != System.Data.ConnectionState.Open)
+            {
+                await conn.OpenAsync(cancellationToken);
+                openedHere = true;
+            }
+            try
+            {
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)";
+                var p1 = cmd.CreateParameter(); p1.Value = schema; cmd.Parameters.Add(p1);
+                var p2 = cmd.CreateParameter(); p2.Value = table; cmd.Parameters.Add(p2);
+                var result = await cmd.ExecuteScalarAsync(cancellationToken);
+                return result is bool b && b;
+            }
+            finally
+            {
+                if (openedHere)
+                {
+                    await conn.CloseAsync();
+                }
             }
         }
 

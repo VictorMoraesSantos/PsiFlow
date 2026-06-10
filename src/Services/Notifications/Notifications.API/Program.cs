@@ -2,6 +2,7 @@ using Notifications.API.Endpoints;
 using Notifications.Application;
 using Notifications.Infrastructure;
 using BuildingBlocks.Authentication;
+using Core.API;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,8 +22,11 @@ builder.Services.AddAuthorization(o =>
     o.AddPolicy("RequirePsychologistOrPatient", p => p.RequireAuthenticatedUser().RequireRole("psychologist", "patient"));
 });
 builder.Services.AddHealthChecks();
+builder.Services.AddCoreApi();
 
 var app = builder.Build();
+
+app.UseCoreApi();
 
 if (app.Environment.IsDevelopment())
 {

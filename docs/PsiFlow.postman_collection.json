@@ -1,0 +1,1508 @@
+{
+  "info": {
+    "_postman_id": "psiflow-collection-2026-06-10",
+    "name": "PsiFlow - Microservices API",
+    "description": "Coleção Postman completa para todos os microserviços do PsiFlow (MVP SaaS para psicólogas). Importe este arquivo no Postman e use a pasta `Auth` primeiro para fazer login e popular automaticamente a variável `{{access_token}}`.\n\n**Pré-requisitos**\n1. Stack rodando localmente (`docker compose -f deploy/docker/docker-compose.dev.yml up --build`)\n2. Executar `POST /v1/auth/register` para criar um psicólogo (ou usar um usuário seed)\n3. Executar `POST /v1/auth/login` para popular `{{access_token}}`\n\n**Portas**\n- Auth: 5001 | Patients: 5002 | Agenda: 5003 | Sessions: 5004\n- ClinicalRecords: 5005 | Notifications: 5006 | OnlineSession: 5007",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "auth_base_url",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "patients_base_url",
+      "value": "http://localhost:5002",
+      "type": "string"
+    },
+    {
+      "key": "agenda_base_url",
+      "value": "http://localhost:5003",
+      "type": "string"
+    },
+    {
+      "key": "sessions_base_url",
+      "value": "http://localhost:5004",
+      "type": "string"
+    },
+    {
+      "key": "clinicalrecords_base_url",
+      "value": "http://localhost:5005",
+      "type": "string"
+    },
+    {
+      "key": "notifications_base_url",
+      "value": "http://localhost:5006",
+      "type": "string"
+    },
+    {
+      "key": "onlinesession_base_url",
+      "value": "http://localhost:5007",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "psychologist_user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "patient_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "record_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "template_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "availability_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "block_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "invite_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "invite_token",
+      "value": "sample-invite-token-replace-after-create",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "video_room_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Health Checks",
+      "item": [
+        {
+          "name": "Auth - Liveness",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{auth_base_url}}/health/live", "host": ["{{auth_base_url}}"], "path": ["health", "live"] } }
+        },
+        {
+          "name": "Patients - Liveness",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{patients_base_url}}/health/live", "host": ["{{patients_base_url}}"], "path": ["health", "live"] } }
+        },
+        {
+          "name": "Agenda - Liveness",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{agenda_base_url}}/health/live", "host": ["{{agenda_base_url}}"], "path": ["health", "live"] } }
+        },
+        {
+          "name": "Sessions - Liveness",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{sessions_base_url}}/health/live", "host": ["{{sessions_base_url}}"], "path": ["health", "live"] } }
+        },
+        {
+          "name": "ClinicalRecords - Liveness",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{clinicalrecords_base_url}}/health/live", "host": ["{{clinicalrecords_base_url}}"], "path": ["health", "live"] } }
+        },
+        {
+          "name": "Notifications - Liveness",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{notifications_base_url}}/health/live", "host": ["{{notifications_base_url}}"], "path": ["health", "live"] } }
+        },
+        {
+          "name": "OnlineSession - Liveness",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{onlinesession_base_url}}/health/live", "host": ["{{onlinesession_base_url}}"], "path": ["health", "live"] } }
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth Service (5001)",
+      "item": [
+        {
+          "name": "JWKS - Get Public Keys",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{auth_base_url}}/.well-known/jwks.json", "host": ["{{auth_base_url}}"], "path": [".well-known", "jwks.json"] } }
+        },
+        {
+          "name": "Register Psychologist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.userId) pm.collectionVariables.set('user_id', body.userId);",
+                  "    if (body.tenantId) pm.collectionVariables.set('tenant_id', body.tenantId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"psychologist\",\n  \"fullName\": \"Dra. Ana Beatriz Souza\",\n  \"email\": \"ana.souza@psiflow.dev\",\n  \"password\": \"PsiFlow@2026!\",\n  \"confirmPassword\": \"PsiFlow@2026!\",\n  \"phone\": \"+55 11 98888-1234\",\n  \"crp\": \"06/12345\",\n  \"acceptedTermsVersion\": \"2026-01-01\",\n  \"acceptedPrivacyVersion\": \"2026-01-01\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/register", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Register Patient",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"patient\",\n  \"fullName\": \"Marina Oliveira\",\n  \"email\": \"marina.oliveira@psiflow.dev\",\n  \"password\": \"PsiFlow@2026!\",\n  \"confirmPassword\": \"PsiFlow@2026!\",\n  \"phone\": \"+55 11 97777-4321\",\n  \"crp\": null,\n  \"acceptedTermsVersion\": \"2026-01-01\",\n  \"acceptedPrivacyVersion\": \"2026-01-01\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/register", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Register Saas Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"saas_admin\",\n  \"fullName\": \"Admin PsiFlow\",\n  \"email\": \"admin@psiflow.dev\",\n  \"password\": \"PsiFlow@2026!\",\n  \"confirmPassword\": \"PsiFlow@2026!\",\n  \"phone\": \"+55 11 90000-0001\",\n  \"crp\": null,\n  \"acceptedTermsVersion\": \"2026-01-01\",\n  \"acceptedPrivacyVersion\": \"2026-01-01\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/register", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login (Psychologist)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.accessToken) pm.collectionVariables.set('access_token', body.accessToken);",
+                  "    if (body.refreshToken) pm.collectionVariables.set('refresh_token', body.refreshToken);",
+                  "    if (body.user && body.user.userId) {",
+                  "        pm.collectionVariables.set('user_id', body.user.userId);",
+                  "        pm.collectionVariables.set('psychologist_user_id', body.user.userId);",
+                  "    }",
+                  "    if (body.user && body.user.tenantId) pm.collectionVariables.set('tenant_id', body.user.tenantId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.souza@psiflow.dev\",\n  \"password\": \"PsiFlow@2026!\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/login", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login (Patient)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.accessToken) pm.collectionVariables.set('access_token', body.accessToken);",
+                  "    if (body.refreshToken) pm.collectionVariables.set('refresh_token', body.refreshToken);",
+                  "    if (body.user && body.user.userId) pm.collectionVariables.set('user_id', body.user.userId);",
+                  "    if (body.user && body.user.tenantId) pm.collectionVariables.set('tenant_id', body.user.tenantId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"marina.oliveira@psiflow.dev\",\n  \"password\": \"PsiFlow@2026!\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/login", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login (Saas Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.accessToken) pm.collectionVariables.set('access_token', body.accessToken);",
+                  "    if (body.refreshToken) pm.collectionVariables.set('refresh_token', body.refreshToken);",
+                  "    if (body.user && body.user.userId) pm.collectionVariables.set('user_id', body.user.userId);",
+                  "    if (body.user && body.user.tenantId) pm.collectionVariables.set('tenant_id', body.user.tenantId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@psiflow.dev\",\n  \"password\": \"PsiFlow@2026!\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/login", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/refresh", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{auth_base_url}}/v1/auth/me", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Record Consent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"termsVersion\": \"2026-01-01\",\n  \"privacyVersion\": \"2026-01-01\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/consent", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "consent"] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"PsiFlow@2026!\",\n  \"newPassword\": \"PsiFlow@2026-New!\",\n  \"confirmNewPassword\": \"PsiFlow@2026-New!\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/change-password", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "change-password"] }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.souza@psiflow.dev\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/forgot-password", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "forgot-password"] }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.souza@psiflow.dev\",\n  \"token\": \"reset-token-from-email-link\",\n  \"newPassword\": \"PsiFlow@2026!\",\n  \"confirmPassword\": \"PsiFlow@2026!\"\n}"
+            },
+            "url": { "raw": "{{auth_base_url}}/v1/auth/reset-password", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "reset-password"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{auth_base_url}}/v1/auth/logout", "host": ["{{auth_base_url}}"], "path": ["v1", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Patients Service (5002)",
+      "item": [
+        {
+          "name": "Patients",
+          "item": [
+            {
+              "name": "List Patients",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{patients_base_url}}/v1/patients/", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", ""] }
+              }
+            },
+            {
+              "name": "Get Patient By Id",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{patients_base_url}}/v1/patients/{{patient_id}}", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", "{{patient_id}}"] }
+              }
+            },
+            {
+              "name": "Create Patient",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('patient_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tenantId\": 1,\n  \"fullName\": \"Marina Oliveira\",\n  \"email\": \"marina.oliveira@psiflow.dev\",\n  \"phone\": \"+55 11 97777-4321\",\n  \"birthDate\": \"1995-04-12\",\n  \"emergencyContactName\": \"João Oliveira\",\n  \"emergencyContactPhone\": \"+55 11 96666-1234\",\n  \"status\": \"active\",\n  \"treatmentStatus\": \"screening\"\n}"
+                },
+                "url": { "raw": "{{patients_base_url}}/v1/patients/", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", ""] }
+              }
+            },
+            {
+              "name": "Update Patient",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": {{patient_id}},\n  \"tenantId\": 1,\n  \"fullName\": \"Marina Oliveira Santos\",\n  \"email\": \"marina.oliveira@psiflow.dev\",\n  \"phone\": \"+55 11 97777-4321\",\n  \"birthDate\": \"1995-04-12\",\n  \"status\": \"active\",\n  \"treatmentStatus\": \"in_treatment\",\n  \"emergencyContactName\": \"João Oliveira\",\n  \"emergencyContactPhone\": \"+55 11 96666-1234\"\n}"
+                },
+                "url": { "raw": "{{patients_base_url}}/v1/patients/{{patient_id}}", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", "{{patient_id}}"] }
+              }
+            },
+            {
+              "name": "Delete Patient",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{patients_base_url}}/v1/patients/{{patient_id}}", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", "{{patient_id}}"] }
+              }
+            },
+            {
+              "name": "Deactivate Patient",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Mudança de cidade a pedido da paciente\"\n}"
+                },
+                "url": { "raw": "{{patients_base_url}}/v1/patients/{{patient_id}}/deactivate", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", "{{patient_id}}", "deactivate"] }
+              }
+            },
+            {
+              "name": "Change Treatment Status",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"treatmentStatus\": \"in_treatment\",\n  \"reason\": \"Plano terapêutico iniciado\"\n}"
+                },
+                "url": { "raw": "{{patients_base_url}}/v1/patients/{{patient_id}}/status", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", "{{patient_id}}", "status"] }
+              }
+            },
+            {
+              "name": "Get Patient Sessions Summary",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{patients_base_url}}/v1/patients/{{patient_id}}/sessions-summary", "host": ["{{patients_base_url}}"], "path": ["v1", "patients", "{{patient_id}}", "sessions-summary"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Patient Invites",
+          "item": [
+            {
+              "name": "Create Patient Invite",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('invite_id', body.id);",
+                      "    if (body.token) pm.collectionVariables.set('invite_token', body.token);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"carla.novo@psiflow.dev\",\n  \"phone\": \"+55 11 95555-1111\",\n  \"patientId\": null\n}"
+                },
+                "url": { "raw": "{{patients_base_url}}/v1/patient-invites", "host": ["{{patients_base_url}}"], "path": ["v1", "patient-invites"] }
+              }
+            },
+            {
+              "name": "Preview Patient Invite",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{patients_base_url}}/v1/patient-invites/{{invite_token}}/preview", "host": ["{{patients_base_url}}"], "path": ["v1", "patient-invites", "{{invite_token}}", "preview"] }
+              }
+            },
+            {
+              "name": "Accept Patient Invite",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": {{user_id}}\n}"
+                },
+                "url": { "raw": "{{patients_base_url}}/v1/patient-invites/{{invite_token}}/accept", "host": ["{{patients_base_url}}"], "path": ["v1", "patient-invites", "{{invite_token}}", "accept"] }
+              }
+            },
+            {
+              "name": "Revoke Patient Invite",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{patients_base_url}}/v1/patient-invites/{{invite_id}}/revoke", "host": ["{{patients_base_url}}"], "path": ["v1", "patient-invites", "{{invite_id}}", "revoke"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Agenda Service (5003)",
+      "item": [
+        {
+          "name": "Appointments",
+          "item": [
+            {
+              "name": "List Appointments",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{agenda_base_url}}/v1/appointments/", "host": ["{{agenda_base_url}}"], "path": ["v1", "appointments", ""] }
+              }
+            },
+            {
+              "name": "Get Appointment By Id",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{agenda_base_url}}/v1/appointments/{{appointment_id}}", "host": ["{{agenda_base_url}}"], "path": ["v1", "appointments", "{{appointment_id}}"] }
+              }
+            },
+            {
+              "name": "Create Appointment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('appointment_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tenantId\": 1,\n  \"name\": \"Sessão inicial - Marina\",\n  \"patientId\": {{patient_id}},\n  \"psychologistId\": {{psychologist_user_id}},\n  \"startsAt\": \"2026-06-15T14:00:00Z\",\n  \"endsAt\": \"2026-06-15T15:00:00Z\",\n  \"modality\": \"online\",\n  \"status\": \"scheduled\",\n  \"createdBy\": {{psychologist_user_id}}\n}"
+                },
+                "url": { "raw": "{{agenda_base_url}}/v1/appointments/", "host": ["{{agenda_base_url}}"], "path": ["v1", "appointments", ""] }
+              }
+            },
+            {
+              "name": "Update Appointment",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": {{appointment_id}},\n  \"tenantId\": 1,\n  \"name\": \"Sessão de retorno - Marina\",\n  \"patientId\": {{patient_id}},\n  \"psychologistId\": {{psychologist_user_id}},\n  \"startsAt\": \"2026-06-15T15:00:00Z\",\n  \"endsAt\": \"2026-06-15T16:00:00Z\",\n  \"modality\": \"online\",\n  \"status\": \"scheduled\",\n  \"lateCancel\": false,\n  \"canceledAt\": null,\n  \"canceledBy\": null,\n  \"cancelReason\": null\n}"
+                },
+                "url": { "raw": "{{agenda_base_url}}/v1/appointments/{{appointment_id}}", "host": ["{{agenda_base_url}}"], "path": ["v1", "appointments", "{{appointment_id}}"] }
+              }
+            },
+            {
+              "name": "Delete Appointment",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{agenda_base_url}}/v1/appointments/{{appointment_id}}", "host": ["{{agenda_base_url}}"], "path": ["v1", "appointments", "{{appointment_id}}"] }
+              }
+            },
+            {
+              "name": "Cancel Appointment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Paciente solicitou remarcação\",\n  \"lateCancel\": false\n}"
+                },
+                "url": { "raw": "{{agenda_base_url}}/v1/appointments/{{appointment_id}}/cancel", "host": ["{{agenda_base_url}}"], "path": ["v1", "appointments", "{{appointment_id}}", "cancel"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Weekly Availability",
+          "item": [
+            {
+              "name": "Create Weekly Availability",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('availability_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"weekday\": 1,\n  \"startTime\": \"08:00:00\",\n  \"endTime\": \"18:00:00\",\n  \"slotDurationMinutes\": 50,\n  \"modality\": \"online\",\n  \"timezone\": \"America/Sao_Paulo\",\n  \"isActive\": true\n}"
+                },
+                "url": { "raw": "{{agenda_base_url}}/v1/availability/weekly", "host": ["{{agenda_base_url}}"], "path": ["v1", "availability", "weekly"] }
+              }
+            },
+            {
+              "name": "Update Weekly Availability",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"weekday\": 1,\n  \"startTime\": \"09:00:00\",\n  \"endTime\": \"19:00:00\",\n  \"slotDurationMinutes\": 50,\n  \"modality\": \"online\",\n  \"timezone\": \"America/Sao_Paulo\",\n  \"isActive\": true\n}"
+                },
+                "url": { "raw": "{{agenda_base_url}}/v1/availability/weekly/{{availability_id}}", "host": ["{{agenda_base_url}}"], "path": ["v1", "availability", "weekly", "{{availability_id}}"] }
+              }
+            },
+            {
+              "name": "Delete Weekly Availability",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{agenda_base_url}}/v1/availability/weekly/{{availability_id}}", "host": ["{{agenda_base_url}}"], "path": ["v1", "availability", "weekly", "{{availability_id}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Schedule Blocks",
+          "item": [
+            {
+              "name": "Create Schedule Block",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('block_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startsAt\": \"2026-06-20T12:00:00Z\",\n  \"endsAt\": \"2026-06-20T14:00:00Z\",\n  \"reason\": \"Almoço\"\n}"
+                },
+                "url": { "raw": "{{agenda_base_url}}/v1/schedule-blocks", "host": ["{{agenda_base_url}}"], "path": ["v1", "schedule-blocks"] }
+              }
+            },
+            {
+              "name": "Delete Schedule Block",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{agenda_base_url}}/v1/schedule-blocks/{{block_id}}", "host": ["{{agenda_base_url}}"], "path": ["v1", "schedule-blocks", "{{block_id}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Available Slots",
+          "item": [
+            {
+              "name": "Get Available Slots",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": {
+                  "raw": "{{agenda_base_url}}/v1/available-slots?from=2026-06-15T00:00:00Z&to=2026-06-22T00:00:00Z&modality=online",
+                  "host": ["{{agenda_base_url}}"],
+                  "path": ["v1", "available-slots"],
+                  "query": [
+                    { "key": "from", "value": "2026-06-15T00:00:00Z" },
+                    { "key": "to", "value": "2026-06-22T00:00:00Z" },
+                    { "key": "modality", "value": "online" }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Sessions Service (5004)",
+      "item": [
+        {
+          "name": "Sessions",
+          "item": [
+            {
+              "name": "List Sessions",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", ""] }
+              }
+            },
+            {
+              "name": "Get Session By Id",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}"] }
+              }
+            },
+            {
+              "name": "Create Session",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('session_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tenantId\": 1,\n  \"name\": \"Sessão #1 - Marina\",\n  \"appointmentId\": {{appointment_id}},\n  \"patientId\": {{patient_id}},\n  \"psychologistId\": {{psychologist_user_id}},\n  \"startsAt\": \"2026-06-15T14:00:00Z\",\n  \"endsAt\": \"2026-06-15T15:00:00Z\",\n  \"status\": \"scheduled\",\n  \"modality\": \"online\"\n}"
+                },
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", ""] }
+              }
+            },
+            {
+              "name": "Update Session",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": {{session_id}},\n  \"tenantId\": 1,\n  \"name\": \"Sessão #1 - Marina (remarcada)\",\n  \"appointmentId\": {{appointment_id}},\n  \"patientId\": {{patient_id}},\n  \"psychologistId\": {{psychologist_user_id}},\n  \"startsAt\": \"2026-06-15T15:00:00Z\",\n  \"endsAt\": \"2026-06-15T16:00:00Z\",\n  \"status\": \"scheduled\",\n  \"modality\": \"online\"\n}"
+                },
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}"] }
+              }
+            },
+            {
+              "name": "Delete Session",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Session Workflow",
+          "item": [
+            {
+              "name": "List Patient Sessions",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{sessions_base_url}}/v1/patients/{{patient_id}}/sessions", "host": ["{{sessions_base_url}}"], "path": ["v1", "patients", "{{patient_id}}", "sessions"] }
+              }
+            },
+            {
+              "name": "Start Session",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": null\n}"
+                },
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}/start", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "start"] }
+              }
+            },
+            {
+              "name": "Complete Session",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": null\n}"
+                },
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}/complete", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "complete"] }
+              }
+            },
+            {
+              "name": "Mark Session As No-Show",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Paciente não compareceu e não avisou\"\n}"
+                },
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}/no-show", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "no-show"] }
+              }
+            },
+            {
+              "name": "Cancel Session",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Viagem inesperada da paciente\"\n}"
+                },
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}/cancel", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "cancel"] }
+              }
+            },
+            {
+              "name": "Mark Payment Received",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amountCents\": 15000,\n  \"currency\": \"BRL\",\n  \"notes\": \"Pix recebido em 2026-06-15\"\n}"
+                },
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}/payment/mark-received", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "payment", "mark-received"] }
+              }
+            },
+            {
+              "name": "Get Session Payment",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}/payment", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "payment"] }
+              }
+            },
+            {
+              "name": "Send Receipt",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{sessions_base_url}}/v1/sessions/{{session_id}}/receipt/send", "host": ["{{sessions_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "receipt", "send"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Clinical Records Service (5005)",
+      "item": [
+        {
+          "name": "Medical Records (CRUD)",
+          "item": [
+            {
+              "name": "List Medical Records",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", ""] }
+              }
+            },
+            {
+              "name": "Get Medical Record By Id",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}"] }
+              }
+            },
+            {
+              "name": "Create Medical Record",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('record_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tenantId\": 1,\n  \"patientId\": {{patient_id}},\n  \"name\": \"Prontuário Marina Oliveira\",\n  \"status\": \"active\"\n}"
+                },
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", ""] }
+              }
+            },
+            {
+              "name": "Update Medical Record",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": {{record_id}},\n  \"tenantId\": 1,\n  \"patientId\": {{patient_id}},\n  \"name\": \"Prontuário Marina Oliveira (revisado)\",\n  \"status\": \"active\"\n}"
+                },
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}"] }
+              }
+            },
+            {
+              "name": "Delete Medical Record",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clinical Record Workflow",
+          "item": [
+            {
+              "name": "Get Clinical Record By Patient",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/patients/{{patient_id}}/clinical-record", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "patients", "{{patient_id}}", "clinical-record"] }
+              }
+            },
+            {
+              "name": "Create Clinical Record For Patient",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('record_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Prontuário inicial - Marina\"\n}"
+                },
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/patients/{{patient_id}}/clinical-record", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "patients", "{{patient_id}}", "clinical-record"] }
+              }
+            },
+            {
+              "name": "Get Clinical Record",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}"] }
+              }
+            },
+            {
+              "name": "Get Anamnesis",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}/anamnesis", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}", "anamnesis"] }
+              }
+            },
+            {
+              "name": "Autosave Anamnesis (encrypted draft)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ciphertext\": \"BASE64_CIPHERTEXT_PLACEHOLDER==\",\n  \"nonce\": \"BASE64_NONCE_PLACEHOLDER==\",\n  \"tag\": \"BASE64_TAG_PLACEHOLDER==\"\n}"
+                },
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}/anamnesis/autosave", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}", "anamnesis", "autosave"] }
+              }
+            },
+            {
+              "name": "Publish Anamnesis Version",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Finalização da anamnese inicial\"\n}"
+                },
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}/anamnesis/publish-version", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}", "anamnesis", "publish-version"] }
+              }
+            },
+            {
+              "name": "Get Session Evolution",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/sessions/{{session_id}}/evolution", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "evolution"] }
+              }
+            },
+            {
+              "name": "Autosave Evolution (encrypted draft)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ciphertext\": \"BASE64_CIPHERTEXT_PLACEHOLDER==\",\n  \"nonce\": \"BASE64_NONCE_PLACEHOLDER==\",\n  \"tag\": \"BASE64_TAG_PLACEHOLDER==\"\n}"
+                },
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/sessions/{{session_id}}/evolution/autosave", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "evolution", "autosave"] }
+              }
+            },
+            {
+              "name": "Publish Evolution Version",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Fechamento da sessão #1\"\n}"
+                },
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/sessions/{{session_id}}/evolution/publish-version", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "evolution", "publish-version"] }
+              }
+            },
+            {
+              "name": "List Evolution Versions",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/sessions/{{session_id}}/evolution/versions", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "evolution", "versions"] }
+              }
+            },
+            {
+              "name": "Get Clinical Audit Log",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{clinicalrecords_base_url}}/v1/clinical-records/{{record_id}}/audit-log", "host": ["{{clinicalrecords_base_url}}"], "path": ["v1", "clinical-records", "{{record_id}}", "audit-log"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Notifications Service (5006)",
+      "item": [
+        {
+          "name": "Templates (CRUD)",
+          "item": [
+            {
+              "name": "List Notification Templates",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-templates/", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-templates", ""] }
+              }
+            },
+            {
+              "name": "Get Notification Template By Id",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-templates/{{template_id}}", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-templates", "{{template_id}}"] }
+              }
+            },
+            {
+              "name": "Create Notification Template",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('template_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tenantId\": 1,\n  \"key\": \"session.reminder.24h\",\n  \"channel\": \"email\",\n  \"name\": \"Lembrete de sessão 24h antes\",\n  \"status\": \"active\",\n  \"isActive\": true\n}"
+                },
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-templates/", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-templates", ""] }
+              }
+            },
+            {
+              "name": "Update Notification Template",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": {{template_id}},\n  \"tenantId\": 1,\n  \"key\": \"session.reminder.24h\",\n  \"channel\": \"email\",\n  \"name\": \"Lembrete de sessão 24h antes (v2)\",\n  \"status\": \"active\",\n  \"isActive\": true\n}"
+                },
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-templates/{{template_id}}", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-templates", "{{template_id}}"] }
+              }
+            },
+            {
+              "name": "Delete Notification Template",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-templates/{{template_id}}", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-templates", "{{template_id}}"] }
+              }
+            },
+            {
+              "name": "Create Template Version",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"subject\": \"Sua sessão é amanhã!\",\n  \"bodyHtml\": \"<h1>Olá, {{paciente.nome}}!</h1><p>Sua sessão com {{psicologa.nome}} está marcada para amanhã às {{sessao.hora}}.</p>\",\n  \"bodyText\": \"Olá, {{paciente.nome}}! Sua sessão com {{psicologa.nome}} está marcada para amanhã às {{sessao.hora}}.\"\n}"
+                },
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-templates/{{template_id}}/versions", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-templates", "{{template_id}}", "versions"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notification Logs",
+          "item": [
+            {
+              "name": "List Notification Logs",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-logs/", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-logs", ""] }
+              }
+            },
+            {
+              "name": "Get Notification Log By Id",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('notification_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{notifications_base_url}}/v1/notification-logs/{{notification_id}}", "host": ["{{notifications_base_url}}"], "path": ["v1", "notification-logs", "{{notification_id}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operations",
+          "item": [
+            {
+              "name": "Send Test Email",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"recipientEmail\": \"ana.souza@psiflow.dev\",\n  \"templateKey\": \"session.reminder.24h\"\n}"
+                },
+                "url": { "raw": "{{notifications_base_url}}/v1/notifications/test-email", "host": ["{{notifications_base_url}}"], "path": ["v1", "notifications", "test-email"] }
+              }
+            },
+            {
+              "name": "Retry Notification",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{notifications_base_url}}/v1/notifications/retry/{{notification_id}}", "host": ["{{notifications_base_url}}"], "path": ["v1", "notifications", "retry", "{{notification_id}}"] }
+              }
+            },
+            {
+              "name": "Schedule Reminder",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"notificationType\": \"session.reminder.24h\",\n  \"scheduledFor\": \"2026-06-14T14:00:00Z\",\n  \"recipientEmail\": \"marina.oliveira@psiflow.dev\",\n  \"recipientUserId\": {{user_id}},\n  \"payloadJson\": \"{\\\"pacienteNome\\\":\\\"Marina\\\",\\\"psicologaNome\\\":\\\"Dra. Ana Beatriz\\\",\\\"sessaoHora\\\":\\\"14:00\\\"}\"\n}"
+                },
+                "url": { "raw": "{{notifications_base_url}}/v1/notifications/schedule-reminders", "host": ["{{notifications_base_url}}"], "path": ["v1", "notifications", "schedule-reminders"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Online Session Service (5007)",
+      "item": [
+        {
+          "name": "Video Rooms (CRUD)",
+          "item": [
+            {
+              "name": "List Video Rooms",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{onlinesession_base_url}}/v1/video-rooms/", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "video-rooms", ""] }
+              }
+            },
+            {
+              "name": "Get Video Room By Id",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{onlinesession_base_url}}/v1/video-rooms/{{video_room_id}}", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "video-rooms", "{{video_room_id}}"] }
+              }
+            },
+            {
+              "name": "Create Video Room",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const body = pm.response.json();",
+                      "    if (body.id) pm.collectionVariables.set('video_room_id', body.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tenantId\": 1,\n  \"sessionId\": {{session_id}},\n  \"name\": \"Sala online - Marina\",\n  \"provider\": \"external\",\n  \"urlEncrypted\": \"BASE64_ENCRYPTED_URL==\",\n  \"urlHash\": \"sha256:abcdef1234567890\",\n  \"instructions\": \"Entre pelo link 5 minutos antes do horário.\",\n  \"createdBy\": {{psychologist_user_id}},\n  \"status\": \"active\"\n}"
+                },
+                "url": { "raw": "{{onlinesession_base_url}}/v1/video-rooms/", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "video-rooms", ""] }
+              }
+            },
+            {
+              "name": "Update Video Room",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": {{video_room_id}},\n  \"tenantId\": 1,\n  \"sessionId\": {{session_id}},\n  \"name\": \"Sala online - Marina (atualizada)\",\n  \"provider\": \"external\",\n  \"urlEncrypted\": \"BASE64_ENCRYPTED_URL==\",\n  \"urlHash\": \"sha256:abcdef1234567890\",\n  \"instructions\": \"Entre com fones de ouvido.\",\n  \"createdBy\": {{psychologist_user_id}},\n  \"status\": \"active\"\n}"
+                },
+                "url": { "raw": "{{onlinesession_base_url}}/v1/video-rooms/{{video_room_id}}", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "video-rooms", "{{video_room_id}}"] }
+              }
+            },
+            {
+              "name": "Delete Video Room",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{onlinesession_base_url}}/v1/video-rooms/{{video_room_id}}", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "video-rooms", "{{video_room_id}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Session Video Room",
+          "item": [
+            {
+              "name": "Upsert Video Room For Session",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Sessão online - Marina\",\n  \"provider\": \"external\",\n  \"url\": \"https://meet.exemplo.com/sala-psiflow-abc123\",\n  \"instructions\": \"Teste câmera e microfone 5 min antes.\"\n}"
+                },
+                "url": { "raw": "{{onlinesession_base_url}}/v1/sessions/{{session_id}}/video-room/", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "video-room", ""] }
+              }
+            },
+            {
+              "name": "Get Video Room For Session",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{onlinesession_base_url}}/v1/sessions/{{session_id}}/video-room/", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "video-room", ""] }
+              }
+            },
+            {
+              "name": "Record Video Room Click",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{onlinesession_base_url}}/v1/sessions/{{session_id}}/video-room/click", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "video-room", "click"] }
+              }
+            },
+            {
+              "name": "List Video Room Clicks",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{onlinesession_base_url}}/v1/sessions/{{session_id}}/video-room/clicks", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "sessions", "{{session_id}}", "video-room", "clicks"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Default Video Settings",
+          "item": [
+            {
+              "name": "Upsert Default Video Settings",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{access_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"provider\": \"external\",\n  \"url\": \"https://meet.exemplo.com/psiflow-default-room\"\n}"
+                },
+                "url": { "raw": "{{onlinesession_base_url}}/v1/video-settings/default-link/", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "video-settings", "default-link", ""] }
+              }
+            },
+            {
+              "name": "Get Default Video Settings",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+                "url": { "raw": "{{onlinesession_base_url}}/v1/video-settings/default-link/", "host": ["{{onlinesession_base_url}}"], "path": ["v1", "video-settings", "default-link", ""] }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

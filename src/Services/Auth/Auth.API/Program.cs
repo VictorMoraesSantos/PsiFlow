@@ -3,6 +3,7 @@ using Auth.Application;
 using Auth.Application.Settings;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Persistence.Seeds;
+using Core.API;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
@@ -20,10 +21,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddHostedService<AuthDataSeeder>();
-builder.Services.AddProblemDetails();
-builder.Services.AddCors();
+builder.Services.AddCoreApi();
 
 var app = builder.Build();
+
+app.UseCoreApi();
 
 if (app.Environment.IsDevelopment())
 {

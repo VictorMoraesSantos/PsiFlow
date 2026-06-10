@@ -1,0 +1,6 @@
+{
+  "files": ["src/Web/PsiFlow.Web/index.html"],
+  "insertBefore": "</body>",
+  "commentSyntax": "html",
+  "cspChecked": true
+}

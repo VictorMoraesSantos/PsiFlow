@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-10T00:00:00.000Z",
+  "title": "Design System: PsiFlow",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Forest Sage",
+        "canonical": "oklch(0.35 0.11 140)",
+        "tonalRamp": [
+          "oklch(0.15 0.04 140)",
+          "oklch(0.22 0.06 140)",
+          "oklch(0.30 0.10 140)",
+          "oklch(0.35 0.11 140)",
+          "oklch(0.55 0.10 140)",
+          "oklch(0.72 0.08 140)",
+          "oklch(0.85 0.05 140)",
+          "oklch(0.95 0.02 140)"
+        ]
+      },
+      "primary-soft": {
+        "role": "primary-soft",
+        "displayName": "Pale Sage",
+        "canonical": "oklch(0.91 0.044 140)",
+        "tonalRamp": [
+          "oklch(0.55 0.10 140)",
+          "oklch(0.65 0.09 140)",
+          "oklch(0.75 0.08 140)",
+          "oklch(0.83 0.07 140)",
+          "oklch(0.88 0.06 140)",
+          "oklch(0.91 0.044 140)",
+          "oklch(0.95 0.03 140)",
+          "oklch(0.98 0.01 140)"
+        ]
+      },
+      "accent": {
+        "role": "accent",
+        "displayName": "Warm Amber",
+        "canonical": "oklch(0.57 0.13 48)",
+        "tonalRamp": [
+          "oklch(0.20 0.04 48)",
+          "oklch(0.30 0.06 48)",
+          "oklch(0.42 0.10 48)",
+          "oklch(0.57 0.13 48)",
+          "oklch(0.70 0.12 48)",
+          "oklch(0.82 0.09 48)",
+          "oklch(0.91 0.05 48)",
+          "oklch(0.97 0.02 48)"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.97 0.006 140)",
+          "oklch(0.98 0.005 140)",
+          "oklch(0.99 0.003 140)",
+          "oklch(1.0 0 0)",
+          "oklch(1.0 0 0)",
+          "oklch(1.0 0 0)",
+          "oklch(1.0 0 0)",
+          "oklch(1.0 0 0)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Sage-tinted Paper",
+        "canonical": "oklch(0.972 0.006 140)",
+        "tonalRamp": [
+          "oklch(0.94 0.012 140)",
+          "oklch(0.95 0.010 140)",
+          "oklch(0.96 0.008 140)",
+          "oklch(0.972 0.006 140)",
+          "oklch(0.98 0.005 140)",
+          "oklch(0.99 0.003 140)",
+          "oklch(0.995 0.002 140)",
+          "oklch(1.0 0 0)"
+        ]
+      },
+      "surface-strong": {
+        "role": "neutral",
+        "displayName": "Sage-tinted Stone",
+        "canonical": "oklch(0.938 0.012 140)",
+        "tonalRamp": [
+          "oklch(0.88 0.018 140)",
+          "oklch(0.90 0.016 140)",
+          "oklch(0.92 0.014 140)",
+          "oklch(0.938 0.012 140)",
+          "oklch(0.96 0.008 140)",
+          "oklch(0.97 0.006 140)",
+          "oklch(0.98 0.004 140)",
+          "oklch(0.99 0.002 140)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Deep Sage",
+        "canonical": "oklch(0.185 0.034 140)",
+        "tonalRamp": [
+          "oklch(0.10 0.02 140)",
+          "oklch(0.14 0.028 140)",
+          "oklch(0.165 0.032 140)",
+          "oklch(0.185 0.034 140)",
+          "oklch(0.215 0.038 140)",
+          "oklch(0.245 0.042 140)",
+          "oklch(0.30 0.05 140)",
+          "oklch(0.40 0.06 140)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.205 0.025 140)",
+        "tonalRamp": [
+          "oklch(0.10 0.01 140)",
+          "oklch(0.15 0.018 140)",
+          "oklch(0.18 0.022 140)",
+          "oklch(0.205 0.025 140)",
+          "oklch(0.30 0.025 140)",
+          "oklch(0.435 0.018 140)",
+          "oklch(0.60 0.014 140)",
+          "oklch(0.75 0.010 140)"
+        ]
+      },
+      "danger": {
+        "role": "state",
+        "displayName": "Coral",
+        "canonical": "oklch(0.49 0.16 28)",
+        "tonalRamp": [
+          "oklch(0.20 0.06 28)",
+          "oklch(0.30 0.10 28)",
+          "oklch(0.40 0.13 28)",
+          "oklch(0.49 0.16 28)",
+          "oklch(0.62 0.14 28)",
+          "oklch(0.74 0.10 28)",
+          "oklch(0.85 0.06 28)",
+          "oklch(0.94 0.035 28)"
+        ]
+      },
+      "success": {
+        "role": "state",
+        "displayName": "Verdant",
+        "canonical": "oklch(0.43 0.12 145)",
+        "tonalRamp": [
+          "oklch(0.18 0.05 145)",
+          "oklch(0.27 0.08 145)",
+          "oklch(0.35 0.10 145)",
+          "oklch(0.43 0.12 145)",
+          "oklch(0.56 0.10 145)",
+          "oklch(0.70 0.08 145)",
+          "oklch(0.83 0.05 145)",
+          "oklch(0.925 0.052 145)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero panel headline. One per page, max. Carries the day's tone."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Topbar page title. Anchors the screen."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headers, modal headers, drawer headers, large card titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All body, all forms, all list text. Prose caps at 65-75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Table headers, form labels, button text, badge text. The workhorse of the system at weight 800."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-lift",
+        "value": "0 8px 16px oklch(0.2 0.03 140 / 0.08)",
+        "purpose": "Tight lift shadow for modal, detail drawer, and toast — elements that have left the page plane."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-default",
+        "value": "ease",
+        "purpose": "Default easing for state transitions (background, border, transform). 180ms duration."
+      },
+      {
+        "name": "ease-slide",
+        "value": "ease-out",
+        "purpose": "Easing for the mobile sidebar slide-in. 180ms."
+      },
+      {
+        "name": "duration-state",
+        "value": "180ms",
+        "purpose": "Standard transition duration for color, border, and transform changes on interactive elements."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile-large", "value": "620px" },
+      { "name": "tablet", "value": "920px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Refined primary action. Forest Sage on paper white. Hover lifts 1px.",
+      "html": "<button type=\"button\" class=\"ds-btn-primary\">Preparar proxima sessao</button>",
+      "css": ".ds-btn-primary { min-height: 44px; border-radius: 8px; border: 1px solid transparent; padding: 0.7rem 1rem; background: var(--primary, oklch(0.35 0.11 140)); color: var(--bg, oklch(1 0 0)); font: inherit; font-weight: 750; cursor: pointer; transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease; } .ds-btn-primary:hover { background: var(--primary-hover, oklch(0.302 0.105 140)); transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 3px solid oklch(0.85 0.06 140); outline-offset: 3px; } .ds-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Refined quiet primary. Pale Sage on Forest Sage text with hairline border.",
+      "html": "<button type=\"button\" class=\"ds-btn-secondary\">Criar paciente</button>",
+      "css": ".ds-btn-secondary { min-height: 44px; border-radius: 8px; border: 1px solid oklch(0.78 0.055 140); padding: 0.7rem 1rem; background: var(--primary-soft, oklch(0.91 0.044 140)); color: var(--primary, oklch(0.35 0.11 140)); font: inherit; font-weight: 750; cursor: pointer; transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease; } .ds-btn-secondary:hover { transform: translateY(-1px); } .ds-btn-secondary:focus-visible { outline: 3px solid oklch(0.85 0.06 140); outline-offset: 3px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparent refined button for tertiary actions in dense surfaces.",
+      "html": "<button type=\"button\" class=\"ds-btn-ghost\">Ver mais</button>",
+      "css": ".ds-btn-ghost { min-height: 44px; border-radius: 8px; border: 1px solid transparent; padding: 0.7rem 1rem; background: transparent; color: var(--primary, oklch(0.35 0.11 140)); font: inherit; font-weight: 750; cursor: pointer; transition: background-color 180ms ease, transform 180ms ease; } .ds-btn-ghost:hover { background: var(--surface, oklch(0.972 0.006 140)); } .ds-btn-ghost:focus-visible { outline: 3px solid oklch(0.85 0.06 140); outline-offset: 3px; }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "44px circular topbar action. Paper white with hairline border, hover to sage-tinted paper.",
+      "html": "<button type=\"button\" class=\"ds-btn-icon\" aria-label=\"Abrir notificacoes\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\"/><path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\"/></svg></button>",
+      "css": ".ds-btn-icon { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border, oklch(0.885 0.012 140)); background: var(--bg, oklch(1 0 0)); color: var(--ink, oklch(0.205 0.025 140)); display: grid; place-items: center; cursor: pointer; transition: background-color 180ms ease; } .ds-btn-icon:hover { background: var(--surface, oklch(0.972 0.006 140)); } .ds-btn-icon:focus-visible { outline: 3px solid oklch(0.85 0.06 140); outline-offset: 3px; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Pill status chip. Mist surface with saturated text. Read-only.",
+      "html": "<span class=\"ds-badge ds-badge--success\">Confirmada</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; width: fit-content; min-height: 28px; border-radius: 999px; padding: 0.26rem 0.62rem; font-size: 0.82rem; font-weight: 750; white-space: nowrap; } .ds-badge--neutral { background: var(--surface-strong, oklch(0.938 0.012 140)); color: var(--ink, oklch(0.205 0.025 140)); } .ds-badge--success { background: var(--success-soft, oklch(0.925 0.052 145)); color: oklch(0.29 0.095 145); } .ds-badge--warning { background: var(--warning-soft, oklch(0.94 0.05 75)); color: oklch(0.34 0.085 75); } .ds-badge--danger { background: var(--danger-soft, oklch(0.94 0.035 28)); color: oklch(0.34 0.12 28); } .ds-badge--info { background: var(--info-soft, oklch(0.93 0.035 220)); color: oklch(0.32 0.085 220); }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text input with hairline border, 8px radius, sage focus ring.",
+      "html": "<label class=\"ds-field\"><span>Nome completo</span><input type=\"text\" class=\"ds-input\" placeholder=\"Como aparece no prontuario\"/></label>",
+      "css": ".ds-field { display: grid; gap: 0.5rem; color: var(--ink, oklch(0.205 0.025 140)); font-weight: 700; } .ds-field span { font-size: 0.92rem; } .ds-input { width: 100%; padding: 0.74rem 0.82rem; border: 1px solid var(--border, oklch(0.885 0.012 140)); border-radius: 8px; background: var(--bg, oklch(1 0 0)); color: var(--ink, oklch(0.205 0.025 140)); font: inherit; transition: border-color 180ms ease, outline-color 180ms ease; } .ds-input::placeholder { color: var(--muted, oklch(0.435 0.018 140)); } .ds-input:focus { outline: 3px solid oklch(0.85 0.06 140); outline-offset: 2px; border-color: var(--primary, oklch(0.35 0.11 140)); } .ds-input:disabled { opacity: 0.55; cursor: not-allowed; }"
+    },
+    {
+      "name": "Section Card",
+      "kind": "card",
+      "refersTo": "section",
+      "description": "16px radius page container. Paper white, hairline border, no shadow at rest.",
+      "html": "<section class=\"ds-section\"><header class=\"ds-section__header\"><h2>Agenda proxima</h2><p>Ordem de atendimento e preparacao.</p></header><div class=\"ds-section__body\">Conteudo da secao.</div></section>",
+      "css": ".ds-section { padding: 1.5rem; border: 1px solid var(--border, oklch(0.885 0.012 140)); border-radius: 16px; background: var(--bg, oklch(1 0 0)); } .ds-section__header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; } .ds-section h2 { margin: 0; font-size: 1.25rem; font-weight: 750; line-height: 1.3; text-wrap: balance; } .ds-section p { margin: 0.25rem 0 0; color: var(--muted, oklch(0.435 0.018 140)); }"
+    },
+    {
+      "name": "Hero Panel",
+      "kind": "card",
+      "refersTo": "hero-panel",
+      "description": "16px radius day-anchor. The single card allowed to carry Ambient Lift.",
+      "html": "<section class=\"ds-hero\"><div class=\"ds-hero__content\"><span class=\"ds-context-label\">Atendimento de hoje</span><h2>Comece pelo que precisa de contexto clinico.</h2><p>Agenda, sessao e prontuario ficam no mesmo fluxo.</p><div class=\"ds-hero__actions\"><button type=\"button\" class=\"ds-btn-primary\">Preparar proxima sessao</button><button type=\"button\" class=\"ds-btn-secondary\">Criar paciente</button></div></div><aside class=\"ds-care-card\"><span>Paciente em foco</span><strong>Marina Coelho</strong><p>Sessao 14:30, online</p></aside></section>",
+      "css": ".ds-hero { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 1.5rem; padding: 2rem; border: 1px solid var(--border, oklch(0.885 0.012 140)); border-radius: 16px; background: var(--bg, oklch(1 0 0)); box-shadow: 0 8px 16px oklch(0.2 0.03 140 / 0.08); } .ds-context-label { color: var(--primary, oklch(0.35 0.11 140)); font-weight: 800; font-size: 0.86rem; } .ds-hero h2 { margin: 0.5rem 0 0.75rem; max-width: 13ch; font-size: 2.6rem; line-height: 1.04; letter-spacing: -0.03em; font-weight: 800; text-wrap: balance; } .ds-hero p { max-width: 60ch; margin: 0; color: var(--muted, oklch(0.435 0.018 140)); } .ds-hero__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; } .ds-care-card { align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 0.5rem; border-radius: 12px; padding: 1.5rem; background: var(--surface, oklch(0.972 0.006 140)); border: 1px solid var(--border, oklch(0.885 0.012 140)); } .ds-care-card span { color: var(--muted, oklch(0.435 0.018 140)); } .ds-care-card strong { font-size: 1.35rem; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Sidebar entry. Transparent at rest, paper white when active.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Navegacao\"><button type=\"button\" class=\"ds-nav-item ds-nav-item--active\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z\"/></svg><span>Visao geral</span></button><button type=\"button\" class=\"ds-nav-item\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg><span>Pacientes</span></button></nav>",
+      "css": ".ds-nav { display: grid; gap: 0.5rem; } .ds-nav-item { width: 100%; border: 0; border-radius: 8px; display: flex; align-items: center; gap: 0.75rem; padding: 0.78rem 0.9rem; background: transparent; color: oklch(0.86 0.018 140); font: inherit; text-align: left; cursor: pointer; transition: background-color 180ms ease, color 180ms ease; } .ds-nav-item:hover { background: var(--sidebar-soft, oklch(0.245 0.042 140)); } .ds-nav-item--active { background: oklch(0.91 0.045 140); color: var(--sidebar, oklch(0.185 0.034 140)); font-weight: 700; } .ds-nav-item:focus-visible { outline: 3px solid var(--accent, oklch(0.57 0.13 48)); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Clinic",
+    "overview": "The room is a consultation room, not a hospital. The interface lowers the room's temperature on entry, holds it there across the day, and hands it back to the clinician warm enough to welcome the next patient. Forest Sage is the wall. Warm Amber is the lamp. Paper White is the chart. Each does one thing; together they feel considered. PsiFlow is a clinical workspace for psychology: agenda, sessions, records, notifications, online attendance. The system reads as one voice — composed, precise, trustworthy — without slipping into the cold hospital register or the generic SaaS register. It is human enough that a sensitive conversation can happen in the same room as the screen, clinical enough that the work is taken seriously. This system explicitly rejects: cold hospital software (generic blue-white surfaces, dense legacy tables, sterile visual language); generic SaaS dashboard tropes (interchangeable metric cards, decorative gradients, visual noise that competes with clinical work). It is composed and human; clinical seriousness without becoming cold or bureaucratic.",
+    "keyCharacteristics": [
+      "One Inter family, no display/body pairing; the system reads as one voice, not a hierarchy of voices.",
+      "Tonal layering does the depth work. Tight 8px/16px lift shadows detach modal, drawer, and toast; a restrained 12px/28px ambient shadow anchors the hero. Everything else sits flat.",
+      "One warm note (Amber) in a room otherwise dressed in Sage. Rarity is the signature.",
+      "Status is explicit, never decorative. State lives in badges, button text, and the row — never in a sea of icons or a legend.",
+      "Density serves the workflow, not the screen. Prose caps at 65-75ch; tables and dense UI can run tighter.",
+      "Every interactive control has a visible focus ring and a press feedback. Reduced motion is honored across the surface."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Warm Amber appears on no more than one element per viewport. The active focus ring counts as one. The rarity of warm color is the system's signature.", "section": "colors" },
+      { "name": "The Tinted Neutral Rule", "body": "Neutrals carry 0.005-0.015 chroma toward the brand hue (140), never toward warm by default. Warmth lives in the amber accent and the typography, not in the body background.", "section": "colors" },
+      { "name": "The Mist Surface Rule", "body": "State indicators use a mist (95% lightness) background with a saturated foreground, never a saturated background. Coral Mist, Amber Mist, Verdant Mist, Slate Mist. Saturated surfaces shout; the system does not.", "section": "colors" },
+      { "name": "The One Voice Rule", "body": "Inter is the only family. No display faces, no mono, no secondary. The system reads as one voice, not a pairing.", "section": "typography" },
+      { "name": "The 800 Floor", "body": "Labels, table headers, and form labels hold weight 800. Weight is the workhorse of hierarchy, not size alone.", "section": "typography" },
+      { "name": "The Balance Rule", "body": "Display and headline h-tags use text-wrap: balance; prose uses text-wrap: pretty to reduce orphans without altering line count.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadow appears only as a response to lift (modal, drawer, toast) or on the hero panel. Cards, sections, and inputs never carry a shadow at rest.", "section": "elevation" },
+      { "name": "The Tonal Hierarchy Rule", "body": "The three neutral tiers (paper white, sage-tinted paper, sage-tinted stone) carry depth. Do not introduce a second shadow. Do not stack shadows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the system in one Inter family. Add a second face only if a real reading task demands it.",
+      "Do use Warm Amber on one element per viewport, never two. The accent earns its rarity.",
+      "Do use tonal layering (paper white to sage-tinted paper to sage-tinted stone) for depth before reaching for shadow. Shadow is the last resort, not the first tool.",
+      "Do show status in badges, button text, and the row. The interface announces; it does not require a legend.",
+      "Do keep destructive actions clear and contained. A red button is fine; a row of red is not.",
+      "Do give every interactive control a visible focus ring (3px sage-tinted paper outline) and a press feedback (1px Y-lift on buttons, surface tint on inputs, 180ms ease).",
+      "Do honor reduced motion. Every transition respects prefers-reduced-motion and collapses to a crossfade or instant change.",
+      "Do respect line length. Prose caps at 65-75ch; tables and dense UI may run tighter."
+    ],
+    "donts": [
+      "Don't use a saturated state surface. Mist surfaces (95% lightness) carry the color; saturated tones carry the text. Coral Mist bg plus dark Coral text. Never Coral bg plus paper white text.",
+      "Don't lean on a hero-metric pattern (big number, small label, supporting stats). The Dashboard already pairs the day with a patient in focus, not a metric count.",
+      "Don't stack cards inside cards. Nested cards signal a missing layout decision; the workspace uses sections, two-column grids, and a single hero panel.",
+      "Don't use a side-stripe border (border-left or border-right greater than 1px as a colored accent) on cards, list items, callouts, or alerts. Use full borders, background tints, leading numbers/icons, or nothing.",
+      "Don't use gradient text. Decorative, never meaningful. Use a single solid color; emphasis through weight or size.",
+      "Don't fall into the SaaS-cream trap. The body background is paper white with a 0.006 chroma tint toward 140, not toward warm-by-default. Warmth lives in the amber accent and the typography, not in the surface tier.",
+      "Don't treat clinical data playfully. The work is sensitive. No exclamation marks, no casual interjections, no emoji, no celebrate-your-progress language.",
+      "Don't add kicker eyebrows (small all-caps tracked text above every section) by reflex. The 2023-era scaffold reads as AI grammar; use it once, deliberately, if at all.",
+      "Don't number sections (01 / 02 / 03) above every block. Numbers earn their place when the section IS a sequence; otherwise the scaffold reads as template reflex.",
+      "Don't rely on color alone for status. The badge text, the row label, and the toast text all carry the meaning. Color is reinforcement, not the message.",
+      "Don't introduce a second shadow tier. The system has one. Cards stay flat at rest; only modals, drawers, toasts, and the hero panel carry Ambient Lift.",
+      "Don't invent a display face or a mono. Inter carries the room alone.",
+      "Don't go off-grid with the radius scale. The scale is 8/12/16 (with 999px reserved for badges, chips, and full-circles). Other values pollute the system."
+    ]
+  }
+}

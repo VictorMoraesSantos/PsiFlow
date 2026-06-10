@@ -32,6 +32,18 @@ namespace Auth.Infrastructure.Persistence.Data
                 b.Property(x => x.ConsentTermsVersion).HasMaxLength(32);
                 b.Property(x => x.ConsentPrivacyVersion).HasMaxLength(32);
                 b.Property(x => x.RefreshTokenHash).HasMaxLength(256);
+
+                b.OwnsOne(x => x.Name, nb =>
+                {
+                    nb.Property(x => x.FirstName).HasColumnName("first_name").HasMaxLength(80).IsRequired();
+                    nb.Property(x => x.LastName).HasColumnName("last_name").HasMaxLength(80).IsRequired();
+                });
+
+                b.OwnsOne(x => x.Contact, cb =>
+                {
+                    cb.Property(x => x.Email).HasColumnName("contact_email").HasMaxLength(254).IsRequired();
+                    cb.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(32);
+                });
             });
 
             builder.Entity<Consent>(b =>
