@@ -1,7 +1,7 @@
+using BuildingBlocks.Authentication;
 using ClinicalRecords.API.Endpoints;
 using ClinicalRecords.Application;
 using ClinicalRecords.Infrastructure;
-using BuildingBlocks.Authentication;
 using Core.API;
 using Serilog;
 

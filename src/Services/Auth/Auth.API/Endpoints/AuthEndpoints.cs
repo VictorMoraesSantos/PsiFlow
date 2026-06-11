@@ -1,9 +1,8 @@
-using System.Security.Claims;
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
 using BuildingBlocks.Results;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Auth.API.Endpoints
 {

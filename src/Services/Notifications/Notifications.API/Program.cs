@@ -1,8 +1,8 @@
+using BuildingBlocks.Authentication;
+using Core.API;
 using Notifications.API.Endpoints;
 using Notifications.Application;
 using Notifications.Infrastructure;
-using BuildingBlocks.Authentication;
-using Core.API;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -1,7 +1,3 @@
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
 using Auth.Domain.Entities;
@@ -12,6 +8,9 @@ using Auth.Domain.ValueObjects;
 using BuildingBlocks.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Auth.Application.Services
 {

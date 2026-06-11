@@ -1,5 +1,4 @@
 using Core.API.Middleware;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Core.API
 {

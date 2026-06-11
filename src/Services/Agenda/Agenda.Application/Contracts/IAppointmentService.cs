@@ -1,5 +1,4 @@
 using Agenda.Application.DTOs.Appointment;
-using Core.Application.DTO;
 using Core.Application.Interfaces;
 
 namespace Agenda.Application.Contracts

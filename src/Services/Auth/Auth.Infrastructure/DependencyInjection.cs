@@ -3,7 +3,6 @@ using Auth.Application.Settings;
 using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
 using Auth.Infrastructure.Persistence.Data;
-using Auth.Infrastructure.Persistence.Seeds;
 using Auth.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;

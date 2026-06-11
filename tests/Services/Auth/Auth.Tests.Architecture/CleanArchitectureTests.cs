@@ -1,8 +1,7 @@
-using System.Reflection;
 using NetArchTest.Rules;
 using Xunit;
-using AuthDom = Auth.Domain.Entities;
 using AuthApp = Auth.Application.Services;
+using AuthDom = Auth.Domain.Entities;
 using AuthInf = Auth.Infrastructure.Persistence.Data;
 
 namespace PsiFlow.Auth.Tests.Architecture;

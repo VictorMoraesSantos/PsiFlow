@@ -1,6 +1,6 @@
+using Core.Domain.Repositories;
 using Notifications.Domain.Entities;
 using Notifications.Domain.Filters;
-using Core.Domain.Repositories;
 
 namespace Notifications.Domain.Repositories
 {

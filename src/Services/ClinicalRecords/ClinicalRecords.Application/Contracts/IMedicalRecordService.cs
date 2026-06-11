@@ -1,5 +1,4 @@
 using ClinicalRecords.Application.DTOs.MedicalRecord;
-using Core.Application.DTO;
 using Core.Application.Interfaces;
 
 namespace ClinicalRecords.Application.Contracts

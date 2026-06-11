@@ -1,10 +1,8 @@
-﻿using Auth.API.Endpoints;
-using Auth.Application;
+using Auth.API.Endpoints;
 using Auth.Application.Settings;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Persistence.Seeds;
 using Core.API;
-using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -1,8 +1,8 @@
+using BuildingBlocks.Authentication;
+using Core.API;
 using OnlineSession.API.Endpoints;
 using OnlineSession.Application;
 using OnlineSession.Infrastructure;
-using BuildingBlocks.Authentication;
-using Core.API;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

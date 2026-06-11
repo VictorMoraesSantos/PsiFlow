@@ -1,13 +1,11 @@
-using Core.Application.Interfaces;
+using BuildingBlocks.Results;
 using Microsoft.Extensions.Logging;
 using Patients.Application.Contracts;
 using Patients.Application.DTOs.Patient;
 using Patients.Application.Mapping;
-using Patients.Domain.Entities;
 using Patients.Domain.Errors;
 using Patients.Domain.Filters;
 using Patients.Domain.Repositories;
-using BuildingBlocks.Results;
 using System.Linq.Expressions;
 
 namespace Patients.Infrastructure.Services

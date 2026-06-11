@@ -1,10 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Patients.Application.Contracts;
 using Patients.Domain.Repositories;
 using Patients.Infrastructure.Persistence.Repositories;
 using Patients.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using PsiFlow.Patients.Infrastructure.Persistence.Data;
 
 namespace Patients.Infrastructure

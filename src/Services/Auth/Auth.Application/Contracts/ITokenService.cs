@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using BuildingBlocks.Results;
+using System.Security.Claims;
 
 namespace Auth.Application.Contracts
 {

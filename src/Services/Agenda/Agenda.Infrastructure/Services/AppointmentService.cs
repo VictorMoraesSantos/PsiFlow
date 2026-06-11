@@ -1,12 +1,10 @@
 using Agenda.Application.Contracts;
 using Agenda.Application.DTOs.Appointment;
 using Agenda.Application.Mapping;
-using Agenda.Domain.Entities;
 using Agenda.Domain.Errors;
 using Agenda.Domain.Filters;
 using Agenda.Domain.Repositories;
 using BuildingBlocks.Results;
-using Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 

@@ -1,7 +1,5 @@
-using Core.Application.DTO;
 using Core.Application.Interfaces;
 using Patients.Application.DTOs.Patient;
-using Patients.Domain.Filters;
 
 namespace Patients.Application.Contracts
 {

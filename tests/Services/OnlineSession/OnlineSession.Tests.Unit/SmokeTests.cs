@@ -1,6 +1,7 @@
 using Xunit;
 
 namespace PsiFlow.OnlineSession.Tests.Unit;
+
 public sealed class SmokeTests
 {
     [Fact]

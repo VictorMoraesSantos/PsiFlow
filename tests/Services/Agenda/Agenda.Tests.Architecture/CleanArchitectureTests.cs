@@ -1,4 +1,3 @@
-using System.Reflection;
 using NetArchTest.Rules;
 using Xunit;
 

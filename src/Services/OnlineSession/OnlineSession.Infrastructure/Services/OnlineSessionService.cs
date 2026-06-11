@@ -1,10 +1,10 @@
-using System.Security.Cryptography;
-using System.Text;
 using BuildingBlocks.Results;
 using Microsoft.EntityFrameworkCore;
 using OnlineSession.Application.Contracts;
 using OnlineSession.Domain.Entities;
 using PsiFlow.OnlineSession.Infrastructure.Persistence.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OnlineSession.Infrastructure.Services;
 

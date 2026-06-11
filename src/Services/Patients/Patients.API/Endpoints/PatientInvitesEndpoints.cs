@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using Patients.Application.Features.Workflow;
+using System.Security.Claims;
 
 namespace Patients.API.Endpoints;
 

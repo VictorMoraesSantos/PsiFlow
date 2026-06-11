@@ -1,5 +1,4 @@
 using Auth.Domain.Entities;
-using Auth.Domain.Enums;
 
 namespace Auth.Infrastructure.Persistence.Seeds
 {

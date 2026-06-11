@@ -1,7 +1,6 @@
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Users;
 using Auth.Application.Mapping;
-using Auth.Domain.Entities;
 using Auth.Domain.Filters;
 using Auth.Domain.Repositories;
 using Auth.Domain.ValueObjects;

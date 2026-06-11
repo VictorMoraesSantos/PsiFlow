@@ -1,4 +1,3 @@
-using Auth.Application.DTOs.Auth;
 using Auth.Application.DTOs.Users;
 using Auth.Domain.Filters;
 using BuildingBlocks.Results;

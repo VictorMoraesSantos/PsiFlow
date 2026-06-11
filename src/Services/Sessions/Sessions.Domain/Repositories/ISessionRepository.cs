@@ -1,6 +1,6 @@
+using Core.Domain.Repositories;
 using Sessions.Domain.Entities;
 using Sessions.Domain.Filters;
-using Core.Domain.Repositories;
 
 namespace Sessions.Domain.Repositories
 {

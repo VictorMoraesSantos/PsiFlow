@@ -1,10 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using OnlineSession.Application.Contracts;
 using OnlineSession.Domain.Repositories;
 using OnlineSession.Infrastructure.Persistence.Repositories;
 using OnlineSession.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using PsiFlow.OnlineSession.Infrastructure.Persistence.Data;
 
 namespace OnlineSession.Infrastructure

@@ -1,9 +1,9 @@
-using Sessions.API.Endpoints;
-using Sessions.Application;
-using Sessions.Infrastructure;
 using BuildingBlocks.Authentication;
 using Core.API;
 using Serilog;
+using Sessions.API.Endpoints;
+using Sessions.Application;
+using Sessions.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 

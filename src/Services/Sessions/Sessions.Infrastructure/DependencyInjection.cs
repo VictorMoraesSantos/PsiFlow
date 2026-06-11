@@ -1,11 +1,11 @@
-using Sessions.Application.Contracts;
-using Sessions.Domain.Repositories;
-using Sessions.Infrastructure.Persistence.Repositories;
-using Sessions.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PsiFlow.Sessions.Infrastructure.Persistence.Data;
+using Sessions.Application.Contracts;
+using Sessions.Domain.Repositories;
+using Sessions.Infrastructure.Persistence.Repositories;
+using Sessions.Infrastructure.Services;
 
 namespace Sessions.Infrastructure
 {

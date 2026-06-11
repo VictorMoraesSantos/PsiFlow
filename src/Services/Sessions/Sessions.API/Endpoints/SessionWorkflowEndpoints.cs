@@ -1,8 +1,8 @@
-using System.Security.Claims;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using Sessions.Application.Contracts;
 using Sessions.Application.Features.Workflow;
+using System.Security.Claims;
 
 namespace Sessions.API.Endpoints;
 

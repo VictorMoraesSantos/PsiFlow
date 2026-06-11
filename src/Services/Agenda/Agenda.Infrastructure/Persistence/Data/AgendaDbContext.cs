@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using Agenda.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace PsiFlow.Agenda.Infrastructure.Persistence.Data;
 

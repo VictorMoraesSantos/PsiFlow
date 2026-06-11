@@ -1,10 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Notifications.Application.Contracts;
 using Notifications.Domain.Repositories;
 using Notifications.Infrastructure.Persistence.Repositories;
 using Notifications.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using PsiFlow.Notifications.Infrastructure.Persistence.Data;
 
 namespace Notifications.Infrastructure

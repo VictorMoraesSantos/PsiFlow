@@ -1,6 +1,6 @@
+using Core.Domain.Repositories;
 using Patients.Domain.Entities;
 using Patients.Domain.Filters;
-using Core.Domain.Repositories;
 
 namespace Patients.Domain.Repositories
 {

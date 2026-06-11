@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using Notifications.Application.Features.Workflow;
+using System.Security.Claims;
 
 namespace Notifications.API.Endpoints;
 

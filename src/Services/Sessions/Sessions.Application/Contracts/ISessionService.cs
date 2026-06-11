@@ -1,4 +1,3 @@
-using Core.Application.DTO;
 using Core.Application.Interfaces;
 using Sessions.Application.DTOs.Session;
 

@@ -1,8 +1,8 @@
+using BuildingBlocks.Authentication;
+using Core.API;
 using Patients.API.Endpoints;
 using Patients.Application;
 using Patients.Infrastructure;
-using BuildingBlocks.Authentication;
-using Core.API;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
