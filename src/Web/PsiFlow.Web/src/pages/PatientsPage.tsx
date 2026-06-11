@@ -7,7 +7,7 @@ import { DetailDrawer } from '../components/DetailDrawer';
 import { ResourceFormModal } from '../components/ResourceFormModal';
 import { Section } from '../components/Section';
 import { useToast } from '../components/Toast';
-import { api, createResource, updateResource } from '../services/api';
+import { api, createResource, isLocalFallbackStatus, updateResource } from '../services/api';
 import type { DashboardData, FormField, Patient, StatusTone } from '../types';
 
 const fields: Array<FormField<Patient>> = [
@@ -16,7 +16,7 @@ const fields: Array<FormField<Patient>> = [
   { name: 'phone', label: 'Telefone', type: 'tel', required: true, placeholder: '(11) 90000-0000' },
   { name: 'birthDate', label: 'Nascimento', type: 'date' },
   { name: 'status', label: 'Status', type: 'select', required: true, options: [{ label: 'Ativo', value: 'Ativo' }, { label: 'Aguardando', value: 'Aguardando' }, { label: 'Inativo', value: 'Inativo' }] },
-  { name: 'treatmentStatus', label: 'Tratamento', type: 'select', options: [{ label: 'Triagem', value: 'screening' }, { label: 'Ativo', value: 'active' }, { label: 'Alta', value: 'discharged' }] },
+  { name: 'treatmentStatus', label: 'Tratamento', type: 'select', options: [{ label: 'Triagem', value: 'screening' }, { label: 'Em tratamento', value: 'active_treatment' }, { label: 'Pausa', value: 'paused' }, { label: 'Alta', value: 'discharged' }] },
   { name: 'emergencyContactName', label: 'Contato de emergencia', type: 'text', placeholder: 'Nome do contato' },
   { name: 'emergencyContactPhone', label: 'Telefone de emergencia', type: 'tel', placeholder: '(11) 90000-0000' },
 ];
@@ -87,7 +87,57 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
       setInactiveTarget(null);
       setSelected(null);
     } catch (error) {
+      if (isLocalFallbackStatus(error)) {
+        onPatientsChange(data.patients.map((patient) => patient.id === inactiveTarget.id ? { ...patient, status: 'Inativo' } : patient));
+        notify('Paciente inativado localmente.', 'info');
+        setInactiveTarget(null);
+        setSelected(null);
+        return;
+      }
       notify(error instanceof Error ? error.message : 'Nao foi possivel inativar o paciente.', 'danger');
+    }
+  }
+
+  async function invitePatient(patient: Patient) {
+    try {
+      await api.post('patients', '/v1/patient-invites', { email: patient.email, phone: patient.phone, patientId: patient.id });
+      onPatientsChange(data.patients.map((item) => item.id === patient.id ? { ...item, status: item.status === 'Ativo' ? item.status : 'Aguardando' } : item));
+      notify('Convite do paciente criado.');
+    } catch (error) {
+      if (isLocalFallbackStatus(error)) {
+        onPatientsChange(data.patients.map((item) => item.id === patient.id ? { ...item, status: 'Aguardando' } : item));
+        notify('Convite registrado localmente.', 'info');
+        return;
+      }
+      notify(error instanceof Error ? error.message : 'Nao foi possivel criar o convite.', 'danger');
+    }
+  }
+
+  async function changeTreatmentStatus(patient: Patient, treatmentStatus: string) {
+    try {
+      await api.post('patients', `/v1/patients/${patient.id}/status`, { treatmentStatus, reason: 'Atualizado pelo workspace web' });
+      onPatientsChange(data.patients.map((item) => item.id === patient.id ? { ...item, treatmentStatus } : item));
+      notify('Status de tratamento atualizado.');
+    } catch (error) {
+      if (isLocalFallbackStatus(error)) {
+        onPatientsChange(data.patients.map((item) => item.id === patient.id ? { ...item, treatmentStatus } : item));
+        notify('Status atualizado localmente.', 'info');
+        return;
+      }
+      notify(error instanceof Error ? error.message : 'Nao foi possivel alterar o status.', 'danger');
+    }
+  }
+
+  async function loadSessionsSummary(patient: Patient) {
+    try {
+      await api.get('patients', `/v1/patients/${patient.id}/sessions-summary`);
+      notify('Resumo de sessoes carregado.');
+    } catch (error) {
+      if (isLocalFallbackStatus(error)) {
+        notify('Resumo de sessoes disponivel em modo local.', 'info');
+        return;
+      }
+      notify(error instanceof Error ? error.message : 'Nao foi possivel carregar o resumo.', 'danger');
     }
   }
 
@@ -151,6 +201,10 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
           <>
             <Button type="button" variant="secondary"><FileText size={16} aria-hidden="true" />Ver prontuario</Button>
             <Button type="button" variant="secondary"><CalendarPlus size={16} aria-hidden="true" />Agendar sessao</Button>
+            <Button type="button" variant="secondary" onClick={() => invitePatient(selected)}><UserPlus size={16} aria-hidden="true" />Enviar convite</Button>
+            <Button type="button" variant="secondary" onClick={() => loadSessionsSummary(selected)}>Resumo de sessoes</Button>
+            <Button type="button" variant="secondary" onClick={() => changeTreatmentStatus(selected, 'active_treatment')}>Marcar em tratamento</Button>
+            <Button type="button" variant="secondary" onClick={() => changeTreatmentStatus(selected, 'paused')}>Marcar pausa</Button>
             <Button type="button" variant="secondary" onClick={() => setMode('edit')}><Edit3 size={16} aria-hidden="true" />Editar cadastro</Button>
             <Button type="button" className="button--danger" onClick={() => setInactiveTarget(selected)}>Inativar paciente</Button>
           </>
@@ -253,7 +307,8 @@ function getStatusTone(status: Patient['status']): StatusTone {
 }
 
 function formatTreatment(status?: string) {
-  if (status === 'active') return 'Ativo';
+  if (status === 'active' || status === 'active_treatment') return 'Em tratamento';
+  if (status === 'paused') return 'Pausa';
   if (status === 'discharged') return 'Alta';
   return 'Triagem';
 }

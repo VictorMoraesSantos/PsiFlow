@@ -22,6 +22,9 @@ namespace Auth.Domain.Errors
         public static Error CrpInvalid => Error.Failure("Formato de CRP invalido. Use NN/NNNNNN.");
         public static Error TenantRequired => Error.Failure("TenantId invalido.");
         public static Error RoleInvalid => Error.Failure("Role invalida. Use 'psychologist', 'patient' ou 'saas_admin'.");
+        public static Error MfaNotAllowed => Error.Failure("MFA esta disponivel apenas para psicologas e administradores SaaS.");
+        public static Error MfaChallengeNotFound => Error.NotFound("Challenge MFA ativo nao encontrado.");
+        public static Error MfaCodeInvalid => Error.Failure("Codigo MFA invalido.");
         public static Error TermsNotAccepted => Error.Failure("Os termos e a politica de privacidade devem ser aceitos.");
         public static Error EmailNotConfirmed => Error.Failure("E-mail ainda nao foi confirmado.");
         public static Error CreateError => Error.Failure("Falha ao criar usuario.");

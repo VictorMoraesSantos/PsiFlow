@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, FileText, HeartPulse, Home, MessageSquareText, PanelLeft, UserRound, Video } from 'lucide-react';
+import { Bell, CalendarDays, FileText, HeartPulse, Home, LogOut, MessageSquareText, PanelLeft, UserRound, Video } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
@@ -17,6 +17,7 @@ export type PageId = (typeof navItems)[number]['id'];
 type AppShellProps = {
   currentPage: PageId;
   onNavigate: (page: PageId) => void;
+  onLogout: () => void;
   children: React.ReactNode;
 };
 
@@ -28,7 +29,7 @@ function formatTopbarDate(date: Date): string {
   }).replace(/^./, (char) => char.toUpperCase());
 }
 
-export function AppShell({ currentPage, onNavigate, children }: AppShellProps) {
+export function AppShell({ currentPage, onNavigate, onLogout, children }: AppShellProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [today] = useState(() => formatTopbarDate(new Date()));
   const sidebarRef = useRef<HTMLElement>(null);
@@ -126,6 +127,9 @@ export function AppShell({ currentPage, onNavigate, children }: AppShellProps) {
               <span aria-hidden="true">DV</span>
               <strong>Dra. Vitoria</strong>
             </div>
+            <button className="icon-button" type="button" aria-label="Sair da conta" onClick={onLogout}>
+              <LogOut aria-hidden="true" size={19} />
+            </button>
           </div>
         </header>
         <main id="main-content" tabIndex={-1}>

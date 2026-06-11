@@ -29,6 +29,13 @@ public sealed class UpdateWeeklyAvailabilityCommandHandler(IAgendaService servic
     }
 }
 
+public sealed class GetWeeklyAvailabilitiesQueryHandler(IAgendaService service)
+    : IQueryHandler<GetWeeklyAvailabilitiesQuery, IReadOnlyCollection<WeeklyAvailabilityResult>>
+{
+    public Task<Result<IReadOnlyCollection<WeeklyAvailabilityResult>>> Handle(GetWeeklyAvailabilitiesQuery query, CancellationToken cancellationToken) =>
+        service.GetWeeklyAvailabilitiesAsync(query.TenantId, cancellationToken);
+}
+
 public sealed class DeleteWeeklyAvailabilityCommandHandler(IAgendaService service) : ICommandHandler<DeleteWeeklyAvailabilityCommand, bool>
 {
     public Task<Result<bool>> Handle(DeleteWeeklyAvailabilityCommand command, CancellationToken cancellationToken) =>
@@ -51,6 +58,13 @@ public sealed class DeleteScheduleBlockCommandHandler(IAgendaService service) : 
 {
     public Task<Result<bool>> Handle(DeleteScheduleBlockCommand command, CancellationToken cancellationToken) =>
         service.DeleteScheduleBlockAsync(command.BlockId, command.TenantId, cancellationToken);
+}
+
+public sealed class GetScheduleBlocksQueryHandler(IAgendaService service)
+    : IQueryHandler<GetScheduleBlocksQuery, IReadOnlyCollection<ScheduleBlockResult>>
+{
+    public Task<Result<IReadOnlyCollection<ScheduleBlockResult>>> Handle(GetScheduleBlocksQuery query, CancellationToken cancellationToken) =>
+        service.GetScheduleBlocksAsync(query.TenantId, cancellationToken);
 }
 
 public sealed class GetAvailableSlotsQueryHandler(IAgendaService service, IValidator<GetAvailableSlotsQuery> validator)

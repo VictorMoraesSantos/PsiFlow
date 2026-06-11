@@ -73,6 +73,20 @@ namespace Auth.API.Endpoints
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
             });
 
+            group.MapPost("/mfa/setup", [Authorize] async (HttpContext http, IAuthService authService, CancellationToken ct) =>
+            {
+                if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
+                var result = await authService.SetupMfaAsync(userId, ct);
+                return result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
+            });
+
+            group.MapPost("/mfa/verify", [Authorize] async (MfaVerifyRequest request, HttpContext http, IAuthService authService, CancellationToken ct) =>
+            {
+                if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
+                var result = await authService.VerifyMfaAsync(userId, request, ct);
+                return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+            });
+
             return app;
         }
 

@@ -6,7 +6,7 @@ const fields: Array<FormField<VideoRoom>> = [
   { name: 'sessionId', label: 'Sessao', type: 'lookup', lookupKey: 'sessions', required: true, helperText: 'Sessao que abrira a sala online.' },
   { name: 'name', label: 'Nome da sala', type: 'text', required: true, placeholder: 'Ex: Sala Marina 14:30' },
   { name: 'provider', label: 'Provedor', type: 'select', required: true, options: [{ label: 'Externo', value: 'external' }, { label: 'Google Meet', value: 'google_meet' }, { label: 'Zoom', value: 'zoom' }] },
-  { name: 'urlEncrypted', label: 'URL criptografada', type: 'text', helperText: 'Use o valor criptografado retornado pelo backend quando disponivel.' },
+  { name: 'urlEncrypted', label: 'URL externa HTTPS', type: 'text', helperText: 'Cole o link que sera enviado ao endpoint seguro da sessao.' },
   { name: 'urlHash', label: 'Hash da URL', type: 'text' },
   { name: 'instructions', label: 'Instrucoes', type: 'textarea' },
   { name: 'createdBy', label: 'Criado por', type: 'lookup', lookupKey: 'psychologists' },
@@ -59,9 +59,12 @@ export function OnlineSessionPage({ data, onVideoRoomsChange }: OnlineSessionPag
         { label: 'Status', value: (room) => statusBadge(room.status) },
       ]}
       actions={[
+        { label: 'Salvar link da sessao', successMessage: 'Link da sessao salvo.', run: (room) => api.put('onlineSession', `/v1/sessions/${room.sessionId}/video-room`, { name: room.name, provider: room.provider || 'external', url: room.urlEncrypted || room.urlHash || 'https://meet.google.com/psiflow-demo', instructions: room.instructions || null }) },
+        { label: 'Consultar link', successMessage: 'Link da sessao carregado.', run: (room) => api.get('onlineSession', `/v1/sessions/${room.sessionId}/video-room`) },
         { label: 'Registrar clique', successMessage: 'Clique registrado ou simulado.', run: (room) => api.post('onlineSession', `/v1/sessions/${room.sessionId}/video-room/click`) },
         { label: 'Ver cliques', successMessage: 'Historico carregado ou simulado.', run: (room) => api.get('onlineSession', `/v1/sessions/${room.sessionId}/video-room/clicks`) },
-        { label: 'Definir link padrao', successMessage: 'Link padrao salvo ou simulado.', run: (room) => api.put('onlineSession', '/v1/video-settings/default-link', { provider: room.provider, url: room.urlHash || room.urlEncrypted || room.name }) },
+        { label: 'Definir link padrao', successMessage: 'Link padrao salvo.', run: (room) => api.put('onlineSession', '/v1/video-settings/default-link', { provider: room.provider, url: room.urlEncrypted || room.urlHash || 'https://meet.google.com/psiflow-demo' }) },
+        { label: 'Ver link padrao', successMessage: 'Link padrao carregado.', run: () => api.get('onlineSession', '/v1/video-settings/default-link') },
       ]}
     />
   );

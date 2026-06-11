@@ -1,7 +1,7 @@
 import { Edit3, Eye, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ApiService } from '../services/api';
-import { createResource, deleteResource, updateResource } from '../services/api';
+import { createResource, deleteResource, isLocalFallbackStatus, updateResource } from '../services/api';
 import type { FormField, Id, LookupMap } from '../types';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -51,6 +51,7 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
   const [selected, setSelected] = useState<T | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
 
   const formValue = mode === 'edit' && selected ? selected : emptyValue;
   const tableColumns = useMemo(() => [
@@ -67,6 +68,10 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
       ),
     },
   ], [actions.length, columns, getTitle]);
+
+  useEffect(() => {
+    setShowMoreActions(false);
+  }, [selected]);
 
   async function submit(value: T) {
     setIsSubmitting(true);
@@ -108,6 +113,10 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
       await action.run(item);
       notify(action.successMessage ?? `${action.label}: acao concluida.`, action.tone === 'danger' ? 'info' : 'success');
     } catch (error) {
+      if (isLocalFallbackStatus(error)) {
+        notify(`${action.label}: acao registrada localmente.`, 'info');
+        return;
+      }
       notify(error instanceof Error ? error.message : 'Nao foi possivel executar a acao.', 'danger');
     }
   }
@@ -142,9 +151,19 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
         actions={selected ? (
           <>
             <Button type="button" variant="secondary" onClick={() => setMode('edit')}>Editar registro</Button>
-            {actions.map((action) => (
-              <Button key={action.label} type="button" variant={action.tone === 'danger' ? 'primary' : 'secondary'} className={action.tone === 'danger' ? 'button--danger' : ''} onClick={() => runAction(action, selected)}>{action.label}</Button>
-            ))}
+            {actions[0] ? <Button type="button" variant={actions[0].tone === 'danger' ? 'primary' : 'secondary'} className={actions[0].tone === 'danger' ? 'button--danger' : ''} onClick={() => runAction(actions[0], selected)}>{actions[0].label}</Button> : null}
+            {actions.length > 1 ? (
+              <div className="drawer-action-group">
+                <button type="button" className="drawer-action-group__toggle" onClick={() => setShowMoreActions((value) => !value)} aria-expanded={showMoreActions}>Mais ações</button>
+                {showMoreActions ? (
+                  <div className="drawer-action-group__items">
+                    {actions.slice(1).map((action) => (
+                      <Button key={action.label} type="button" variant={action.tone === 'danger' ? 'primary' : 'secondary'} className={action.tone === 'danger' ? 'button--danger' : ''} onClick={() => runAction(action, selected)}>{action.label}</Button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </>
         ) : null}
       />

@@ -10,9 +10,9 @@ type DashboardState = {
   reload: () => Promise<void>;
 };
 
-export function useDashboardData(): DashboardState {
+export function useDashboardData(enabled: boolean): DashboardState {
   const [data, setData] = useState<DashboardData>(fallbackData);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
 
   async function reload() {
     setIsLoading(true);
@@ -22,7 +22,13 @@ export function useDashboardData(): DashboardState {
   }
 
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false);
+      return;
+    }
+
     let isCurrent = true;
+    setIsLoading(true);
 
     loadDashboardData().then((data) => {
       if (!isCurrent) return;
@@ -33,7 +39,7 @@ export function useDashboardData(): DashboardState {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [enabled]);
 
   return { data, isLoading, setData, reload };
 }

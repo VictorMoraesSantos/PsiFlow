@@ -34,6 +34,24 @@ export type Appointment = {
   createdBy?: number;
 };
 
+export type WeeklyAvailability = {
+  id: number;
+  weekday: number;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  modality: string;
+  timezone: string;
+  isActive: boolean;
+};
+
+export type ScheduleBlock = {
+  id: number;
+  startsAt: string;
+  endsAt: string;
+  reason?: string | null;
+};
+
 export type Session = {
   id: number;
   tenantId?: number;

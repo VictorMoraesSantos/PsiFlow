@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
@@ -17,6 +19,7 @@ namespace Auth.Application.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IConsentRepository _consentRepository;
+        private readonly IMfaChallengeRepository _mfaChallengeRepository;
         private readonly IOutboxRepository _outboxRepository;
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
@@ -27,6 +30,7 @@ namespace Auth.Application.Services
         public AuthService(
             IUserRepository userRepository,
             IConsentRepository consentRepository,
+            IMfaChallengeRepository mfaChallengeRepository,
             IOutboxRepository outboxRepository,
             UserManager<User> userManager,
             SignInManager<User> signInManager,
@@ -36,6 +40,7 @@ namespace Auth.Application.Services
         {
             _userRepository = userRepository;
             _consentRepository = consentRepository;
+            _mfaChallengeRepository = mfaChallengeRepository;
             _outboxRepository = outboxRepository;
             _userManager = userManager;
             _signInManager = signInManager;
@@ -227,6 +232,61 @@ namespace Auth.Application.Services
             return Result.Success();
         }
 
+        public async Task<Result<MfaSetupResult>> SetupMfaAsync(int userId, CancellationToken cancellationToken = default)
+        {
+            var user = await _userRepository.GetById(userId, cancellationToken);
+            if (user is null) return Result.Failure<MfaSetupResult>(UserErrors.NotFound(userId));
+            if (user.Role is not ("psychologist" or "saas_admin"))
+                return Result.Failure<MfaSetupResult>(UserErrors.MfaNotAllowed);
+
+            var secret = GenerateBase32Secret();
+            var issuer = Uri.EscapeDataString("PsiFlow");
+            var account = Uri.EscapeDataString(user.Email ?? user.Id.ToString());
+            var qrCodeUri = $"otpauth://totp/{issuer}:{account}?secret={secret}&issuer={issuer}&digits=6&period=30";
+
+            var activeChallenge = await _mfaChallengeRepository.GetActiveByUserAsync(userId, cancellationToken);
+            if (activeChallenge is not null)
+            {
+                activeChallenge.SecretEncrypted = secret;
+                activeChallenge.QrCodeUri = qrCodeUri;
+                await _mfaChallengeRepository.Update(activeChallenge, cancellationToken);
+            }
+            else
+            {
+                await _mfaChallengeRepository.Create(new MfaChallenge
+                {
+                    UserId = user.Id,
+                    TenantId = user.TenantId,
+                    SecretEncrypted = secret,
+                    QrCodeUri = qrCodeUri,
+                    IsConfirmed = false
+                }, cancellationToken);
+            }
+
+            return Result.Success(new MfaSetupResult(secret, qrCodeUri));
+        }
+
+        public async Task<Result> VerifyMfaAsync(int userId, MfaVerifyRequest request, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(request.Code)) return Result.Failure(UserErrors.MfaCodeInvalid);
+
+            var user = await _userRepository.GetById(userId, cancellationToken);
+            if (user is null) return Result.Failure(UserErrors.NotFound(userId));
+            if (user.Role is not ("psychologist" or "saas_admin")) return Result.Failure(UserErrors.MfaNotAllowed);
+
+            var challenge = await _mfaChallengeRepository.GetActiveByUserAsync(userId, cancellationToken);
+            if (challenge is null) return Result.Failure(UserErrors.MfaChallengeNotFound);
+            if (!IsValidTotp(challenge.SecretEncrypted, request.Code.Trim())) return Result.Failure(UserErrors.MfaCodeInvalid);
+
+            challenge.IsConfirmed = true;
+            challenge.ConfirmedAt = DateTime.UtcNow;
+            await _mfaChallengeRepository.Update(challenge, cancellationToken);
+
+            user.EnableMfa();
+            await _userRepository.Update(user, cancellationToken);
+            return Result.Success();
+        }
+
         private async Task<Result<TokenResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken)
         {
             var roles = await _userManager.GetRolesAsync(user);
@@ -268,9 +328,80 @@ namespace Auth.Application.Services
 
         private static string ComputeHash(string input)
         {
-            using var sha = System.Security.Cryptography.SHA256.Create();
-            var bytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
             return Convert.ToHexString(bytes);
+        }
+
+        private static string GenerateBase32Secret()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(20);
+            return ToBase32(bytes);
+        }
+
+        private static bool IsValidTotp(string secret, string code)
+        {
+            if (!Regex.IsMatch(code, "^\\d{6}$")) return false;
+            var secretBytes = FromBase32(secret);
+            var currentStep = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30;
+            for (var offset = -1; offset <= 1; offset++)
+            {
+                if (ComputeTotp(secretBytes, currentStep + offset) == code) return true;
+            }
+            return false;
+        }
+
+        private static string ComputeTotp(byte[] secret, long timeStep)
+        {
+            var counter = BitConverter.GetBytes(timeStep);
+            if (BitConverter.IsLittleEndian) Array.Reverse(counter);
+
+            using var hmac = new HMACSHA1(secret);
+            var hash = hmac.ComputeHash(counter);
+            var offset = hash[^1] & 0x0f;
+            var binary = ((hash[offset] & 0x7f) << 24) | ((hash[offset + 1] & 0xff) << 16) | ((hash[offset + 2] & 0xff) << 8) | (hash[offset + 3] & 0xff);
+            return (binary % 1_000_000).ToString("D6");
+        }
+
+        private static string ToBase32(byte[] bytes)
+        {
+            const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+            var output = new StringBuilder((bytes.Length * 8 + 4) / 5);
+            var buffer = 0;
+            var bitsLeft = 0;
+            foreach (var value in bytes)
+            {
+                buffer = (buffer << 8) | value;
+                bitsLeft += 8;
+                while (bitsLeft >= 5)
+                {
+                    output.Append(alphabet[(buffer >> (bitsLeft - 5)) & 31]);
+                    bitsLeft -= 5;
+                }
+            }
+            if (bitsLeft > 0) output.Append(alphabet[(buffer << (5 - bitsLeft)) & 31]);
+            return output.ToString();
+        }
+
+        private static byte[] FromBase32(string input)
+        {
+            const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+            var bytes = new List<byte>();
+            var buffer = 0;
+            var bitsLeft = 0;
+            foreach (var c in input.TrimEnd('=').ToUpperInvariant())
+            {
+                var value = alphabet.IndexOf(c);
+                if (value < 0) throw new FormatException("Invalid Base32 secret.");
+                buffer = (buffer << 5) | value;
+                bitsLeft += 5;
+                if (bitsLeft >= 8)
+                {
+                    bytes.Add((byte)((buffer >> (bitsLeft - 8)) & 255));
+                    bitsLeft -= 8;
+                }
+            }
+            return bytes.ToArray();
         }
 
         private static readonly Regex StrongPasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$", RegexOptions.Compiled);

@@ -5,9 +5,11 @@ namespace Agenda.Application.Contracts;
 public interface IAgendaService
 {
     Task<Result<WeeklyAvailabilityResult>> CreateWeeklyAvailabilityAsync(WeeklyAvailabilityRequest request, int tenantId, CancellationToken cancellationToken);
+    Task<Result<IReadOnlyCollection<WeeklyAvailabilityResult>>> GetWeeklyAvailabilitiesAsync(int tenantId, CancellationToken cancellationToken);
     Task<Result<bool>> UpdateWeeklyAvailabilityAsync(int availabilityId, WeeklyAvailabilityRequest request, int tenantId, CancellationToken cancellationToken);
     Task<Result<bool>> DeleteWeeklyAvailabilityAsync(int availabilityId, int tenantId, CancellationToken cancellationToken);
     Task<Result<ScheduleBlockResult>> CreateScheduleBlockAsync(ScheduleBlockRequest request, int tenantId, int userId, CancellationToken cancellationToken);
+    Task<Result<IReadOnlyCollection<ScheduleBlockResult>>> GetScheduleBlocksAsync(int tenantId, CancellationToken cancellationToken);
     Task<Result<bool>> DeleteScheduleBlockAsync(int blockId, int tenantId, CancellationToken cancellationToken);
     Task<Result<IReadOnlyCollection<AvailableSlotResult>>> GetAvailableSlotsAsync(AvailableSlotsRequest request, int tenantId, CancellationToken cancellationToken);
     Task<Result<bool>> CancelAppointmentAsync(int appointmentId, CancelAppointmentRequest request, int tenantId, int userId, CancellationToken cancellationToken);

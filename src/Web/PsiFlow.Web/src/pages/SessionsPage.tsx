@@ -62,7 +62,11 @@ export function SessionsPage({ data, onSessionsChange }: SessionsPageProps) {
       ]}
       actions={[
         { label: 'Iniciar sessao', successMessage: 'Sessao iniciada ou acao simulada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/start`, { reason: 'Iniciada pelo workspace web' }) },
-        { label: 'Marcar pagamento', successMessage: 'Pagamento marcado ou acao simulada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/payment/mark-received`, { amount: 0, method: 'manual', receivedAt: new Date().toISOString() }) },
+        { label: 'Concluir sessao', successMessage: 'Sessao concluida.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/complete`, { reason: 'Concluida pelo workspace web' }) },
+        { label: 'Marcar falta', successMessage: 'Falta registrada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/no-show`, { reason: 'Ausencia registrada pelo workspace web' }) },
+        { label: 'Marcar pagamento', successMessage: 'Pagamento marcado.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/payment/mark-received`, { amountCents: 0, currency: 'BRL', notes: 'Pagamento manual registrado pelo workspace web' }) },
+        { label: 'Ver pagamento', successMessage: 'Pagamento carregado.', run: (session) => api.get('sessions', `/v1/sessions/${session.id}/payment`) },
+        { label: 'Enviar recibo', successMessage: 'Recibo solicitado.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/receipt/send`) },
         { label: 'Cancelar sessao', tone: 'danger', successMessage: 'Sessao cancelada ou acao simulada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/cancel`, { reason: 'Cancelada pelo workspace web' }) },
       ]}
     />

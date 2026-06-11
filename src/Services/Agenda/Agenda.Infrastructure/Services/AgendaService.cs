@@ -27,6 +27,19 @@ public sealed class AgendaService(AgendaDbContext dbContext) : IAgendaService
         return Result.Success(ToResult(availability));
     }
 
+    public async Task<Result<IReadOnlyCollection<WeeklyAvailabilityResult>>> GetWeeklyAvailabilitiesAsync(int tenantId, CancellationToken cancellationToken)
+    {
+        var items = await dbContext.Availabilities
+            .AsNoTracking()
+            .Where(item => item.TenantId == tenantId)
+            .OrderBy(item => item.Weekday)
+            .ThenBy(item => item.StartTime)
+            .Select(item => new WeeklyAvailabilityResult(item.Id, item.Weekday, item.StartTime, item.EndTime, item.SlotDurationMinutes, item.Modality, item.Timezone, item.IsActive))
+            .ToListAsync(cancellationToken);
+
+        return Result.Success<IReadOnlyCollection<WeeklyAvailabilityResult>>(items);
+    }
+
     public async Task<Result<bool>> UpdateWeeklyAvailabilityAsync(int availabilityId, WeeklyAvailabilityRequest request, int tenantId, CancellationToken cancellationToken)
     {
         var availability = await dbContext.Availabilities.FirstOrDefaultAsync(item => item.Id == availabilityId && item.TenantId == tenantId, cancellationToken);
@@ -59,6 +72,18 @@ public sealed class AgendaService(AgendaDbContext dbContext) : IAgendaService
         dbContext.ScheduleBlocks.Add(block);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success(new ScheduleBlockResult(block.Id, block.StartsAt, block.EndsAt, block.Reason));
+    }
+
+    public async Task<Result<IReadOnlyCollection<ScheduleBlockResult>>> GetScheduleBlocksAsync(int tenantId, CancellationToken cancellationToken)
+    {
+        var items = await dbContext.ScheduleBlocks
+            .AsNoTracking()
+            .Where(item => item.TenantId == tenantId)
+            .OrderBy(item => item.StartsAt)
+            .Select(item => new ScheduleBlockResult(item.Id, item.StartsAt, item.EndsAt, item.Reason))
+            .ToListAsync(cancellationToken);
+
+        return Result.Success<IReadOnlyCollection<ScheduleBlockResult>>(items);
     }
 
     public async Task<Result<bool>> DeleteScheduleBlockAsync(int blockId, int tenantId, CancellationToken cancellationToken)

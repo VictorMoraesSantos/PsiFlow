@@ -13,6 +13,7 @@ export const serviceUrls = {
 
 const tokenKey = 'psiflow.accessToken';
 const refreshTokenKey = 'psiflow.refreshToken';
+export const localFallbackEvent = 'psiflow:local-fallback';
 
 export type ApiService = keyof typeof serviceUrls;
 
@@ -20,6 +21,14 @@ export class ApiError extends Error {
   constructor(message: string, public status?: number) {
     super(message);
   }
+}
+
+export function isLocalFallbackStatus(error: unknown) {
+  return error instanceof ApiError && (error.status === 401 || error.status === 405);
+}
+
+function announceLocalFallback(status?: number) {
+  window.dispatchEvent(new CustomEvent(localFallbackEvent, { detail: { status } }));
 }
 
 export function getAccessToken() {
@@ -50,6 +59,7 @@ async function request<T>(service: ApiService, path: string, init: RequestInit =
   const payload = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 405) announceLocalFallback(response.status);
     throw new ApiError(payload?.error ?? payload?.detail ?? payload?.title ?? 'Nao foi possivel concluir a operacao.', response.status);
   }
 
@@ -66,6 +76,16 @@ export const api = {
   patch: <T>(service: ApiService, path: string, body?: unknown) => request<T>(service, path, { method: 'PATCH', body: body === undefined ? undefined : JSON.stringify(body) }),
   delete: <T>(service: ApiService, path: string) => request<T>(service, path, { method: 'DELETE' }),
 };
+
+export function safeFallback<T>(fallback: T) {
+  return async (operation: Promise<T>): Promise<T> => {
+    try {
+      return await operation;
+    } catch {
+      return fallback;
+    }
+  };
+}
 
 async function getJson<T>(service: ApiService, path: string, fallback: T, normalize: (items: unknown[]) => T): Promise<T> {
   try {
@@ -218,7 +238,8 @@ export async function loadDashboardData(): Promise<DashboardData> {
 export async function createResource<T>(service: ApiService, path: string, body: unknown, fallbackItem: T): Promise<T> {
   try {
     return await api.post<T>(service, path, body);
-  } catch {
+  } catch (error) {
+    if (isLocalFallbackStatus(error)) return fallbackItem;
     return fallbackItem;
   }
 }
@@ -226,7 +247,8 @@ export async function createResource<T>(service: ApiService, path: string, body:
 export async function updateResource<T>(service: ApiService, path: string, id: Id, body: unknown, fallbackItem: T): Promise<T> {
   try {
     return await api.put<T>(service, `${path}/${id}`, body);
-  } catch {
+  } catch (error) {
+    if (isLocalFallbackStatus(error)) return fallbackItem;
     return fallbackItem;
   }
 }
@@ -234,7 +256,8 @@ export async function updateResource<T>(service: ApiService, path: string, id: I
 export async function deleteResource(service: ApiService, path: string, id: Id): Promise<void> {
   try {
     await api.delete(service, `${path}/${id}`);
-  } catch {
+  } catch (error) {
+    if (isLocalFallbackStatus(error)) return;
     return;
   }
 }

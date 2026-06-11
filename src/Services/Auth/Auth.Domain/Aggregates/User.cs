@@ -22,6 +22,7 @@ namespace Auth.Domain.Aggregates
         public string? ConsentTermsVersion { get; private set; }
         public string? ConsentPrivacyVersion { get; private set; }
         public DateTime? ConsentAcceptedAt { get; private set; }
+        public bool IsMfaEnabled { get; private set; }
 
         protected User() { }
 
@@ -116,6 +117,12 @@ namespace Auth.Domain.Aggregates
         {
             RefreshTokenHash = tokenHash;
             RefreshTokenExpiryTime = expiry;
+            MarkAsUpdated();
+        }
+
+        public void EnableMfa()
+        {
+            IsMfaEnabled = true;
             MarkAsUpdated();
         }
     }

@@ -31,6 +31,7 @@ namespace Auth.Infrastructure.Persistence.Data
                 b.Property(x => x.Crp).HasMaxLength(32);
                 b.Property(x => x.ConsentTermsVersion).HasMaxLength(32);
                 b.Property(x => x.ConsentPrivacyVersion).HasMaxLength(32);
+                b.Property(x => x.IsMfaEnabled).HasColumnName("is_mfa_enabled").IsRequired();
                 b.Property(x => x.RefreshTokenHash).HasMaxLength(256);
 
                 b.OwnsOne(x => x.Name, nb =>

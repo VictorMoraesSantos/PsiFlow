@@ -47,10 +47,19 @@ export function RecordsPage({ data, onRecordsChange }: RecordsPageProps) {
         { label: 'Status', value: (record) => statusBadge(record.status) },
       ]}
       actions={[
+        { label: 'Criar por paciente', successMessage: 'Prontuario por paciente criado.', run: (record) => api.post('clinicalRecords', `/v1/patients/${record.patientId}/clinical-record`, { name: record.name || record.patientName }) },
+        { label: 'Ler anamnese', successMessage: 'Anamnese carregada.', run: (record) => api.get('clinicalRecords', `/v1/clinical-records/${record.id}/anamnesis`) },
         { label: 'Autosave anamnese', successMessage: 'Rascunho salvo ou acao simulada.', run: (record) => api.post('clinicalRecords', `/v1/clinical-records/${record.id}/anamnesis/autosave`, { ciphertext: 'draft', nonce: 'dev', tag: 'dev' }) },
         { label: 'Publicar versao', successMessage: 'Versao publicada ou simulada.', run: (record) => api.post('clinicalRecords', `/v1/clinical-records/${record.id}/anamnesis/publish-version`, { reason: 'Publicada pelo workspace web' }) },
+        { label: 'Autosave evolucao', successMessage: 'Evolucao salva.', run: (record) => api.post('clinicalRecords', `/v1/sessions/${findSessionId(data, record.patientId)}/evolution/autosave`, { ciphertext: 'draft', nonce: 'dev', tag: 'dev' }) },
+        { label: 'Publicar evolucao', successMessage: 'Versao de evolucao publicada.', run: (record) => api.post('clinicalRecords', `/v1/sessions/${findSessionId(data, record.patientId)}/evolution/publish-version`, { reason: 'Publicada pelo workspace web' }) },
+        { label: 'Historico de evolucao', successMessage: 'Historico de evolucao carregado.', run: (record) => api.get('clinicalRecords', `/v1/sessions/${findSessionId(data, record.patientId)}/evolution/versions`) },
         { label: 'Ver auditoria', successMessage: 'Auditoria carregada ou simulada.', run: (record) => api.get('clinicalRecords', `/v1/clinical-records/${record.id}/audit-log`) },
       ]}
     />
   );
+}
+
+function findSessionId(data: DashboardData, patientId?: number) {
+  return data.sessions.find((session) => session.patientId === patientId)?.id ?? data.sessions[0]?.id ?? 0;
 }

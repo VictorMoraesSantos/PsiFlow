@@ -13,6 +13,9 @@ public static class AgendaEndpoints
         app.MapPost("/v1/availability/weekly", async (WeeklyAvailabilityRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new CreateWeeklyAvailabilityCommand(request, TenantId(user)), ct), value => Results.Created($"/v1/availability/weekly/{value.Id}", value))).RequireAuthorization();
 
+        app.MapGet("/v1/availability/weekly", async (ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            ToHttp(await sender.Send(new GetWeeklyAvailabilitiesQuery(TenantId(user)), ct))).RequireAuthorization();
+
         app.MapPatch("/v1/availability/weekly/{availabilityId:int}", async (int availabilityId, WeeklyAvailabilityRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new UpdateWeeklyAvailabilityCommand(availabilityId, request, TenantId(user)), ct))).RequireAuthorization();
 
@@ -21,6 +24,9 @@ public static class AgendaEndpoints
 
         app.MapPost("/v1/schedule-blocks", async (ScheduleBlockRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new CreateScheduleBlockCommand(request, TenantId(user), UserId(user)), ct), value => Results.Created($"/v1/schedule-blocks/{value.Id}", value))).RequireAuthorization();
+
+        app.MapGet("/v1/schedule-blocks", async (ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
+            ToHttp(await sender.Send(new GetScheduleBlocksQuery(TenantId(user)), ct))).RequireAuthorization();
 
         app.MapDelete("/v1/schedule-blocks/{blockId:int}", async (int blockId, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new DeleteScheduleBlockCommand(blockId, TenantId(user)), ct), _ => Results.NoContent())).RequireAuthorization();
