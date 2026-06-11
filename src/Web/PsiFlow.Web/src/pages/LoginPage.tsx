@@ -23,7 +23,6 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerRole, setRegisterRole] = useState<'psychologist' | 'patient'>('psychologist');
   const [mfaCode, setMfaCode] = useState('');
-  const [isMfaSubmitting, setIsMfaSubmitting] = useState(false);
 
   const passwordRequirements = [
     { label: '10 caracteres ou mais', isMet: registerPassword.length >= 10 },
@@ -48,7 +47,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
       await login(email, password);
       onAuthenticated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel entrar.');
+      setError(toSafeAuthError(err, 'Nao foi possivel entrar. Confira email, senha e tente novamente.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -78,7 +77,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
         setMessage(registerRole === 'psychologist' ? 'Cadastro de psicologa registrado localmente.' : 'Cadastro de paciente registrado localmente.');
         return;
       }
-      setError(err instanceof Error ? err.message : 'Nao foi possivel criar a conta.');
+      setError(toSafeAuthError(err, 'Nao foi possivel criar a conta. Revise os dados e tente novamente.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -91,33 +90,15 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     setIsSubmitting(true);
     try {
       await api.post('auth', '/v1/auth/forgot-password', { email });
-      setMessage('Se o email existir, o fluxo de recuperacao foi iniciado.');
+      setMessage('Se o email existir, enviaremos instrucoes de recuperacao. Verifique a caixa de entrada e o spam nos proximos minutos.');
     } catch (err) {
       if (isLocalFallbackStatus(err)) {
         setMessage('Recuperacao registrada localmente.');
         return;
       }
-      setError(err instanceof Error ? err.message : 'Nao foi possivel iniciar recuperacao.');
+      setError(toSafeAuthError(err, 'Nao foi possivel iniciar a recuperacao agora. Tente novamente em alguns minutos.'));
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  async function setupMfa() {
-    setError(null);
-    setMessage(null);
-    setIsMfaSubmitting(true);
-    try {
-      const result = await api.post<{ secret: string; qrCodeUri: string }>('auth', '/v1/auth/mfa/setup');
-      setMessage(`Verificacao em duas etapas preparada. Use este codigo no autenticador: ${result.secret}`);
-    } catch (err) {
-      if (isLocalFallbackStatus(err)) {
-        setMessage('Preparacao registrada localmente. Entre na conta antes de ativar a verificacao em duas etapas no backend.');
-        return;
-      }
-      setError(err instanceof Error ? err.message : 'Nao foi possivel preparar a verificacao em duas etapas.');
-    } finally {
-      setIsMfaSubmitting(false);
     }
   }
 
@@ -127,18 +108,31 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     setMessage(null);
     try {
       await api.post('auth', '/v1/auth/mfa/verify', { code: mfaCode });
-      setMessage('Verificacao em duas etapas ativada para esta conta.');
+      setMessage('Codigo verificado. Continue o acesso conforme orientacao da sua clinica.');
     } catch (err) {
       if (isLocalFallbackStatus(err)) {
         setMessage('Verificacao em duas etapas registrada localmente.');
         return;
       }
-      setError(err instanceof Error ? err.message : 'Nao foi possivel verificar o codigo.');
+      setError(toSafeAuthError(err, 'Nao foi possivel verificar o codigo. Confira os 6 digitos e tente novamente.'));
     }
   }
 
   return (
     <main className="auth-page">
+      <aside className="auth-panel" aria-label="Resumo de seguranca do PsiFlow">
+        <div className="auth-panel__mark" aria-hidden="true"><ShieldCheck size={24} /></div>
+        <div>
+          <span className="auth-panel__eyebrow">Workspace clinico protegido</span>
+          <h2>Entre com calma. O contexto do consultorio fica preservado.</h2>
+          <p>Agenda, sessoes, prontuarios e notificacoes em um ambiente pensado para dados sensiveis e retomada rapida do atendimento.</p>
+        </div>
+        <dl className="auth-panel__facts">
+          <div><dt>Acesso</dt><dd>Credenciais e codigo de verificacao quando solicitado</dd></div>
+          <div><dt>Uso diario</dt><dd>Paciente, horario e pendencias clinicas no mesmo fluxo</dd></div>
+          <div><dt>Privacidade</dt><dd>Copias e mensagens evitam expor dados clinicos fora do contexto</dd></div>
+        </dl>
+      </aside>
       <section className="auth-card" aria-labelledby="login-title">
         <div className="brand brand--auth">
           <div className="brand__mark" aria-hidden="true">P</div>
@@ -172,7 +166,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
               <div className="input-with-icon"><LockKeyhole aria-hidden="true" size={17} /><input type="password" value={password} autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} required /></div>
             </label>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Entrando...' : 'Entrar no workspace'}</Button>
-            <button className="auth-link" type="button" onClick={() => changeMode('mfa')}>Ativar verificacao em duas etapas</button>
+            <button className="auth-link" type="button" onClick={() => changeMode('mfa')}>Tenho codigo de verificacao</button>
           </form>
         ) : null}
 
@@ -182,6 +176,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
               <button type="button" aria-pressed={registerRole === 'psychologist'} onClick={() => setRegisterRole('psychologist')}>Psicologa</button>
               <button type="button" aria-pressed={registerRole === 'patient'} onClick={() => setRegisterRole('patient')}>Paciente</button>
             </div>
+            <p className="auth-card__hint">{registerRole === 'psychologist' ? 'Conta profissional exige CRP e libera operacao clinica do consultorio.' : 'Conta de paciente tem acesso restrito aos recursos liberados pela clinica.'}</p>
             <label className="form-field">
               <span>Nome completo</span>
               <div className="input-with-icon"><UserPlus aria-hidden="true" size={17} /><input value={registerName} autoComplete="name" onChange={(event) => setRegisterName(event.target.value)} placeholder="Dra. Ana Souza" required /></div>
@@ -206,7 +201,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             </label>
             <ul id="password-rules" className="auth-checklist" aria-label="Requisitos da senha">
               {passwordRequirements.map((requirement) => (
-                <li key={requirement.label} data-met={requirement.isMet}>{requirement.label}</li>
+                <li key={requirement.label} data-met={requirement.isMet} aria-label={`${requirement.label}: ${requirement.isMet ? 'cumprido' : 'pendente'}`}>{requirement.isMet ? 'Cumprido: ' : 'Pendente: '}{requirement.label}</li>
               ))}
             </ul>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Criando conta...' : 'Criar conta'}</Button>
@@ -226,8 +221,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
         {mode === 'mfa' ? (
           <form className="resource-form auth-form" onSubmit={verifyMfa}>
-            <p className="auth-card__hint">A verificacao em duas etapas adiciona um codigo do aplicativo autenticador ao login. Entre na conta antes de ativar este recurso.</p>
-            <Button type="button" variant="secondary" onClick={setupMfa} disabled={isMfaSubmitting}>{isMfaSubmitting ? 'Preparando...' : 'Preparar verificacao'}</Button>
+            <p className="auth-card__hint">Use esta etapa apenas quando o login solicitar um codigo do aplicativo autenticador. A ativacao da verificacao em duas etapas acontece dentro da conta.</p>
             <label className="form-field">
               <span>Codigo do autenticador</span>
               <div className="input-with-icon"><ShieldCheck aria-hidden="true" size={17} /><input inputMode="numeric" autoComplete="one-time-code" value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} placeholder="000000" required /></div>
@@ -239,4 +233,12 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
       </section>
     </main>
   );
+}
+
+function toSafeAuthError(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) return fallback;
+  const message = error.message.toLowerCase();
+  if (message.includes('401') || message.includes('unauthorized') || message.includes('invalid')) return fallback;
+  if (message.includes('network') || message.includes('fetch')) return 'Nao conseguimos conectar ao servidor. Verifique sua conexao e tente novamente.';
+  return fallback;
 }

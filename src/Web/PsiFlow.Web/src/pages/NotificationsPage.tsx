@@ -21,6 +21,7 @@ type NotificationsPageProps = { templates: NotificationTemplate[]; onTemplatesCh
 export function NotificationsPage({ templates, onTemplatesChange }: NotificationsPageProps) {
   const { notify } = useToast();
   const [logs, setLogs] = useState<Array<{ id: number; recipientEmail?: string; status?: string; templateKey?: string }>>([]);
+  const failedLogs = logs.filter((log) => log.status === 'failed');
 
   async function loadLogs() {
     try {
@@ -38,14 +39,14 @@ export function NotificationsPage({ templates, onTemplatesChange }: Notification
   }
 
   async function retryFirstFailed() {
-    const failed = logs.find((log) => log.status === 'failed') ?? logs[0];
+    const failed = failedLogs[0];
     if (!failed) {
-      notify('Carregue os logs antes de tentar retry.', 'info');
+      notify(logs.length ? 'Nenhuma falha encontrada para reprocessar.' : 'Carregue os logs antes de reprocessar falhas.', 'info');
       return;
     }
     try {
       await api.post('notifications', `/v1/notifications/retry/${failed.id}`);
-      notify('Retry solicitado.');
+      notify(`Reprocessamento solicitado para o log #${failed.id}.`);
     } catch (error) {
       if (isLocalFallbackStatus(error)) {
         notify('Retry registrado localmente.', 'info');
@@ -59,7 +60,7 @@ export function NotificationsPage({ templates, onTemplatesChange }: Notification
     <div className="resource-layout">
       <ResourcePage
         title="Notificacoes"
-        description="Modelos, canais, versoes e envios operacionais."
+        description="Modelos, canais, versoes, testes e entregas operacionais."
         createLabel="Criar modelo"
         items={templates}
         service="notifications"
@@ -74,6 +75,7 @@ export function NotificationsPage({ templates, onTemplatesChange }: Notification
         columns={[
           { key: 'name', header: 'Modelo', render: (template) => <div className="person-cell"><strong>{template.name}</strong><span>{template.key}</span></div> },
           { key: 'channel', header: 'Canal', render: (template) => template.channel },
+          { key: 'delivery', header: 'Uso seguro', render: (template) => template.isActive === false || template.status === 'Pausado' ? 'Revisar antes de enviar' : 'Pronto para teste' },
           { key: 'status', header: 'Status', render: (template) => statusBadge(template.status) },
         ]}
         detailFields={[
@@ -82,15 +84,31 @@ export function NotificationsPage({ templates, onTemplatesChange }: Notification
           { label: 'Ativo', value: (template) => template.isActive === false ? 'Nao' : 'Sim' },
           { label: 'Status', value: (template) => statusBadge(template.status) },
         ]}
-        actions={[{ label: 'Nova versao', successMessage: 'Versao criada ou simulada.', run: (template) => api.post('notifications', `/v1/notification-templates/${template.id}/versions`, { subject: template.name, bodyHtml: '<p>Mensagem do PsiFlow</p>', bodyText: 'Mensagem do PsiFlow' }) }, { label: 'Enviar teste', successMessage: 'Email de teste enviado ou simulado.', run: (template) => api.post('notifications', '/v1/notifications/test-email', { recipientEmail: 'teste@psiflow.local', templateKey: template.key }) }, { label: 'Agendar lembrete', successMessage: 'Lembrete agendado ou simulado.', run: () => api.post('notifications', '/v1/notifications/schedule-reminders', { notificationType: 'appointment_reminder', scheduledFor: new Date(Date.now() + 3600000).toISOString(), recipientEmail: 'teste@psiflow.local', recipientUserId: null, payloadJson: '{}' }) }]}
+        actions={[
+          { label: 'Criar versao do modelo', successMessage: 'Versao do modelo criada.', run: (template) => api.post('notifications', `/v1/notification-templates/${template.id}/versions`, { subject: template.name, bodyHtml: '<p>Mensagem do PsiFlow</p>', bodyText: 'Mensagem do PsiFlow' }) },
+          { label: 'Enviar email de teste', successMessage: 'Email de teste enviado para teste@psiflow.local.', run: (template) => api.post('notifications', '/v1/notifications/test-email', { recipientEmail: 'teste@psiflow.local', templateKey: template.key }) },
+          { label: 'Agendar lembrete de teste', successMessage: 'Lembrete de teste agendado para teste@psiflow.local.', run: () => api.post('notifications', '/v1/notifications/schedule-reminders', { notificationType: 'appointment_reminder', scheduledFor: new Date(Date.now() + 3600000).toISOString(), recipientEmail: 'teste@psiflow.local', recipientUserId: null, payloadJson: '{}' }) },
+        ]}
+        summaryLabel={(count) => `${count} ${count === 1 ? 'modelo' : 'modelos'}`}
+        summaryDescription={(count) => count === 0 ? 'Nenhum modelo de notificacao cadastrado.' : 'Revise canais, status e testes antes de depender de envios automaticos.'}
+        updatePolicyLabel="Envios exigem conferencia"
+        emptyTitle="Nenhum modelo de notificacao"
+        emptyDescription="Crie modelos para lembretes e mensagens transacionais. Teste cada canal antes de ativar envios automaticos."
+        modalDescription="Defina chave, nome, canal e status do modelo. Use chaves estaveis para evitar envio pelo template errado."
+        createSubmitLabel="Criar modelo"
+        editSubmitLabel="Salvar modelo"
+        detailEditLabel="Editar modelo"
+        moreActionsLabel="Versao, teste e agendamento"
+        moreActionsHint="As acoes de teste usam teste@psiflow.local. Nao substituem o envio real para pacientes."
       />
       <Section title="Logs e reprocessamento" description="Acompanhe entregas transacionais e reenvie falhas sem abrir outro sistema.">
         <div className="workflow-actions">
           <Button type="button" variant="secondary" onClick={loadLogs}>Carregar logs</Button>
-          <Button type="button" onClick={retryFirstFailed}>Reprocessar falha</Button>
+          <Button type="button" disabled={logs.length > 0 && failedLogs.length === 0} onClick={retryFirstFailed}>Reprocessar primeira falha</Button>
         </div>
+        {logs.length ? <p className="workflow-note">{failedLogs.length} {failedLogs.length === 1 ? 'falha encontrada' : 'falhas encontradas'} em {logs.length} logs carregados.</p> : null}
         <div className="workflow-panel workflow-panel--wide">
-          {logs.length ? <ul>{logs.slice(0, 8).map((log) => <li key={log.id}>#{log.id} {log.templateKey || 'template'} para {log.recipientEmail || 'destinatario'}, {log.status || 'sem status'}</li>)}</ul> : <p>Nenhum log carregado.</p>}
+          {logs.length ? <ul>{logs.slice(0, 8).map((log) => <li key={log.id}><strong>#{log.id} {log.status || 'sem status'}</strong><span>{log.templateKey || 'template sem chave'} para {log.recipientEmail || 'destinatario nao informado'}</span></li>)}</ul> : <p>Carregue os logs para ver entregas, falhas e reprocessamentos disponiveis.</p>}
         </div>
       </Section>
     </div>
