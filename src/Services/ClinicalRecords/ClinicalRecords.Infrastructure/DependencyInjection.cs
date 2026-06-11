@@ -5,6 +5,7 @@ using ClinicalRecords.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PsiFlow.ClinicalRecords.Infrastructure.Persistence;
 
 namespace ClinicalRecords.Infrastructure
 {
@@ -16,6 +17,7 @@ namespace ClinicalRecords.Infrastructure
             services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<IClinicalRecordWorkflowService, ClinicalRecordWorkflowService>();
+            services.AddHostedService<ClinicalRecordsDatabaseInitializer>();
             return services;
         }
     }

@@ -5,6 +5,7 @@ using Patients.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PsiFlow.Patients.Infrastructure.Persistence;
 
 namespace Patients.Infrastructure
 {
@@ -16,6 +17,7 @@ namespace Patients.Infrastructure
             services.AddScoped<IPatientRepository, PatientRepository>();
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IPatientInviteService, PatientInviteService>();
+            services.AddHostedService<PatientsDatabaseInitializer>();
             return services;
         }
     }

@@ -5,6 +5,7 @@ using Sessions.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PsiFlow.Sessions.Infrastructure.Persistence;
 
 namespace Sessions.Infrastructure
 {
@@ -16,6 +17,7 @@ namespace Sessions.Infrastructure
             services.AddScoped<ISessionRepository, SessionRepository>();
             services.AddScoped<ISessionService, SessionService>();
             services.AddScoped<ISessionWorkflowService, SessionWorkflowService>();
+            services.AddHostedService<SessionsDatabaseInitializer>();
             return services;
         }
     }

@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import type { DashboardData, FormField, LookupMap, Session } from '../types';
 
 const fields: Array<FormField<Session>> = [
-  { name: 'name', label: 'Nome da sessao', type: 'text', required: true, placeholder: 'Ex: Sessao clinica Marina' },
+  { name: 'name', label: 'Nome da sessao', type: 'text', required: true, placeholder: 'Ex: Retorno clinico Marina' },
   { name: 'appointmentId', label: 'Consulta', type: 'lookup', lookupKey: 'appointments', required: true, helperText: 'Consulta que originou esta sessao.' },
   { name: 'patientId', label: 'Paciente', type: 'lookup', lookupKey: 'patients', required: true },
   { name: 'psychologistId', label: 'Psicologo', type: 'lookup', lookupKey: 'psychologists', required: true },
@@ -33,7 +33,7 @@ export function SessionsPage({ data, onSessionsChange }: SessionsPageProps) {
   return (
     <ResourcePage
       title="Sessoes"
-      description="Preparacao, status clinico, pagamento e sala online."
+      description="Acompanhe preparo, atendimento, pagamento e encerramento de cada sessao."
       createLabel="Criar sessao"
       items={data.sessions}
       service="sessions"
@@ -47,28 +47,66 @@ export function SessionsPage({ data, onSessionsChange }: SessionsPageProps) {
       toCreatePayload={(session) => ({ tenantId: session.tenantId, name: session.name || session.patientName, appointmentId: session.appointmentId, patientId: session.patientId, psychologistId: session.psychologistId, startsAt: session.startsAt, endsAt: session.endsAt, status: session.status === 'Finalizada' ? 'completed' : session.status === 'Em andamento' ? 'started' : 'scheduled', modality: session.modality || 'online' })}
       toUpdatePayload={(session) => ({ id: session.id, tenantId: session.tenantId, name: session.name || session.patientName, appointmentId: session.appointmentId, patientId: session.patientId, psychologistId: session.psychologistId, startsAt: session.startsAt, endsAt: session.endsAt, status: session.status === 'Finalizada' ? 'completed' : session.status === 'Em andamento' ? 'started' : 'scheduled', modality: session.modality || 'online' })}
       columns={[
-        { key: 'patientName', header: 'Sessao', render: (session) => <strong>{session.name || session.patientName}</strong> },
+        { key: 'patientName', header: 'Paciente e horario', render: (session) => <div className="person-cell"><strong>{session.patientName || session.name || `Sessao ${session.id}`}</strong><span>{formatSessionRange(session)}</span></div> },
         { key: 'room', header: 'Local', render: (session) => session.room },
+        { key: 'nextStep', header: 'Proximo passo', render: (session) => nextStepLabel(session) },
         { key: 'payment', header: 'Pagamento', render: (session) => statusBadge(session.payment) },
         { key: 'status', header: 'Status', render: (session) => statusBadge(session.status) },
       ]}
       detailFields={[
         { label: 'Consulta', value: (session) => session.appointmentId ? `Consulta #${session.appointmentId}` : 'Nao vinculada' },
         { label: 'Paciente', value: (session) => session.patientName || `Paciente #${session.patientId}` },
-        { label: 'Inicio', value: (session) => session.startsAt || 'Nao informado' },
-        { label: 'Fim', value: (session) => session.endsAt || 'Nao informado' },
+        { label: 'Inicio', value: (session) => formatDateTime(session.startsAt) },
+        { label: 'Fim', value: (session) => formatDateTime(session.endsAt) },
         { label: 'Pagamento', value: (session) => statusBadge(session.payment) },
         { label: 'Status', value: (session) => statusBadge(session.status) },
       ]}
       actions={[
-        { label: 'Iniciar sessao', successMessage: 'Sessao iniciada ou acao simulada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/start`, { reason: 'Iniciada pelo workspace web' }) },
+        { label: 'Iniciar sessao', successMessage: 'Sessao iniciada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/start`, { reason: 'Iniciada pelo workspace web' }) },
         { label: 'Concluir sessao', successMessage: 'Sessao concluida.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/complete`, { reason: 'Concluida pelo workspace web' }) },
         { label: 'Marcar falta', successMessage: 'Falta registrada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/no-show`, { reason: 'Ausencia registrada pelo workspace web' }) },
         { label: 'Marcar pagamento', successMessage: 'Pagamento marcado.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/payment/mark-received`, { amountCents: 0, currency: 'BRL', notes: 'Pagamento manual registrado pelo workspace web' }) },
         { label: 'Ver pagamento', successMessage: 'Pagamento carregado.', run: (session) => api.get('sessions', `/v1/sessions/${session.id}/payment`) },
         { label: 'Enviar recibo', successMessage: 'Recibo solicitado.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/receipt/send`) },
-        { label: 'Cancelar sessao', tone: 'danger', successMessage: 'Sessao cancelada ou acao simulada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/cancel`, { reason: 'Cancelada pelo workspace web' }) },
+        { label: 'Cancelar sessao', tone: 'danger', successMessage: 'Sessao cancelada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/cancel`, { reason: 'Cancelada pelo workspace web' }) },
       ]}
+      summaryLabel={(count) => `${count} ${count === 1 ? 'sessao' : 'sessoes'}`}
+      summaryDescription={(count) => count === 0 ? 'Nenhuma sessao para preparar agora.' : 'Use a lista para retomar contexto, iniciar atendimento e fechar pendencias.'}
+      updatePolicyLabel="Atualiza apos salvar"
+      emptyTitle="Nenhuma sessao cadastrada"
+      emptyDescription="Crie uma sessao a partir de uma consulta para acompanhar preparo, atendimento e fechamento clinico."
+      modalDescription="Vincule a sessao a uma consulta e confira paciente, profissional e horario antes de salvar."
+      createSubmitLabel="Criar sessao"
+      editSubmitLabel="Salvar sessao"
+      detailEditLabel="Editar sessao"
+      moreActionsLabel="Acoes clinicas e administrativas"
+      moreActionsHint="Use estas acoes para encerramento, falta, pagamento, recibo ou cancelamento."
     />
   );
+}
+
+function formatSessionRange(session: Session) {
+  const start = formatTime(session.startsAt);
+  const end = formatTime(session.endsAt);
+  if (start === 'Sem horario' && end === 'Sem horario') return 'Horario nao informado';
+  if (end === 'Sem horario') return start;
+  return `${start} ate ${end}`;
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return 'Nao informado';
+  return new Date(value).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function formatTime(value?: string) {
+  if (!value) return 'Sem horario';
+  return new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function nextStepLabel(session: Session) {
+  const status = session.status.toLowerCase();
+  if (status.includes('final')) return 'Revisar fechamento';
+  if (status.includes('andamento')) return 'Concluir sessao';
+  if (status.includes('cancel')) return 'Revisar cancelamento';
+  return 'Iniciar sessao';
 }

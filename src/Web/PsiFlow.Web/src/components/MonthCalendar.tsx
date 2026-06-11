@@ -39,7 +39,7 @@ export function MonthCalendar({ appointments, title = 'Calendario do mes', compa
         </div>
       </div>
 
-      <div className="month-calendar__grid" role="grid" aria-label="Dias do mes">
+      <div className="month-calendar__grid" aria-label="Dias do mes">
         {weekdayLabels.map((label) => <span className="month-calendar__weekday" key={label}>{label}</span>)}
         {cells.map((date) => {
           const key = dayKey(date);

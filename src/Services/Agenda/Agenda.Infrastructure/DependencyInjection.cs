@@ -17,6 +17,7 @@ namespace Agenda.Infrastructure
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IAgendaService, AgendaService>();
+            services.AddHostedService<AgendaDatabaseInitializer>();
             return services;
         }
     }

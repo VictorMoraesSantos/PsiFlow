@@ -27,6 +27,8 @@ namespace Agenda.Application
                 .AddHandler<UpdateWeeklyAvailabilityCommand, Result<bool>, UpdateWeeklyAvailabilityCommandHandler>()
                 .AddHandler<DeleteWeeklyAvailabilityCommand, Result<bool>, DeleteWeeklyAvailabilityCommandHandler>()
                 .AddHandler<CreateScheduleBlockCommand, Result<ScheduleBlockResult>, CreateScheduleBlockCommandHandler>()
+                .AddHandler<GetWeeklyAvailabilitiesQuery, Result<IReadOnlyCollection<WeeklyAvailabilityResult>>, GetWeeklyAvailabilitiesQueryHandler>()
+                .AddHandler<GetScheduleBlocksQuery, Result<IReadOnlyCollection<ScheduleBlockResult>>, GetScheduleBlocksQueryHandler>()
                 .AddHandler<DeleteScheduleBlockCommand, Result<bool>, DeleteScheduleBlockCommandHandler>()
                 .AddHandler<GetAvailableSlotsQuery, Result<IReadOnlyCollection<AvailableSlotResult>>, GetAvailableSlotsQueryHandler>()
                 .AddHandler<CancelAppointmentCommand, Result<bool>, CancelAppointmentCommandHandler>();

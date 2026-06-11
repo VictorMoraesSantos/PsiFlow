@@ -5,6 +5,7 @@ using OnlineSession.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PsiFlow.OnlineSession.Infrastructure.Persistence;
 
 namespace OnlineSession.Infrastructure
 {
@@ -16,6 +17,7 @@ namespace OnlineSession.Infrastructure
             services.AddScoped<IVideoRoomRepository, VideoRoomRepository>();
             services.AddScoped<IVideoRoomService, VideoRoomService>();
             services.AddScoped<IOnlineSessionService, OnlineSessionService>();
+            services.AddHostedService<OnlineSessionDatabaseInitializer>();
             return services;
         }
     }

@@ -38,6 +38,7 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
   const [mode, setMode] = useState<'create' | 'edit' | null>(null);
   const [inactiveTarget, setInactiveTarget] = useState<Patient | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const filteredPatients = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -80,6 +81,8 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
 
   async function confirmInactivate() {
     if (!inactiveTarget) return;
+    const actionKey = `inactivate:${inactiveTarget.id}`;
+    setPendingAction(actionKey);
     try {
       await api.post('patients', `/v1/patients/${inactiveTarget.id}/deactivate`, { reason: 'Inativado pelo workspace web' });
       onPatientsChange(data.patients.map((patient) => patient.id === inactiveTarget.id ? { ...patient, status: 'Inativo' } : patient));
@@ -95,10 +98,18 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
         return;
       }
       notify(error instanceof Error ? error.message : 'Nao foi possivel inativar o paciente.', 'danger');
+    } finally {
+      setPendingAction(null);
     }
   }
 
   async function invitePatient(patient: Patient) {
+    if (!patient.email || !patient.phone) {
+      notify('Informe email e telefone antes de enviar o convite.', 'danger');
+      return;
+    }
+    const actionKey = `invite:${patient.id}`;
+    setPendingAction(actionKey);
     try {
       await api.post('patients', '/v1/patient-invites', { email: patient.email, phone: patient.phone, patientId: patient.id });
       onPatientsChange(data.patients.map((item) => item.id === patient.id ? { ...item, status: item.status === 'Ativo' ? item.status : 'Aguardando' } : item));
@@ -110,10 +121,18 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
         return;
       }
       notify(error instanceof Error ? error.message : 'Nao foi possivel criar o convite.', 'danger');
+    } finally {
+      setPendingAction(null);
     }
   }
 
   async function changeTreatmentStatus(patient: Patient, treatmentStatus: string) {
+    if (patient.treatmentStatus === treatmentStatus) {
+      notify(`${getPatientName(patient)} ja esta com este status de tratamento.`, 'info');
+      return;
+    }
+    const actionKey = `treatment:${patient.id}:${treatmentStatus}`;
+    setPendingAction(actionKey);
     try {
       await api.post('patients', `/v1/patients/${patient.id}/status`, { treatmentStatus, reason: 'Atualizado pelo workspace web' });
       onPatientsChange(data.patients.map((item) => item.id === patient.id ? { ...item, treatmentStatus } : item));
@@ -125,10 +144,14 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
         return;
       }
       notify(error instanceof Error ? error.message : 'Nao foi possivel alterar o status.', 'danger');
+    } finally {
+      setPendingAction(null);
     }
   }
 
   async function loadSessionsSummary(patient: Patient) {
+    const actionKey = `summary:${patient.id}`;
+    setPendingAction(actionKey);
     try {
       await api.get('patients', `/v1/patients/${patient.id}/sessions-summary`);
       notify('Resumo de sessoes carregado.');
@@ -138,6 +161,8 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
         return;
       }
       notify(error instanceof Error ? error.message : 'Nao foi possivel carregar o resumo.', 'danger');
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -163,7 +188,7 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
           </label>
           <div className="patients-filters" aria-label="Filtrar por status">
             {(['Todos', 'Ativo', 'Aguardando', 'Inativo'] as const).map((status) => (
-              <button key={status} type="button" className={statusFilter === status ? 'filter-chip filter-chip--active' : 'filter-chip'} onClick={() => setStatusFilter(status)}>
+              <button key={status} type="button" className={statusFilter === status ? 'filter-chip filter-chip--active' : 'filter-chip'} aria-pressed={statusFilter === status} onClick={() => setStatusFilter(status)}>
                 {status}
               </button>
             ))}
@@ -199,14 +224,20 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
         onClose={() => setSelected(null)}
         actions={selected ? (
           <>
-            <Button type="button" variant="secondary"><FileText size={16} aria-hidden="true" />Ver prontuario</Button>
-            <Button type="button" variant="secondary"><CalendarPlus size={16} aria-hidden="true" />Agendar sessao</Button>
-            <Button type="button" variant="secondary" onClick={() => invitePatient(selected)}><UserPlus size={16} aria-hidden="true" />Enviar convite</Button>
-            <Button type="button" variant="secondary" onClick={() => loadSessionsSummary(selected)}>Resumo de sessoes</Button>
-            <Button type="button" variant="secondary" onClick={() => changeTreatmentStatus(selected, 'active_treatment')}>Marcar em tratamento</Button>
-            <Button type="button" variant="secondary" onClick={() => changeTreatmentStatus(selected, 'paused')}>Marcar pausa</Button>
+            <Button type="button" variant="secondary" disabled title="Atalho ainda nao conectado ao prontuario"><FileText size={16} aria-hidden="true" />Prontuario indisponivel</Button>
+            <Button type="button" variant="secondary" disabled title="Atalho ainda nao conectado a agenda"><CalendarPlus size={16} aria-hidden="true" />Agenda indisponivel</Button>
+            <Button type="button" variant="secondary" disabled={!selected.email || !selected.phone || pendingAction !== null} onClick={() => invitePatient(selected)}><UserPlus size={16} aria-hidden="true" />{pendingAction === `invite:${selected.id}` ? 'Enviando convite...' : 'Enviar convite'}</Button>
+            {(!selected.email || !selected.phone) ? <p className="drawer-action-hint">Informe email e telefone para enviar convite.</p> : null}
+            <Button type="button" variant="secondary" disabled={pendingAction !== null} onClick={() => loadSessionsSummary(selected)}>{pendingAction === `summary:${selected.id}` ? 'Carregando resumo...' : 'Resumo de sessoes'}</Button>
+            <div className="drawer-action-group" aria-label="Status de tratamento">
+              <span className="drawer-action-group__label">Tratamento atual: {formatTreatment(selected.treatmentStatus)}</span>
+              <div className="drawer-action-group__items">
+                <Button type="button" variant="secondary" disabled={selected.treatmentStatus === 'active_treatment' || pendingAction !== null} onClick={() => changeTreatmentStatus(selected, 'active_treatment')}>{pendingAction === `treatment:${selected.id}:active_treatment` ? 'Atualizando...' : 'Marcar em tratamento'}</Button>
+                <Button type="button" variant="secondary" disabled={selected.treatmentStatus === 'paused' || pendingAction !== null} onClick={() => changeTreatmentStatus(selected, 'paused')}>{pendingAction === `treatment:${selected.id}:paused` ? 'Atualizando...' : 'Marcar pausa'}</Button>
+              </div>
+            </div>
             <Button type="button" variant="secondary" onClick={() => setMode('edit')}><Edit3 size={16} aria-hidden="true" />Editar cadastro</Button>
-            <Button type="button" className="button--danger" onClick={() => setInactiveTarget(selected)}>Inativar paciente</Button>
+            <Button type="button" className="button--danger" disabled={pendingAction !== null} onClick={() => setInactiveTarget(selected)}>Inativar paciente</Button>
           </>
         ) : null}
       />
@@ -229,6 +260,7 @@ export function PatientsPage({ data, onPatientsChange }: PatientsPageProps) {
         description={inactiveTarget ? `${getPatientName(inactiveTarget)} deixara de aparecer como paciente ativo. O historico clinico nao sera removido.` : ''}
         confirmLabel="Inativar paciente"
         isDanger
+        isSubmitting={inactiveTarget ? pendingAction === `inactivate:${inactiveTarget.id}` : false}
         onClose={() => setInactiveTarget(null)}
         onConfirm={confirmInactivate}
       />

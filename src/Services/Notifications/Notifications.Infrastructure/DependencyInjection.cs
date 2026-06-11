@@ -5,6 +5,7 @@ using Notifications.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PsiFlow.Notifications.Infrastructure.Persistence;
 
 namespace Notifications.Infrastructure
 {
@@ -16,6 +17,7 @@ namespace Notifications.Infrastructure
             services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
             services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
             services.AddScoped<INotificationWorkflowService, NotificationWorkflowService>();
+            services.AddHostedService<NotificationsDatabaseInitializer>();
             return services;
         }
     }

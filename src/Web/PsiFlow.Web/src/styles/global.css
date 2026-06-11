@@ -1011,6 +1011,15 @@ tbody tr:last-child td { border-bottom: 0; }
   background: var(--surface);
 }
 
+.drawer-action-group__label,
+.drawer-action-hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.drawer-action-hint { margin: calc(var(--space-2) * -1) 0 var(--space-1); }
+
 .toast-region {
   position: fixed;
   z-index: 60;
@@ -1115,6 +1124,41 @@ tbody tr:last-child td { border-bottom: 0; }
   padding: var(--space-2) var(--space-3);
 }
 
+.auth-checklist {
+  margin: calc(var(--space-2) * -1) 0 0;
+  padding: var(--space-3) var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.9rem;
+  list-style: none;
+}
+
+.auth-checklist li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.auth-checklist li::before {
+  content: "";
+  width: 0.46rem;
+  height: 0.46rem;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  flex: 0 0 auto;
+}
+
+.auth-checklist li[data-met="true"] {
+  color: var(--success-badge-text);
+  font-weight: 750;
+}
+
+.auth-checklist li[data-met="true"]::before { background: var(--success); }
+
 .input-with-icon {
   display: flex;
   align-items: center;
@@ -1205,6 +1249,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .workflow-panel ul {
   margin: 0;
   color: var(--muted);
+}
+
+.workflow-note {
+  margin: calc(var(--space-2) * -1) 0 var(--space-4);
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .workflow-panel ul {

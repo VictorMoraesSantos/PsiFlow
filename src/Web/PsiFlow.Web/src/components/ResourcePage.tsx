@@ -43,9 +43,20 @@ type ResourcePageProps<T extends Record<string, unknown>> = {
   detailFields: Array<{ label: string; value: (item: T) => React.ReactNode }>;
   onItemsChange: (items: T[]) => void;
   actions?: Array<ResourceAction<T>>;
+  summaryLabel?: (count: number) => string;
+  summaryDescription?: (count: number) => string;
+  updatePolicyLabel?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  modalDescription?: string;
+  createSubmitLabel?: string;
+  editSubmitLabel?: string;
+  detailEditLabel?: string;
+  moreActionsLabel?: string;
+  moreActionsHint?: string;
 };
 
-export function ResourcePage<T extends Record<string, unknown>>({ title, description, createLabel, items, service, path, columns, fields, lookups, emptyValue, toCreatePayload, toUpdatePayload, getId, getTitle, detailFields, onItemsChange, actions = [] }: ResourcePageProps<T>) {
+export function ResourcePage<T extends Record<string, unknown>>({ title, description, createLabel, items, service, path, columns, fields, lookups, emptyValue, toCreatePayload, toUpdatePayload, getId, getTitle, detailFields, onItemsChange, actions = [], summaryLabel, summaryDescription, updatePolicyLabel = 'Atualiza ao salvar', emptyTitle, emptyDescription, modalDescription = 'Revise os campos com calma. O workspace atualiza a lista depois que a alteracao for salva.', createSubmitLabel = 'Criar registro', editSubmitLabel = 'Salvar alteracoes', detailEditLabel = 'Editar registro', moreActionsLabel = 'Mais ações', moreActionsHint }: ResourcePageProps<T>) {
   const { notify } = useToast();
   const [mode, setMode] = useState<'create' | 'edit' | null>(null);
   const [selected, setSelected] = useState<T | null>(null);
@@ -126,19 +137,19 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
       <Section title={title} description={description} action={<Button type="button" onClick={() => { setSelected(null); setMode('create'); }}>{createLabel}</Button>}>
         <div className="resource-toolbar" aria-label={`Resumo de ${title}`}>
           <div>
-            <strong>{items.length} {items.length === 1 ? 'registro' : 'registros'}</strong>
-            <span>{items.length === 0 ? 'Nenhum item para revisar agora.' : 'Lista operacional com dados de trabalho do consultorio.'}</span>
+            <strong>{summaryLabel ? summaryLabel(items.length) : `${items.length} ${items.length === 1 ? 'registro' : 'registros'}`}</strong>
+            <span>{summaryDescription ? summaryDescription(items.length) : items.length === 0 ? 'Nenhum item para revisar agora.' : 'Lista operacional com dados de trabalho do consultorio.'}</span>
           </div>
           <div className="resource-toolbar__meta" aria-label="Politica de atualizacao">
-            Atualiza ao salvar
+            {updatePolicyLabel}
           </div>
         </div>
         <DataTable
           items={items}
           getRowKey={getId}
           caption={`${title}: registros operacionais`}
-          emptyTitle={`Nenhum registro em ${title.toLowerCase()}`}
-          emptyDescription="Quando houver dados neste fluxo, eles aparecem aqui com atalhos de revisao, edicao e fechamento."
+          emptyTitle={emptyTitle ?? `Nenhum registro em ${title.toLowerCase()}`}
+          emptyDescription={emptyDescription ?? 'Quando houver dados neste fluxo, eles aparecem aqui com atalhos de revisao, edicao e fechamento.'}
           columns={tableColumns}
         />
       </Section>
@@ -150,13 +161,14 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
         onClose={() => setSelected(null)}
         actions={selected ? (
           <>
-            <Button type="button" variant="secondary" onClick={() => setMode('edit')}>Editar registro</Button>
+            <Button type="button" variant="secondary" onClick={() => setMode('edit')}>{detailEditLabel}</Button>
             {actions[0] ? <Button type="button" variant={actions[0].tone === 'danger' ? 'primary' : 'secondary'} className={actions[0].tone === 'danger' ? 'button--danger' : ''} onClick={() => runAction(actions[0], selected)}>{actions[0].label}</Button> : null}
             {actions.length > 1 ? (
               <div className="drawer-action-group">
-                <button type="button" className="drawer-action-group__toggle" onClick={() => setShowMoreActions((value) => !value)} aria-expanded={showMoreActions}>Mais ações</button>
+                <button type="button" className="drawer-action-group__toggle" onClick={() => setShowMoreActions((value) => !value)} aria-expanded={showMoreActions}>{moreActionsLabel}</button>
                 {showMoreActions ? (
                   <div className="drawer-action-group__items">
+                    {moreActionsHint ? <p className="drawer-action-hint">{moreActionsHint}</p> : null}
                     {actions.slice(1).map((action) => (
                       <Button key={action.label} type="button" variant={action.tone === 'danger' ? 'primary' : 'secondary'} className={action.tone === 'danger' ? 'button--danger' : ''} onClick={() => runAction(action, selected)}>{action.label}</Button>
                     ))}
@@ -171,11 +183,11 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
       <ResourceFormModal
         isOpen={mode !== null}
         title={mode === 'create' ? createLabel : `Editar ${selected ? getTitle(selected) : title}`}
-        description="Revise os campos com calma. O workspace atualiza a lista depois que a alteracao for salva."
+        description={modalDescription}
         fields={fields}
         lookups={lookups}
         initialValue={formValue}
-        submitLabel={mode === 'create' ? 'Criar registro' : 'Salvar alteracoes'}
+        submitLabel={mode === 'create' ? createSubmitLabel : editSubmitLabel}
         isSubmitting={isSubmitting}
         onClose={() => setMode(null)}
         onSubmit={submit}
