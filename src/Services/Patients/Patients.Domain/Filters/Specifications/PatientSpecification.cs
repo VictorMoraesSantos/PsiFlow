@@ -1,5 +1,5 @@
 using Core.Domain.Filters;
-using Patients.Domain.Aggregates;
+using Patients.Domain.Entities;
 
 namespace Patients.Domain.Filters.Specifications;
 

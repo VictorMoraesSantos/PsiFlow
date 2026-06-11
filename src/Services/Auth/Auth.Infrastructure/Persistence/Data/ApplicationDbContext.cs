@@ -1,4 +1,4 @@
-using Auth.Domain.Aggregates;
+using Auth.Domain.Entities;
 using Auth.Domain.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

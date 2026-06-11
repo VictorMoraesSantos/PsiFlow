@@ -9,7 +9,7 @@ public sealed class CleanArchitectureTests
     [Fact]
     public void Domain_Should_Not_Depend_On_Infrastructure_Or_Api()
     {
-        var asm = typeof(global::Sessions.Domain.Aggregates.Session).Assembly;
+        var asm = typeof(global::Sessions.Domain.Entities.Session).Assembly;
         var result = Types.InAssembly(asm)
             .ShouldNot().HaveDependencyOnAny("Sessions.Infrastructure", "Sessions.API", "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore")
             .GetResult();
@@ -27,7 +27,7 @@ public sealed class CleanArchitectureTests
     [Fact]
     public void Infrastructure_Should_Not_Depend_On_Api()
     {
-        var asm = typeof(Infrastructure.Persistence.SessionsDbContext).Assembly;
+        var asm = typeof(Infrastructure.Persistence.Data.SessionsDbContext).Assembly;
         var result = Types.InAssembly(asm)
             .ShouldNot().HaveDependencyOn("Sessions.API").GetResult();
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? new System.Collections.Generic.List<string>()));

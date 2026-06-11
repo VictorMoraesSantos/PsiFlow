@@ -1,7 +1,7 @@
 using Core.Domain.Filters;
 using Core.Infrastructure.Repositories;
-using PsiFlow.Sessions.Infrastructure.Persistence;
-using Sessions.Domain.Aggregates;
+using PsiFlow.Sessions.Infrastructure.Persistence.Data;
+using Sessions.Domain.Entities;
 using Sessions.Domain.Filters;
 using Sessions.Domain.Filters.Specifications;
 using Sessions.Domain.Repositories;

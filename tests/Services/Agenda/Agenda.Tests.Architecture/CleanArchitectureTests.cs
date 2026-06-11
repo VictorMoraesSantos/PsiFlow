@@ -9,7 +9,7 @@ public sealed class CleanArchitectureTests
     [Fact]
     public void Domain_Should_Not_Depend_On_Infrastructure_Or_Api()
     {
-        var asm = typeof(global::Agenda.Domain.Aggregates.Appointment).Assembly;
+        var asm = typeof(global::Agenda.Domain.Entities.Appointment).Assembly;
         var result = Types.InAssembly(asm)
             .ShouldNot().HaveDependencyOnAny("Agenda.Infrastructure", "Agenda.API", "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore")
             .GetResult();
@@ -27,7 +27,7 @@ public sealed class CleanArchitectureTests
     [Fact]
     public void Infrastructure_Should_Not_Depend_On_Api()
     {
-        var asm = typeof(Infrastructure.Persistence.AgendaDbContext).Assembly;
+        var asm = typeof(Infrastructure.Persistence.Data.AgendaDbContext).Assembly;
         var result = Types.InAssembly(asm)
             .ShouldNot().HaveDependencyOn("Agenda.API").GetResult();
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? new System.Collections.Generic.List<string>()));

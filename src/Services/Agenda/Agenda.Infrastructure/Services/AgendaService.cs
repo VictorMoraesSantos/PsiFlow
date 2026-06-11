@@ -1,9 +1,9 @@
 using Agenda.Application.Contracts;
-using Agenda.Domain.Aggregates;
+using Agenda.Domain.Entities;
 using Agenda.Domain.Errors;
 using BuildingBlocks.Results;
 using Microsoft.EntityFrameworkCore;
-using PsiFlow.Agenda.Infrastructure.Persistence;
+using PsiFlow.Agenda.Infrastructure.Persistence.Data;
 
 namespace Agenda.Infrastructure.Services;
 

@@ -5,7 +5,7 @@ using Notifications.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PsiFlow.Notifications.Infrastructure.Persistence;
+using PsiFlow.Notifications.Infrastructure.Persistence.Data;
 
 namespace Notifications.Infrastructure
 {
@@ -13,7 +13,7 @@ namespace Notifications.Infrastructure
     {
         public static IServiceCollection AddNotificationsInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<global::PsiFlow.Notifications.Infrastructure.Persistence.NotificationsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
+            services.AddDbContext<global::PsiFlow.Notifications.Infrastructure.Persistence.Data.NotificationsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
             services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
             services.AddScoped<INotificationWorkflowService, NotificationWorkflowService>();

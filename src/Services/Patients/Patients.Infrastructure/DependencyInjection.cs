@@ -5,7 +5,7 @@ using Patients.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PsiFlow.Patients.Infrastructure.Persistence;
+using PsiFlow.Patients.Infrastructure.Persistence.Data;
 
 namespace Patients.Infrastructure
 {
@@ -13,7 +13,7 @@ namespace Patients.Infrastructure
     {
         public static IServiceCollection AddPatientsInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<global::PsiFlow.Patients.Infrastructure.Persistence.PatientsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
+            services.AddDbContext<global::PsiFlow.Patients.Infrastructure.Persistence.Data.PatientsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddScoped<IPatientRepository, PatientRepository>();
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IPatientInviteService, PatientInviteService>();

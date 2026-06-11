@@ -1,10 +1,10 @@
-using Agenda.Domain.Aggregates;
+using Agenda.Domain.Entities;
 using Agenda.Domain.Filters;
 using Agenda.Domain.Filters.Specifications;
 using Agenda.Domain.Repositories;
 using Core.Domain.Filters;
 using Core.Infrastructure.Repositories;
-using PsiFlow.Agenda.Infrastructure.Persistence;
+using PsiFlow.Agenda.Infrastructure.Persistence.Data;
 
 namespace Agenda.Infrastructure.Persistence.Repositories;
 

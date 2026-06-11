@@ -1,4 +1,4 @@
-using Sessions.Domain.Aggregates;
+using Sessions.Domain.Entities;
 using Sessions.Domain.Filters;
 using Core.Domain.Repositories;
 

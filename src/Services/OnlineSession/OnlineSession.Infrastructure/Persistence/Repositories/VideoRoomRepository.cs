@@ -1,10 +1,10 @@
 using Core.Domain.Filters;
 using Core.Infrastructure.Repositories;
-using OnlineSession.Domain.Aggregates;
+using OnlineSession.Domain.Entities;
 using OnlineSession.Domain.Filters;
 using OnlineSession.Domain.Filters.Specifications;
 using OnlineSession.Domain.Repositories;
-using PsiFlow.OnlineSession.Infrastructure.Persistence;
+using PsiFlow.OnlineSession.Infrastructure.Persistence.Data;
 
 namespace OnlineSession.Infrastructure.Persistence.Repositories;
 

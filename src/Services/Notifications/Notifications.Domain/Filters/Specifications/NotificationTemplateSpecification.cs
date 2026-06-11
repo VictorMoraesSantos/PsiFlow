@@ -1,5 +1,5 @@
 using Core.Domain.Filters;
-using Notifications.Domain.Aggregates;
+using Notifications.Domain.Entities;
 
 namespace Notifications.Domain.Filters.Specifications;
 

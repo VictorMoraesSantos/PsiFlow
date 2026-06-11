@@ -1,6 +1,6 @@
 using Auth.Application;
 using Auth.Application.Settings;
-using Auth.Domain.Aggregates;
+using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
 using Auth.Infrastructure.Persistence.Data;
 using Auth.Infrastructure.Persistence.Seeds;

@@ -1,4 +1,4 @@
-using Auth.Domain.Aggregates;
+using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
 using Auth.Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;

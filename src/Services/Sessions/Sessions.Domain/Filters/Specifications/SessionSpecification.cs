@@ -1,5 +1,5 @@
 using Core.Domain.Filters;
-using Sessions.Domain.Aggregates;
+using Sessions.Domain.Entities;
 
 namespace Sessions.Domain.Filters.Specifications;
 

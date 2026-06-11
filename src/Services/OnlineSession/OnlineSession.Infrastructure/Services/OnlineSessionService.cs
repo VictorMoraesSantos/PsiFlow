@@ -3,8 +3,8 @@ using System.Text;
 using BuildingBlocks.Results;
 using Microsoft.EntityFrameworkCore;
 using OnlineSession.Application.Contracts;
-using OnlineSession.Domain.Aggregates;
-using PsiFlow.OnlineSession.Infrastructure.Persistence;
+using OnlineSession.Domain.Entities;
+using PsiFlow.OnlineSession.Infrastructure.Persistence.Data;
 
 namespace OnlineSession.Infrastructure.Services;
 

@@ -1,8 +1,8 @@
-﻿using BuildingBlocks.Results;
+using BuildingBlocks.Results;
 using ClinicalRecords.Application.Contracts;
 using ClinicalRecords.Application.DTOs.MedicalRecord;
 using ClinicalRecords.Application.Mapping;
-using ClinicalRecords.Domain.Aggregates;
+using ClinicalRecords.Domain.Entities;
 using ClinicalRecords.Domain.Errors;
 using ClinicalRecords.Domain.Filters;
 using ClinicalRecords.Domain.Repositories;

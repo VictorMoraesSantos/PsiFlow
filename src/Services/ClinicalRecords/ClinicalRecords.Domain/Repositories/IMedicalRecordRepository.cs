@@ -1,4 +1,4 @@
-using ClinicalRecords.Domain.Aggregates;
+using ClinicalRecords.Domain.Entities;
 using ClinicalRecords.Domain.Filters;
 using Core.Domain.Repositories;
 

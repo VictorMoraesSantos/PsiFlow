@@ -62,6 +62,10 @@
     <Project Path="src/Services/Sessions/Sessions.Domain/Sessions.Domain.csproj" />
     <Project Path="src/Services/Sessions/Sessions.Infrastructure/Sessions.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/ApiGateways/">
+    <Project Path="src/ApiGateways/PsiFlow.ApiGateway/PsiFlow.ApiGateway.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Services/Auth/">
     <Project Path="tests/Services/Auth/Auth.Tests.Architecture/Auth.Tests.Architecture.csproj" />

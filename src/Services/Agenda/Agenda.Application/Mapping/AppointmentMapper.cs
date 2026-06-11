@@ -1,5 +1,5 @@
-﻿using Agenda.Application.DTOs.Appointment;
-using Agenda.Domain.Aggregates;
+using Agenda.Application.DTOs.Appointment;
+using Agenda.Domain.Entities;
 
 namespace Agenda.Application.Mapping
 {

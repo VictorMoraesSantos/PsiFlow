@@ -1,8 +1,8 @@
 using BuildingBlocks.Results;
 using Microsoft.EntityFrameworkCore;
-using PsiFlow.Sessions.Infrastructure.Persistence;
+using PsiFlow.Sessions.Infrastructure.Persistence.Data;
 using Sessions.Application.Contracts;
-using Sessions.Domain.Aggregates;
+using Sessions.Domain.Entities;
 
 namespace Sessions.Infrastructure.Services;
 

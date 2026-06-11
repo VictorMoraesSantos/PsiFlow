@@ -1,4 +1,4 @@
-using Agenda.Domain.Aggregates;
+using Agenda.Domain.Entities;
 using Agenda.Domain.Filters;
 using Core.Domain.Repositories;
 

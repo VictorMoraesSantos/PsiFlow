@@ -1,10 +1,10 @@
-﻿using BuildingBlocks.Results;
+using BuildingBlocks.Results;
 using Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using OnlineSession.Application.Contracts;
 using OnlineSession.Application.DTOs.VideoRoom;
 using OnlineSession.Application.Mapping;
-using OnlineSession.Domain.Aggregates;
+using OnlineSession.Domain.Entities;
 using OnlineSession.Domain.Errors;
 using OnlineSession.Domain.Filters;
 using OnlineSession.Domain.Repositories;

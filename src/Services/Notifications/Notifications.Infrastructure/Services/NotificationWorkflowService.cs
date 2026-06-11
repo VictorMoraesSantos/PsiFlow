@@ -1,8 +1,8 @@
 using BuildingBlocks.Results;
 using Microsoft.EntityFrameworkCore;
 using Notifications.Application.Contracts;
-using Notifications.Domain.Aggregates;
-using PsiFlow.Notifications.Infrastructure.Persistence;
+using Notifications.Domain.Entities;
+using PsiFlow.Notifications.Infrastructure.Persistence.Data;
 
 namespace Notifications.Infrastructure.Services;
 

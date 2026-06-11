@@ -1,5 +1,5 @@
-﻿using Sessions.Application.DTOs.Session;
-using Sessions.Domain.Aggregates;
+using Sessions.Application.DTOs.Session;
+using Sessions.Domain.Entities;
 
 namespace Sessions.Application.Mapping
 {

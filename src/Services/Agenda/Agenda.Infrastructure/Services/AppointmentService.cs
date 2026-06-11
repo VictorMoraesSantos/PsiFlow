@@ -1,7 +1,7 @@
-﻿using Agenda.Application.Contracts;
+using Agenda.Application.Contracts;
 using Agenda.Application.DTOs.Appointment;
 using Agenda.Application.Mapping;
-using Agenda.Domain.Aggregates;
+using Agenda.Domain.Entities;
 using Agenda.Domain.Errors;
 using Agenda.Domain.Filters;
 using Agenda.Domain.Repositories;

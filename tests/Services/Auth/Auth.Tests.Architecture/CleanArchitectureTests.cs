@@ -1,7 +1,7 @@
 using System.Reflection;
 using NetArchTest.Rules;
 using Xunit;
-using AuthDom = Auth.Domain.Aggregates;
+using AuthDom = Auth.Domain.Entities;
 using AuthApp = Auth.Application.Services;
 using AuthInf = Auth.Infrastructure.Persistence.Data;
 

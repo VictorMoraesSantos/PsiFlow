@@ -1,10 +1,10 @@
-﻿using BuildingBlocks.Results;
+using BuildingBlocks.Results;
 using Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Notifications.Application.Contracts;
 using Notifications.Application.DTOs.NotificationTemplate;
 using Notifications.Application.Mapping;
-using Notifications.Domain.Aggregates;
+using Notifications.Domain.Entities;
 using Notifications.Domain.Errors;
 using Notifications.Domain.Filters;
 using Notifications.Domain.Repositories;

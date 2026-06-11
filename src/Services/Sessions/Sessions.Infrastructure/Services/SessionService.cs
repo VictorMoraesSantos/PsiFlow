@@ -1,10 +1,10 @@
-﻿using BuildingBlocks.Results;
+using BuildingBlocks.Results;
 using Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Sessions.Application.Contracts;
 using Sessions.Application.DTOs.Session;
 using Sessions.Application.Mapping;
-using Sessions.Domain.Aggregates;
+using Sessions.Domain.Entities;
 using Sessions.Domain.Errors;
 using Sessions.Domain.Filters;
 using Sessions.Domain.Repositories;

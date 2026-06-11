@@ -1,5 +1,5 @@
 using Auth.Application.DTOs.Users;
-using Auth.Domain.Aggregates;
+using Auth.Domain.Entities;
 
 namespace Auth.Application.Mapping
 {

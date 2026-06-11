@@ -1,5 +1,5 @@
-﻿using Patients.Application.DTOs.Patient;
-using Patients.Domain.Aggregates;
+using Patients.Application.DTOs.Patient;
+using Patients.Domain.Entities;
 
 namespace Patients.Application.Mapping
 {

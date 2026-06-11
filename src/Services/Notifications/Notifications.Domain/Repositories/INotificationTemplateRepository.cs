@@ -1,4 +1,4 @@
-using Notifications.Domain.Aggregates;
+using Notifications.Domain.Entities;
 using Notifications.Domain.Filters;
 using Core.Domain.Repositories;
 

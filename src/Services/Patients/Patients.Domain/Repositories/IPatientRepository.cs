@@ -1,4 +1,4 @@
-using Patients.Domain.Aggregates;
+using Patients.Domain.Entities;
 using Patients.Domain.Filters;
 using Core.Domain.Repositories;
 

@@ -1,8 +1,8 @@
 using BuildingBlocks.Results;
 using ClinicalRecords.Application.Contracts;
-using ClinicalRecords.Domain.Aggregates;
+using ClinicalRecords.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using PsiFlow.ClinicalRecords.Infrastructure.Persistence;
+using PsiFlow.ClinicalRecords.Infrastructure.Persistence.Data;
 
 namespace ClinicalRecords.Infrastructure.Services;
 

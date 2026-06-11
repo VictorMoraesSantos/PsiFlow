@@ -1,4 +1,4 @@
-using Agenda.Domain.Aggregates;
+using Agenda.Domain.Entities;
 using Core.Domain.Filters;
 
 namespace Agenda.Domain.Filters.Specifications;

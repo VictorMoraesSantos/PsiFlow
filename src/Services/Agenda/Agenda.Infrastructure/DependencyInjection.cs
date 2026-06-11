@@ -5,7 +5,7 @@ using Agenda.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PsiFlow.Agenda.Infrastructure.Persistence;
+using PsiFlow.Agenda.Infrastructure.Persistence.Data;
 
 namespace Agenda.Infrastructure
 {

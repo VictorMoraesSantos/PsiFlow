@@ -3,8 +3,8 @@ using System.Text;
 using BuildingBlocks.Results;
 using Microsoft.EntityFrameworkCore;
 using Patients.Application.Contracts;
-using Patients.Domain.Aggregates;
-using PsiFlow.Patients.Infrastructure.Persistence;
+using Patients.Domain.Entities;
+using PsiFlow.Patients.Infrastructure.Persistence.Data;
 
 namespace Patients.Infrastructure.Services;
 

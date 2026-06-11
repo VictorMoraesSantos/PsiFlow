@@ -1,10 +1,10 @@
 using Core.Domain.Filters;
 using Core.Infrastructure.Repositories;
-using Notifications.Domain.Aggregates;
+using Notifications.Domain.Entities;
 using Notifications.Domain.Filters;
 using Notifications.Domain.Filters.Specifications;
 using Notifications.Domain.Repositories;
-using PsiFlow.Notifications.Infrastructure.Persistence;
+using PsiFlow.Notifications.Infrastructure.Persistence.Data;
 
 namespace Notifications.Infrastructure.Persistence.Repositories;
 

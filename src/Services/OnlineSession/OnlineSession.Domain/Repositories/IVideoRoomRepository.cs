@@ -1,4 +1,4 @@
-using OnlineSession.Domain.Aggregates;
+using OnlineSession.Domain.Entities;
 using OnlineSession.Domain.Filters;
 using Core.Domain.Repositories;
 

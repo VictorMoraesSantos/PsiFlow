@@ -1,4 +1,4 @@
-using Auth.Domain.Aggregates;
+using Auth.Domain.Entities;
 using Auth.Domain.Filters;
 using Core.Domain.Repositories;
 

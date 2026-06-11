@@ -1,5 +1,5 @@
-﻿using OnlineSession.Application.DTOs.VideoRoom;
-using OnlineSession.Domain.Aggregates;
+using OnlineSession.Application.DTOs.VideoRoom;
+using OnlineSession.Domain.Entities;
 
 namespace OnlineSession.Application.Mapping
 {

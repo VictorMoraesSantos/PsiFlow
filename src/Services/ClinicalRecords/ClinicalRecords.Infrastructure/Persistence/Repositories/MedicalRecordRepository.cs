@@ -1,10 +1,10 @@
-using ClinicalRecords.Domain.Aggregates;
+using ClinicalRecords.Domain.Entities;
 using ClinicalRecords.Domain.Filters;
 using ClinicalRecords.Domain.Filters.Specifications;
 using ClinicalRecords.Domain.Repositories;
 using Core.Domain.Filters;
 using Core.Infrastructure.Repositories;
-using PsiFlow.ClinicalRecords.Infrastructure.Persistence;
+using PsiFlow.ClinicalRecords.Infrastructure.Persistence.Data;
 
 namespace ClinicalRecords.Infrastructure.Persistence.Repositories;
 

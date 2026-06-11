@@ -1,5 +1,5 @@
 using Core.Domain.Filters;
-using OnlineSession.Domain.Aggregates;
+using OnlineSession.Domain.Entities;
 
 namespace OnlineSession.Domain.Filters.Specifications;
 

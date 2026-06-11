@@ -1,5 +1,5 @@
-﻿using ClinicalRecords.Application.DTOs.MedicalRecord;
-using ClinicalRecords.Domain.Aggregates;
+using ClinicalRecords.Application.DTOs.MedicalRecord;
+using ClinicalRecords.Domain.Entities;
 
 namespace ClinicalRecords.Application.Mapping
 {

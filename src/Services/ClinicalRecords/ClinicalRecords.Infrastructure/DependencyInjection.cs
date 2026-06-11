@@ -5,7 +5,7 @@ using ClinicalRecords.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PsiFlow.ClinicalRecords.Infrastructure.Persistence;
+using PsiFlow.ClinicalRecords.Infrastructure.Persistence.Data;
 
 namespace ClinicalRecords.Infrastructure
 {
@@ -13,7 +13,7 @@ namespace ClinicalRecords.Infrastructure
     {
         public static IServiceCollection AddClinicalRecordsInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<global::PsiFlow.ClinicalRecords.Infrastructure.Persistence.ClinicalRecordsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
+            services.AddDbContext<global::PsiFlow.ClinicalRecords.Infrastructure.Persistence.Data.ClinicalRecordsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<IClinicalRecordWorkflowService, ClinicalRecordWorkflowService>();

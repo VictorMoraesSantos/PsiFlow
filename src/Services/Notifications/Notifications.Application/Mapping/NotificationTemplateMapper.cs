@@ -1,5 +1,5 @@
-﻿using Notifications.Application.DTOs.NotificationTemplate;
-using Notifications.Domain.Aggregates;
+using Notifications.Application.DTOs.NotificationTemplate;
+using Notifications.Domain.Entities;
 
 namespace Notifications.Application.Mapping
 {

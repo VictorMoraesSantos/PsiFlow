@@ -9,7 +9,7 @@ public sealed class CleanArchitectureTests
     [Fact]
     public void Domain_Should_Not_Depend_On_Infrastructure_Or_Api()
     {
-        var asm = typeof(global::OnlineSession.Domain.Aggregates.VideoRoom).Assembly;
+        var asm = typeof(global::OnlineSession.Domain.Entities.VideoRoom).Assembly;
         var result = Types.InAssembly(asm)
             .ShouldNot().HaveDependencyOnAny("OnlineSession.Infrastructure", "OnlineSession.API", "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore")
             .GetResult();
@@ -27,7 +27,7 @@ public sealed class CleanArchitectureTests
     [Fact]
     public void Infrastructure_Should_Not_Depend_On_Api()
     {
-        var asm = typeof(Infrastructure.Persistence.OnlineSessionDbContext).Assembly;
+        var asm = typeof(Infrastructure.Persistence.Data.OnlineSessionDbContext).Assembly;
         var result = Types.InAssembly(asm)
             .ShouldNot().HaveDependencyOn("OnlineSession.API").GetResult();
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? new System.Collections.Generic.List<string>()));

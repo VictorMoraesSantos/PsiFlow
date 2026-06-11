@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
-using Auth.Domain.Aggregates;
+using Auth.Domain.Entities;
 using Auth.Domain.Errors;
 using Auth.Domain.Events;
 using Auth.Domain.Repositories;
@@ -24,7 +24,6 @@ namespace Auth.Application.Services
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ITokenService _tokenService;
-        private readonly IUserService _userService;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
@@ -35,7 +34,6 @@ namespace Auth.Application.Services
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             ITokenService tokenService,
-            IUserService userService,
             ILogger<AuthService> logger)
         {
             _userRepository = userRepository;
@@ -45,7 +43,6 @@ namespace Auth.Application.Services
             _userManager = userManager;
             _signInManager = signInManager;
             _tokenService = tokenService;
-            _userService = userService;
             _logger = logger;
         }
 
