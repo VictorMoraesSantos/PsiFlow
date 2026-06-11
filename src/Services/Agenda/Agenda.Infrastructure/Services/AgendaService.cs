@@ -1,5 +1,6 @@
 using Agenda.Application.Contracts;
 using Agenda.Domain.Aggregates;
+using Agenda.Domain.Errors;
 using BuildingBlocks.Results;
 using Microsoft.EntityFrameworkCore;
 using PsiFlow.Agenda.Infrastructure.Persistence;
@@ -10,6 +11,11 @@ public sealed class AgendaService(AgendaDbContext dbContext) : IAgendaService
 {
     public async Task<Result<WeeklyAvailabilityResult>> CreateWeeklyAvailabilityAsync(WeeklyAvailabilityRequest request, int tenantId, CancellationToken cancellationToken)
     {
+        if (await HasOverlappingAvailabilityAsync(request, tenantId, excludedAvailabilityId: null, cancellationToken))
+        {
+            return Result.Failure<WeeklyAvailabilityResult>(AppointmentErrors.OverlappingAvailability);
+        }
+
         var availability = new Availability
         {
             TenantId = tenantId,
@@ -45,6 +51,11 @@ public sealed class AgendaService(AgendaDbContext dbContext) : IAgendaService
         var availability = await dbContext.Availabilities.FirstOrDefaultAsync(item => item.Id == availabilityId && item.TenantId == tenantId, cancellationToken);
         if (availability is null) return Result.Failure<bool>(Error.NotFound("Availability not found"));
 
+        if (await HasOverlappingAvailabilityAsync(request, tenantId, availabilityId, cancellationToken))
+        {
+            return Result.Failure<bool>(AppointmentErrors.OverlappingAvailability);
+        }
+
         availability.Weekday = request.Weekday;
         availability.StartTime = request.StartTime;
         availability.EndTime = request.EndTime;
@@ -68,6 +79,17 @@ public sealed class AgendaService(AgendaDbContext dbContext) : IAgendaService
 
     public async Task<Result<ScheduleBlockResult>> CreateScheduleBlockAsync(ScheduleBlockRequest request, int tenantId, int userId, CancellationToken cancellationToken)
     {
+        var duplicated = await dbContext.ScheduleBlocks.AnyAsync(item =>
+            item.TenantId == tenantId &&
+            item.StartsAt == request.StartsAt &&
+            item.EndsAt == request.EndsAt,
+            cancellationToken);
+
+        if (duplicated)
+        {
+            return Result.Failure<ScheduleBlockResult>(Error.Conflict("Schedule block already exists"));
+        }
+
         var block = new ScheduleBlock { TenantId = tenantId, StartsAt = request.StartsAt, EndsAt = request.EndsAt, Reason = request.Reason, CreatedBy = userId };
         dbContext.ScheduleBlocks.Add(block);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -129,15 +151,28 @@ public sealed class AgendaService(AgendaDbContext dbContext) : IAgendaService
     {
         var appointment = await dbContext.Appointments.FirstOrDefaultAsync(item => item.Id == appointmentId && item.TenantId == tenantId, cancellationToken);
         if (appointment is null) return Result.Failure<bool>(Error.NotFound("Appointment not found"));
+        if (appointment.Status == "canceled") return Result.Failure<bool>(AppointmentErrors.AlreadyCancelled);
+        if (appointment.StartsAt <= DateTime.UtcNow) return Result.Failure<bool>(AppointmentErrors.CannotCancelPast);
 
+        var canceledAt = DateTime.UtcNow;
         appointment.Status = "canceled";
-        appointment.CanceledAt = DateTime.UtcNow;
+        appointment.CanceledAt = canceledAt;
         appointment.CanceledBy = userId;
         appointment.CancelReason = request.Reason;
-        appointment.LateCancel = request.LateCancel;
+        appointment.LateCancel = appointment.StartsAt - canceledAt < TimeSpan.FromHours(24);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success(true);
     }
+
+    private Task<bool> HasOverlappingAvailabilityAsync(WeeklyAvailabilityRequest request, int tenantId, int? excludedAvailabilityId, CancellationToken cancellationToken) =>
+        dbContext.Availabilities.AnyAsync(item =>
+            item.TenantId == tenantId &&
+            item.Id != excludedAvailabilityId &&
+            item.Weekday == request.Weekday &&
+            item.Modality == (request.Modality ?? "online") &&
+            item.StartTime < request.EndTime &&
+            item.EndTime > request.StartTime,
+            cancellationToken);
 
     private static WeeklyAvailabilityResult ToResult(Availability availability) =>
         new(availability.Id, availability.Weekday, availability.StartTime, availability.EndTime, availability.SlotDurationMinutes, availability.Modality, availability.Timezone, availability.IsActive);

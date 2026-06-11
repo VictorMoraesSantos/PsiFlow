@@ -71,14 +71,15 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
       key: 'actions',
       header: 'Atalhos',
       render: (item: T) => (
-        <div className="row-actions">
-          <button type="button" className="table-action" onClick={() => setSelected(item)} aria-label={`Abrir detalhes de ${getTitle(item)}`}><Eye size={15} aria-hidden="true" /><span>Abrir</span></button>
-          <button type="button" className="table-action" onClick={() => { setSelected(item); setMode('edit'); }} aria-label={`Editar ${getTitle(item)}`}><Edit3 size={15} aria-hidden="true" /><span>Editar</span></button>
-          <button type="button" className="table-action table-action--danger" onClick={() => setDeleteTarget(item)} aria-label={`Excluir ${getTitle(item)}`}><Trash2 size={15} aria-hidden="true" /><span>Excluir</span></button>
-        </div>
+        <ResourceRowActions
+          title={getTitle(item)}
+          onOpen={() => setSelected(item)}
+          onEdit={() => { setSelected(item); setMode('edit'); }}
+          onDelete={() => setDeleteTarget(item)}
+        />
       ),
     },
-  ], [actions.length, columns, getTitle]);
+  ], [columns, getTitle]);
 
   useEffect(() => {
     setShowMoreActions(false);
@@ -135,15 +136,13 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
   return (
     <div className="resource-layout">
       <Section title={title} description={description} action={<Button type="button" onClick={() => { setSelected(null); setMode('create'); }}>{createLabel}</Button>}>
-        <div className="resource-toolbar" aria-label={`Resumo de ${title}`}>
-          <div>
-            <strong>{summaryLabel ? summaryLabel(items.length) : `${items.length} ${items.length === 1 ? 'registro' : 'registros'}`}</strong>
-            <span>{summaryDescription ? summaryDescription(items.length) : items.length === 0 ? 'Nenhum item para revisar agora.' : 'Lista operacional com dados de trabalho do consultorio.'}</span>
-          </div>
-          <div className="resource-toolbar__meta" aria-label="Politica de atualizacao">
-            {updatePolicyLabel}
-          </div>
-        </div>
+        <ResourceToolbar
+          title={title}
+          count={items.length}
+          summaryLabel={summaryLabel}
+          summaryDescription={summaryDescription}
+          updatePolicyLabel={updatePolicyLabel}
+        />
         <DataTable
           items={items}
           getRowKey={getId}
@@ -160,23 +159,17 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
         fields={detailFields}
         onClose={() => setSelected(null)}
         actions={selected ? (
-          <>
-            <Button type="button" variant="secondary" onClick={() => setMode('edit')}>{detailEditLabel}</Button>
-            {actions[0] ? <Button type="button" variant={actions[0].tone === 'danger' ? 'primary' : 'secondary'} className={actions[0].tone === 'danger' ? 'button--danger' : ''} onClick={() => runAction(actions[0], selected)}>{actions[0].label}</Button> : null}
-            {actions.length > 1 ? (
-              <div className="drawer-action-group">
-                <button type="button" className="drawer-action-group__toggle" onClick={() => setShowMoreActions((value) => !value)} aria-expanded={showMoreActions}>{moreActionsLabel}</button>
-                {showMoreActions ? (
-                  <div className="drawer-action-group__items">
-                    {moreActionsHint ? <p className="drawer-action-hint">{moreActionsHint}</p> : null}
-                    {actions.slice(1).map((action) => (
-                      <Button key={action.label} type="button" variant={action.tone === 'danger' ? 'primary' : 'secondary'} className={action.tone === 'danger' ? 'button--danger' : ''} onClick={() => runAction(action, selected)}>{action.label}</Button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </>
+          <ResourceDrawerActions
+            item={selected}
+            actions={actions}
+            editLabel={detailEditLabel}
+            moreActionsLabel={moreActionsLabel}
+            moreActionsHint={moreActionsHint}
+            showMoreActions={showMoreActions}
+            onEdit={() => setMode('edit')}
+            onToggleMoreActions={() => setShowMoreActions((value) => !value)}
+            onRunAction={runAction}
+          />
         ) : null}
       />
 
@@ -204,6 +197,85 @@ export function ResourcePage<T extends Record<string, unknown>>({ title, descrip
       />
     </div>
   );
+}
+
+function ResourceToolbar({ title, count, summaryLabel, summaryDescription, updatePolicyLabel }: {
+  title: string;
+  count: number;
+  summaryLabel?: (count: number) => string;
+  summaryDescription?: (count: number) => string;
+  updatePolicyLabel: string;
+}) {
+  const label = summaryLabel ? summaryLabel(count) : `${count} ${count === 1 ? 'registro' : 'registros'}`;
+  const description = summaryDescription ? summaryDescription(count) : count === 0 ? 'Nenhum item para revisar agora.' : 'Lista operacional com dados de trabalho do consultorio.';
+
+  return (
+    <div className="resource-toolbar" aria-label={`Resumo de ${title}`}>
+      <div>
+        <strong>{label}</strong>
+        <span>{description}</span>
+      </div>
+      <div className="resource-toolbar__meta" aria-label="Politica de atualizacao">
+        {updatePolicyLabel}
+      </div>
+    </div>
+  );
+}
+
+function ResourceRowActions({ title, onOpen, onEdit, onDelete }: {
+  title: string;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="row-actions">
+      <button type="button" className="table-action" onClick={onOpen} aria-label={`Abrir detalhes de ${title}`}><Eye size={15} aria-hidden="true" /><span>Abrir</span></button>
+      <button type="button" className="table-action" onClick={onEdit} aria-label={`Editar ${title}`}><Edit3 size={15} aria-hidden="true" /><span>Editar</span></button>
+      <button type="button" className="table-action table-action--danger" onClick={onDelete} aria-label={`Excluir ${title}`}><Trash2 size={15} aria-hidden="true" /><span>Excluir</span></button>
+    </div>
+  );
+}
+
+function ResourceDrawerActions<T extends Record<string, unknown>>({ item, actions, editLabel, moreActionsLabel, moreActionsHint, showMoreActions, onEdit, onToggleMoreActions, onRunAction }: {
+  item: T;
+  actions: Array<ResourceAction<T>>;
+  editLabel: string;
+  moreActionsLabel: string;
+  moreActionsHint?: string;
+  showMoreActions: boolean;
+  onEdit: () => void;
+  onToggleMoreActions: () => void;
+  onRunAction: (action: ResourceAction<T>, item: T) => void;
+}) {
+  const primaryAction = actions[0];
+  const secondaryActions = actions.slice(1);
+
+  return (
+    <>
+      <Button type="button" variant="secondary" onClick={onEdit}>{editLabel}</Button>
+      {primaryAction ? <ActionButton action={primaryAction} item={item} onRunAction={onRunAction} /> : null}
+      {secondaryActions.length > 0 ? (
+        <div className="drawer-action-group">
+          <button type="button" className="drawer-action-group__toggle" onClick={onToggleMoreActions} aria-expanded={showMoreActions}>{moreActionsLabel}</button>
+          {showMoreActions ? (
+            <div className="drawer-action-group__items">
+              {moreActionsHint ? <p className="drawer-action-hint">{moreActionsHint}</p> : null}
+              {secondaryActions.map((action) => <ActionButton key={action.label} action={action} item={item} onRunAction={onRunAction} />)}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function ActionButton<T extends Record<string, unknown>>({ action, item, onRunAction }: {
+  action: ResourceAction<T>;
+  item: T;
+  onRunAction: (action: ResourceAction<T>, item: T) => void;
+}) {
+  return <Button type="button" variant={action.tone === 'danger' ? 'primary' : 'secondary'} className={action.tone === 'danger' ? 'button--danger' : ''} onClick={() => onRunAction(action, item)}>{action.label}</Button>;
 }
 
 export function statusBadge(status: string) {

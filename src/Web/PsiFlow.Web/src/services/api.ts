@@ -152,7 +152,7 @@ function normalizeAppointments(items: unknown[]): Appointment[] {
     };
   });
 }
-
+            
 function normalizeSessions(items: unknown[]): Session[] {
   return items.map((item, index) => {
     const row = asRecord(item);

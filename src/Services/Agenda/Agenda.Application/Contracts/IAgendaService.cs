@@ -21,4 +21,4 @@ public sealed record ScheduleBlockRequest(DateTime StartsAt, DateTime EndsAt, st
 public sealed record ScheduleBlockResult(int Id, DateTime StartsAt, DateTime EndsAt, string? Reason);
 public sealed record AvailableSlotsRequest(DateTime From, DateTime To, string? Modality);
 public sealed record AvailableSlotResult(DateTime StartsAt, DateTime EndsAt, string Modality);
-public sealed record CancelAppointmentRequest(string? Reason, bool LateCancel = false);
+public sealed record CancelAppointmentRequest(string? Reason);
