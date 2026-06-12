@@ -29,7 +29,7 @@ namespace Auth.Infrastructure.Repositories
         public async Task Delete(OutboxMessage entity, CancellationToken cancellationToken = default) =>
             dbContext.OutboxMessages.Remove(entity);
 
-        public async Task<IEnumerable<OutboxMessage>> GetUnprocessedAsync(int maxRetries, int batchSize, CancellationToken cancellationToken = default) =>
+        public async Task<IEnumerable<OutboxMessage>> GetUnprocessed(int maxRetries, int batchSize, CancellationToken cancellationToken = default) =>
             await dbContext.OutboxMessages
                 .Where(x => x.ProcessedAt == null && x.RetryCount < maxRetries)
                 .OrderBy(x => x.OccurredAt)

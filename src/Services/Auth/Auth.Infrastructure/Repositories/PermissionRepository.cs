@@ -29,7 +29,7 @@ namespace Auth.Infrastructure.Repositories
         public async Task Delete(Permission entity, CancellationToken cancellationToken = default) =>
             dbContext.Permissions.Remove(entity);
 
-        public async Task<Permission?> FindByClaimAsync(string claimType, string claimValue, CancellationToken cancellationToken = default) =>
+        public async Task<Permission?> FindByClaim(string claimType, string claimValue, CancellationToken cancellationToken = default) =>
             await dbContext.Permissions.FirstOrDefaultAsync(x => x.ClaimType == claimType && x.ClaimValue == claimValue, cancellationToken);
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>

@@ -66,7 +66,7 @@ namespace Auth.Application.Services
                 return Result.Failure<RegisterResult>(NameErrors.TooLong);
 
             var email = request.Email.Trim().ToLowerInvariant();
-            var existing = await _userRepository.FindByEmailAsync(email, cancellationToken);
+            var existing = await _userRepository.FindByEmail(email, cancellationToken);
             if (existing is not null) return Result.Failure<RegisterResult>(UserErrors.EmailAlreadyInUse(email));
 
             var name = SplitFullName(request.FullName);
@@ -102,7 +102,7 @@ namespace Auth.Application.Services
                 return Result.Failure<TokenResponse>(UserErrors.InvalidCredentials);
 
             var email = request.Email.Trim().ToLowerInvariant();
-            var user = await _userRepository.FindByEmailAsync(email, cancellationToken);
+            var user = await _userRepository.FindByEmail(email, cancellationToken);
             if (user is null) return Result.Failure<TokenResponse>(UserErrors.InvalidCredentials);
             if (!user.IsActive) return Result.Failure<TokenResponse>(UserErrors.AlreadyInactive);
 
@@ -120,7 +120,7 @@ namespace Auth.Application.Services
         {
             if (string.IsNullOrWhiteSpace(refreshToken)) return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
             var hash = _tokenService.HashToken(refreshToken);
-            var user = await _userRepository.FindByRefreshTokenHashAsync(hash, cancellationToken);
+            var user = await _userRepository.FindByRefreshTokenHash(hash, cancellationToken);
             if (user is null) return Result.Failure<TokenResponse>(UserErrors.RefreshTokenReused);
             if (user.RefreshTokenExpiryTime is null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
             {
@@ -155,7 +155,7 @@ namespace Auth.Application.Services
             var user = await _userRepository.GetById(userId, cancellationToken);
             if (user is null) return Result.Failure(UserErrors.NotFound(userId));
 
-            var existing = await _consentRepository.FindByUserAndVersionAsync(userId, request.TermsVersion, request.PrivacyVersion, cancellationToken);
+            var existing = await _consentRepository.FindByUserAndVersion(userId, request.TermsVersion, request.PrivacyVersion, cancellationToken);
             if (existing is not null) return Result.Failure(UserErrors.TermsNotAccepted);
 
             var documentHash = ComputeHash($"{userId}:{request.TermsVersion}:{request.PrivacyVersion}");
@@ -197,7 +197,7 @@ namespace Auth.Application.Services
         {
             if (string.IsNullOrWhiteSpace(request.Email)) return Result.Failure(ContactErrors.EmailRequired);
             var email = request.Email.Trim().ToLowerInvariant();
-            var user = await _userRepository.FindByEmailAsync(email, cancellationToken);
+            var user = await _userRepository.FindByEmail(email, cancellationToken);
             if (user is null)
             {
                 _logger.LogInformation("ForgotPassword para e-mail inexistente: {Email}", email);
@@ -215,7 +215,7 @@ namespace Auth.Application.Services
             if (request.NewPassword != request.ConfirmPassword) return Result.Failure(UserErrors.PasswordsDoNotMatch);
 
             var email = request.Email.Trim().ToLowerInvariant();
-            var user = await _userRepository.FindByEmailAsync(email, cancellationToken);
+            var user = await _userRepository.FindByEmail(email, cancellationToken);
             if (user is null) return Result.Failure(UserErrors.NotFound(0));
 
             var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
@@ -240,7 +240,7 @@ namespace Auth.Application.Services
             var account = Uri.EscapeDataString(user.Email ?? user.Id.ToString());
             var qrCodeUri = $"otpauth://totp/{issuer}:{account}?secret={secret}&issuer={issuer}&digits=6&period=30";
 
-            var activeChallenge = await _mfaChallengeRepository.GetActiveByUserAsync(userId, cancellationToken);
+            var activeChallenge = await _mfaChallengeRepository.GetActiveByUser(userId, cancellationToken);
             if (activeChallenge is not null)
             {
                 activeChallenge.SecretEncrypted = secret;
@@ -270,7 +270,7 @@ namespace Auth.Application.Services
             if (user is null) return Result.Failure(UserErrors.NotFound(userId));
             if (user.Role is not ("psychologist" or "saas_admin")) return Result.Failure(UserErrors.MfaNotAllowed);
 
-            var challenge = await _mfaChallengeRepository.GetActiveByUserAsync(userId, cancellationToken);
+            var challenge = await _mfaChallengeRepository.GetActiveByUser(userId, cancellationToken);
             if (challenge is null) return Result.Failure(UserErrors.MfaChallengeNotFound);
             if (!IsValidTotp(challenge.SecretEncrypted, request.Code.Trim())) return Result.Failure(UserErrors.MfaCodeInvalid);
 

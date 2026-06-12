@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Auth.Domain.Entities
 {
-    public class User : IdentityUser<int>, IBaseEntity<int>
+    public class User : IdentityUser<UserId>, IBaseEntity<UserId>
     {
         private readonly List<IDomainEvent> _domainEvents = new();
         public Name Name { get; private set; } = null!;
         public Contact Contact { get; private set; } = null!;
-        public int TenantId { get; private set; }
+        public TenantId TenantId { get; private set; }
         public string Role { get; private set; } = "patient";
         public string? Crp { get; private set; }
         public DateTime? Birthday { get; private set; }
@@ -23,10 +23,21 @@ namespace Auth.Domain.Entities
         public string? ConsentPrivacyVersion { get; private set; }
         public DateTime? ConsentAcceptedAt { get; private set; }
         public bool IsMfaEnabled { get; private set; }
+        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; private set; }
+        public bool IsDeleted { get; private set; }
+        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         protected User() { }
 
-        public User(Name name, Contact contact, string role, int? tenantId, string? crp, string termsVersion, string privacyVersion)
+        public User(
+            Name name,
+            Contact contact,
+            string role,
+            TenantId? tenantId,
+            string? crp,
+            string termsVersion,
+            string privacyVersion)
         {
             Name = name;
             Contact = contact;
@@ -37,16 +48,11 @@ namespace Auth.Domain.Entities
             EmailConfirmed = true;
             Role = role;
             Crp = crp;
-            TenantId = tenantId ?? 0;
+            TenantId = tenantId;
             ConsentTermsVersion = termsVersion;
             ConsentPrivacyVersion = privacyVersion;
             ConsentAcceptedAt = DateTime.UtcNow;
         }
-
-        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; private set; }
-        public bool IsDeleted { get; private set; }
-        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         public void MarkAsUpdated()
         {
@@ -80,7 +86,7 @@ namespace Auth.Domain.Entities
             MarkAsUpdated();
         }
 
-        public void AttachTenant(int tenantId)
+        public void AttachTenant(TenantId tenantId)
         {
             TenantId = tenantId;
             MarkAsUpdated();

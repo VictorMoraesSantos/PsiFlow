@@ -43,10 +43,10 @@ namespace Auth.Infrastructure.Repositories
         public async Task Delete(User entity, CancellationToken cancellationToken = default) =>
             dbContext.Users.Remove(entity);
 
-        public async Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        public async Task<User?> FindByEmail(string email, CancellationToken cancellationToken = default) =>
             await dbContext.Users.FirstOrDefaultAsync(x => x.Email != null && x.Email == email.ToLowerInvariant(), cancellationToken);
 
-        public async Task<User?> FindByRefreshTokenHashAsync(string refreshTokenHash, CancellationToken cancellationToken = default) =>
+        public async Task<User?> FindByRefreshTokenHash(string refreshTokenHash, CancellationToken cancellationToken = default) =>
             await dbContext.Users.FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>

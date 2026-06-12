@@ -1,11 +1,12 @@
 using Auth.Domain.Enums;
 using Auth.Domain.Errors;
+using Auth.Domain.ValueObjects;
 using Core.Domain.Aggregates;
 using Core.Domain.Exceptions;
 
 namespace Auth.Domain.Entities
 {
-    public class PermissionGroup : BaseEntity<int>
+    public class PermissionGroup : BaseEntity<PermissionGroupId>
     {
         private readonly List<Permission> _permissions = new();
         public string GroupKey { get; private set; } = string.Empty;

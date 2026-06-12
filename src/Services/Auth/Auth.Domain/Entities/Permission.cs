@@ -1,14 +1,15 @@
 using Auth.Domain.Enums;
 using Auth.Domain.Errors;
+using Auth.Domain.ValueObjects;
 using Core.Domain.Aggregates;
 using Core.Domain.Exceptions;
 
 namespace Auth.Domain.Entities
 {
-    public class Permission : BaseEntity<int>
+    public class Permission : BaseEntity<PermissionId>
     {
         private const string DefaultClaimType = "permission";
-        public int PermissionGroupId { get; private set; }
+        public PermissionGroupId PermissionGroupId { get; private set; }
         public PermissionGroup? PermissionGroup { get; private set; }
         public PermissionAction Action { get; private set; }
         public string GroupKey { get; private set; } = string.Empty;
@@ -19,7 +20,12 @@ namespace Auth.Domain.Entities
 
         protected Permission() { }
 
-        public Permission(int permissionGroupId, string groupKey, PermissionAction action, string description, string claimType = DefaultClaimType)
+        public Permission(
+            PermissionGroupId permissionGroupId,
+            string groupKey,
+            PermissionAction action,
+            string description,
+            string claimType = DefaultClaimType)
         {
             if (string.IsNullOrWhiteSpace(groupKey))
                 throw new DomainException(PermissionErrors.InvalidKeyGroup);
@@ -44,10 +50,14 @@ namespace Auth.Domain.Entities
         public void Activate() { IsActive = true; MarkAsUpdated(); }
         public void Deactivate() { IsActive = false; MarkAsUpdated(); }
 
-        private static string BuildClaimValue(string groupKey, PermissionAction action) =>
-            $"{Normalize(groupKey)}.{action.ToString().ToLowerInvariant()}";
+        private static string BuildClaimValue(string groupKey, PermissionAction action)
+        {
+            return $"{Normalize(groupKey)}.{action.ToString().ToLowerInvariant()}";
+        }
 
-        private static string Normalize(string value) =>
-            value.Trim().ToLowerInvariant().Replace(" ", "_");
+        private static string Normalize(string value)
+        {
+            return value.Trim().ToLowerInvariant().Replace(" ", "_");
+        }
     }
 }

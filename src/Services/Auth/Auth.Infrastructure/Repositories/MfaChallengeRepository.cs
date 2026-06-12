@@ -29,7 +29,7 @@ namespace Auth.Infrastructure.Repositories
         public async Task Delete(MfaChallenge entity, CancellationToken cancellationToken = default) =>
             dbContext.MfaChallenges.Remove(entity);
 
-        public async Task<MfaChallenge?> GetActiveByUserAsync(int userId, CancellationToken cancellationToken = default) =>
+        public async Task<MfaChallenge?> GetActiveByUser(int userId, CancellationToken cancellationToken = default) =>
             await dbContext.MfaChallenges.Where(x => x.UserId == userId && !x.IsConfirmed).OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>

@@ -29,7 +29,7 @@ namespace Auth.Infrastructure.Repositories
         public async Task Delete(PermissionGroup entity, CancellationToken cancellationToken = default) =>
             dbContext.PermissionGroups.Remove(entity);
 
-        public async Task<PermissionGroup?> FindByKeyAsync(string groupKey, CancellationToken cancellationToken = default) =>
+        public async Task<PermissionGroup?> FindByKey(string groupKey, CancellationToken cancellationToken = default) =>
             await dbContext.PermissionGroups.FirstOrDefaultAsync(x => x.GroupKey == groupKey, cancellationToken);
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>

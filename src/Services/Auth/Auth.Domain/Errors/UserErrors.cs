@@ -32,7 +32,6 @@ namespace Auth.Domain.Errors
         public static Error DeleteError => Error.Failure("Falha ao excluir usuario.");
         public static Error ActivateError => Error.Failure("Falha ao ativar usuario.");
         public static Error DeactivateError => Error.Failure("Falha ao desativar usuario.");
-
         public static Error EmailAlreadyInUse(string email) => Error.Failure($"E-mail {email} ja esta em uso.");
         public static Error NotFound(int id) => Error.NotFound($"Usuario nao encontrado: {id}");
     }

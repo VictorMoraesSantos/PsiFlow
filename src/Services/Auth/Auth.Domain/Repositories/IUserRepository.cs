@@ -1,12 +1,13 @@
 using Auth.Domain.Entities;
 using Auth.Domain.Filters;
+using Auth.Domain.ValueObjects;
 using Core.Domain.Repositories;
 
 namespace Auth.Domain.Repositories
 {
-    public interface IUserRepository : IRepository<User, int, UserFilter>
+    public interface IUserRepository : IRepository<User, UserId, UserFilter>
     {
-        Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
-        Task<User?> FindByRefreshTokenHashAsync(string refreshTokenHash, CancellationToken cancellationToken = default);
+        Task<User?> FindByEmail(string email, CancellationToken cancellationToken = default);
+        Task<User?> FindByRefreshTokenHash(string refreshTokenHash, CancellationToken cancellationToken = default);
     }
 }

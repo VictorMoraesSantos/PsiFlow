@@ -12,20 +12,8 @@ namespace Auth.Domain.Errors
         public static Error InvalidDescription => Error.Failure("Description cannot be empty.");
         public static Error InvalidKeyGroup => Error.Failure("Key group cannot be empty.");
         public static Error PermissionAlreadyExists => Error.Failure("Permission already exists.");
-
-        public static Error NotFound(int id)
-        {
-            return Error.NotFound($"Id: {id} was not found.");
-        }
-
-        public static Error NotFound(string claimType, string claimValue)
-        {
-            return Error.NotFound($"Permission '{claimType}:{claimValue}' was not found.");
-        }
-
-        public static Error Duplicate(string claimType, string claimValue)
-        {
-            return Error.Failure($"Permission '{claimType}:{claimValue}' already exists.");
-        }
+        public static Error NotFound(int id) => Error.NotFound($"Id: {id} was not found.");
+        public static Error NotFound(string claimType, string claimValue) => Error.NotFound($"Permission '{claimType}:{claimValue}' was not found.");
+        public static Error Duplicate(string claimType, string claimValue) => Error.Failure($"Permission '{claimType}:{claimValue}' already exists.");
     }
 }

@@ -26,7 +26,7 @@ namespace Auth.Application.Services
         public async Task<Result<UserSummaryDTO>> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(email)) return Result.Failure<UserSummaryDTO>(Domain.Errors.ContactErrors.EmailRequired);
-            var user = await _repository.FindByEmailAsync(email.Trim().ToLowerInvariant(), cancellationToken);
+            var user = await _repository.FindByEmail(email.Trim().ToLowerInvariant(), cancellationToken);
             if (user is null) return Result.Failure<UserSummaryDTO>(Domain.Errors.UserErrors.NotFound(0));
             return Result.Success(user.ToSummary());
         }
