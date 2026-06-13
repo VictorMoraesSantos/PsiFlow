@@ -1,5 +1,4 @@
 using Auth.Application.Services;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Auth.API.Endpoints
 {
@@ -9,11 +8,7 @@ namespace Auth.API.Endpoints
         {
             app.MapGet("/.well-known/jwks.json", (JwtRsaKeyProvider keyProvider) =>
             {
-                var jwk = keyProvider.PublicJwk;
-                jwk.Use = "sig";
-                jwk.Alg = SecurityAlgorithms.RsaSha256;
-
-                return Results.Json(new { keys = new[] { jwk } });
+                return Results.Json(new { keys = keyProvider.PublicKeys });
             }).AllowAnonymous();
 
             return app;

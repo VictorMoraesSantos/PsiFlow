@@ -1,6 +1,7 @@
 using BuildingBlocks.Results;
 using Sessions.Application.Contracts;
 using Sessions.Domain.Entities;
+using Sessions.Domain.Errors;
 using Sessions.Domain.Repositories;
 
 namespace Sessions.Application.Services;
@@ -25,6 +26,15 @@ public sealed class SessionWorkflowService(
         var session = await sessionRepository.GetByIdAndTenantAsync(sessionId, tenantId, cancellationToken);
         if (session is null) return Result.Failure<bool>(Error.NotFound("Session not found"));
 
+        var transition = ValidateTransition(session.Status, request.Status);
+        if (!transition.IsSuccess) return Result.Failure<bool>(transition.Error!);
+
+        if (request.Status == "in_progress")
+        {
+            var earliest = session.StartsAt.AddMinutes(-5);
+            if (DateTime.UtcNow < earliest) return Result.Failure<bool>(SessionErrors.StartOutsideWindow);
+        }
+
         var previousStatus = session.Status;
         session.Status = request.Status;
         await sessionStatusHistoryRepository.Create(new SessionStatusHistory
@@ -37,6 +47,21 @@ public sealed class SessionWorkflowService(
             Reason = request.Reason
         }, cancellationToken);
         await sessionStatusHistoryRepository.SaveChangesAsync(cancellationToken);
+        return Result.Success(true);
+    }
+
+    private static Result<bool> ValidateTransition(string from, string to)
+    {
+        if (from is "completed" or "canceled" or "no_show")
+            return Result.Failure<bool>(SessionErrors.AlreadyTerminal(from));
+        if (to == "in_progress" && from != "scheduled")
+            return Result.Failure<bool>(SessionErrors.InvalidTransition(from, to));
+        if (to == "completed" && from != "in_progress")
+            return Result.Failure<bool>(SessionErrors.MustBeInProgressToComplete);
+        if (to == "no_show" && from is not "scheduled" and not "in_progress")
+            return Result.Failure<bool>(SessionErrors.InvalidTransition(from, to));
+        if (to == "canceled" && from != "scheduled")
+            return Result.Failure<bool>(SessionErrors.InvalidTransition(from, to));
         return Result.Success(true);
     }
 

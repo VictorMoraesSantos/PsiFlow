@@ -1,5 +1,6 @@
 using BuildingBlocks.Results;
 using Notifications.Application.Contracts;
+using Notifications.Application.Email;
 using Notifications.Domain.Entities;
 using Notifications.Domain.Repositories;
 
@@ -9,7 +10,8 @@ public sealed class NotificationWorkflowService(
     INotificationTemplateRepository templateRepository,
     INotificationTemplateVersionRepository versionRepository,
     INotificationLogRepository logRepository,
-    IScheduledNotificationRepository scheduledRepository) : INotificationWorkflowService
+    IScheduledNotificationRepository scheduledRepository,
+    IEmailProvider emailProvider) : INotificationWorkflowService
 {
     public async Task<Result<object>> CreateTemplateVersionAsync(int templateId, string subject, string? bodyHtml, string? bodyText, int userId, CancellationToken ct)
     {
@@ -30,9 +32,25 @@ public sealed class NotificationWorkflowService(
 
     public async Task<Result<object>> SendTestEmailAsync(string recipientEmail, string templateKey, int? tenantId, CancellationToken ct)
     {
-        var log = new NotificationLog { TenantId = tenantId, RecipientEmail = recipientEmail, TemplateKey = templateKey, NotificationType = "test_email", Status = "sent", SentAt = DateTime.UtcNow };
+        var log = new NotificationLog { TenantId = tenantId, RecipientEmail = recipientEmail, TemplateKey = templateKey, NotificationType = "test_email" };
+        var delivery = await emailProvider.SendAsync(new EmailMessage(recipientEmail, $"Test {templateKey}", string.Empty, string.Empty), ct);
+        if (!delivery.IsSuccess)
+        {
+            log.Status = "failed";
+            log.Error = delivery.Error!.Description;
+            log.Provider = emailProvider.Name;
+        }
+        else
+        {
+            log.Status = delivery.Value!.Status;
+            log.Provider = emailProvider.Name;
+            log.ProviderMessageId = delivery.Value.ProviderMessageId;
+            log.SentAt = DateTime.UtcNow;
+        }
         await logRepository.Create(log, ct);
-        return Result.Success<object>(log);
+        return delivery.IsSuccess
+            ? Result.Success<object>(log)
+            : Result.Failure<object>(delivery.Error!);
     }
 
     public async Task<Result> RetryAsync(int notificationId, CancellationToken ct)

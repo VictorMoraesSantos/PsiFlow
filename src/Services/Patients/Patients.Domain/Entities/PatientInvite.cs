@@ -12,6 +12,9 @@ public class PatientInvite : BaseEntity<int>
     public string Status { get; set; } = "pending";
     public DateTime ExpiresAt { get; set; }
     public DateTime? AcceptedAt { get; set; }
+    public int? AcceptedByUserId { get; set; }
+    public string? AcceptedByIp { get; set; }
+    public string? AcceptedByUserAgent { get; set; }
     public DateTime? RevokedAt { get; set; }
     public int CreatedBy { get; set; }
 }

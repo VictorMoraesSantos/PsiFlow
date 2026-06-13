@@ -4,7 +4,7 @@ namespace Sessions.Application.Features.Workflow;
 
 public sealed class ChangeSessionStatusCommandValidator : AbstractValidator<ChangeSessionStatusCommand>
 {
-    private static readonly string[] AllowedStatuses = ["started", "completed", "no_show", "canceled"];
+    private static readonly string[] AllowedStatuses = ["in_progress", "completed", "no_show", "canceled"];
 
     public ChangeSessionStatusCommandValidator()
     {

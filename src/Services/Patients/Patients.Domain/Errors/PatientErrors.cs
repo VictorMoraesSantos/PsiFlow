@@ -15,6 +15,7 @@ namespace Patients.Domain.Errors
         public static Error PhoneRequired => Error.Failure("Telefone e obrigatorio.");
         public static Error BirthDateInFuture => Error.Failure("Data de nascimento nao pode ser futura.");
         public static Error EmergencyContactPhoneRequired => Error.Failure("Telefone de contato de emergencia e obrigatorio quando nome informado.");
+        public static Error ResponsibleLegalRequiredForMinor => Error.Failure("Responsavel legal e obrigatorio para paciente menor de idade.");
         public static Error NotFound(int id) => Error.NotFound("Patient nao encontrado: " + id);
         public static Error InviteNotFound(int id) => Error.NotFound("Convite nao encontrado: " + id);
         public static Error InviteAlreadyAccepted => Error.Failure("Convite ja foi aceito.");

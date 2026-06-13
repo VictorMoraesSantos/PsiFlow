@@ -8,6 +8,5 @@ namespace Auth.Domain.Repositories
     public interface IUserRepository : IRepository<User, UserId, UserFilter>
     {
         Task<User?> FindByEmail(string email, CancellationToken cancellationToken = default);
-        Task<User?> FindByRefreshTokenHash(string refreshTokenHash, CancellationToken cancellationToken = default);
     }
 }

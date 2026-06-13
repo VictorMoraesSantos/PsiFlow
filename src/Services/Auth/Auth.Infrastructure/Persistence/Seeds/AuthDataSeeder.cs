@@ -44,7 +44,25 @@ namespace Auth.Infrastructure.Persistence.Seeds
             await ApplySchemaPatchesAsync(context, cancellationToken);
             await SeedRolesAsync(roleManager);
             await SeedPermissionGroupsAsync(context, cancellationToken);
+            await SeedRolePermissionsAsync(context, cancellationToken);
             await SeedUsersAsync(userManager, context, cancellationToken);
+        }
+
+        private async Task SeedRolePermissionsAsync(ApplicationDbContext context, CancellationToken cancellationToken)
+        {
+            if (await context.RolePermissions.AnyAsync(cancellationToken)) return;
+
+            var rolePermissions = new List<Auth.Domain.Entities.RolePermission>();
+            foreach (var p in Auth.Application.Authorization.PermissionCatalog.SaasAdminPermissions())
+                rolePermissions.Add(new Auth.Domain.Entities.RolePermission(PermissionGroupSeed.AdminRole, p));
+            foreach (var p in Auth.Application.Authorization.PermissionCatalog.PsychologistPermissions())
+                rolePermissions.Add(new Auth.Domain.Entities.RolePermission(PermissionGroupSeed.PsychologistRole, p));
+            foreach (var p in Auth.Application.Authorization.PermissionCatalog.PatientPermissions())
+                rolePermissions.Add(new Auth.Domain.Entities.RolePermission(PermissionGroupSeed.PatientRole, p));
+
+            await context.RolePermissions.AddRangeAsync(rolePermissions, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Seed de role-permissions aplicado: {Count} mapeamentos.", rolePermissions.Count);
         }
 
         private async Task SeedPermissionGroupsAsync(ApplicationDbContext context, CancellationToken cancellationToken)
@@ -224,6 +242,16 @@ namespace Auth.Infrastructure.Persistence.Seeds
             await context.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS is_mfa_enabled boolean NOT NULL DEFAULT false;",
                 cancellationToken);
+
+            if (await HasTableAsync(context, "auth", "consents", cancellationToken))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE auth.consents ADD COLUMN IF NOT EXISTS document_type varchar(64) NOT NULL DEFAULT 'terms_privacy';",
+                    cancellationToken);
+                await context.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE auth.consents ADD COLUMN IF NOT EXISTS version varchar(64) NOT NULL DEFAULT '';",
+                    cancellationToken);
+            }
 
             if (await HasTableAsync(context, "auth", "mfa_challenges", cancellationToken))
             {

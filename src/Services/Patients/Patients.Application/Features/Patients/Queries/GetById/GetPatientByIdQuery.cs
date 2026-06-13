@@ -3,4 +3,4 @@ using Patients.Application.DTOs.Patient;
 
 namespace Patients.Application.Features.Patients.Queries.GetById;
 
-public sealed record GetPatientByIdQuery(int Id) : IQuery<PatientDTO?>;
+public sealed record GetPatientByIdQuery(int Id, int TenantId) : IQuery<PatientDTO?>;

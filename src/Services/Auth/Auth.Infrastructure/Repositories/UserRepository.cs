@@ -47,9 +47,6 @@ namespace Auth.Infrastructure.Repositories
         public async Task<User?> FindByEmail(string email, CancellationToken cancellationToken = default) =>
             await dbContext.Users.FirstOrDefaultAsync(x => x.Email != null && x.Email == email.ToLowerInvariant(), cancellationToken);
 
-        public async Task<User?> FindByRefreshTokenHash(string refreshTokenHash, CancellationToken cancellationToken = default) =>
-            await dbContext.Users.FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
-
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
             await dbContext.SaveChangesAsync(cancellationToken);
     }

@@ -32,11 +32,11 @@ public static class PatientInvitesEndpoints
 
         app.MapGet("/v1/patient-invites/{token}/preview", async (string token, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new PreviewPatientInviteQuery(token), ct))).AllowAnonymous();
 
-        app.MapPost("/v1/patient-invites/{token}/accept", async (string token, AcceptInviteRequest request, ISender sender, CancellationToken ct) =>
+        app.MapPost("/v1/patient-invites/{token}/accept", async (string token, ISender sender, HttpContext http, CancellationToken ct) =>
         {
-            var result = await sender.Send(new AcceptPatientInviteCommand(token, request.UserId), ct);
+            var result = await sender.Send(new AcceptPatientInviteCommand(token, http.GetUserId(), http.GetEmail(), http.Connection.RemoteIpAddress?.ToString(), http.Request.Headers.UserAgent.ToString()), ct);
             return ToHttp(result);
-        }).AllowAnonymous();
+        }).RequireAuthorization();
 
         app.MapPost("/v1/patient-invites/{inviteId:int}/revoke", async (int inviteId, ISender sender, HttpContext http, CancellationToken ct) =>
         {
@@ -67,7 +67,6 @@ public static class PatientInvitesEndpoints
 }
 
 public sealed record InvitePatientRequest(string Email, string? Phone, int? PatientId);
-public sealed record AcceptInviteRequest(int UserId);
 public sealed record DeactivatePatientRequest(string? Reason);
 public sealed record ChangeTreatmentStatusRequest(string TreatmentStatus, string? Reason);
 
@@ -75,4 +74,5 @@ internal static class PatientHttpContextExtensions
 {
     public static int GetTenantId(this HttpContext http) => int.TryParse(http.User.FindFirstValue("tenant_id"), out var id) ? id : 0;
     public static int GetUserId(this HttpContext http) => int.TryParse(http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? http.User.FindFirstValue("sub"), out var id) ? id : 0;
+    public static string GetEmail(this HttpContext http) => http.User.FindFirstValue(ClaimTypes.Email) ?? http.User.FindFirstValue("email") ?? string.Empty;
 }

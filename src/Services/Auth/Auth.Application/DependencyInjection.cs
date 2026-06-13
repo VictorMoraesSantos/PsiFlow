@@ -26,10 +26,12 @@ namespace Auth.Application
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddSingleton<EncryptionService>();
+            services.AddSingleton<MfaLoginStore>();
 
             services.AddMediatorService()
                 .AddHandler<RegisterCommand, Result<RegisterResult>, RegisterCommandHandler>()
-                .AddHandler<LoginCommand, Result<TokenResponse>, LoginCommandHandler>()
+                .AddHandler<LoginCommand, Result<object>, LoginCommandHandler>()
                 .AddHandler<RefreshCommand, Result<TokenResponse>, RefreshCommandHandler>()
                 .AddHandler<LogoutCommand, Result, LogoutCommandHandler>()
                 .AddHandler<MeQuery, Result<MeResponse>, MeQueryHandler>()

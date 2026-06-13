@@ -23,29 +23,38 @@ namespace Auth.Application.Services
         private readonly IConsentRepository _consentRepository;
         private readonly IMfaChallengeRepository _mfaChallengeRepository;
         private readonly IOutboxRepository _outboxRepository;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ITokenService _tokenService;
+        private readonly EncryptionService _encryption;
         private readonly ILogger<AuthService> _logger;
+        private readonly MfaLoginStore _mfaLoginStore;
 
         public AuthService(
             IUserRepository userRepository,
             IConsentRepository consentRepository,
             IMfaChallengeRepository mfaChallengeRepository,
             IOutboxRepository outboxRepository,
+            IRefreshTokenRepository refreshTokenRepository,
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             ITokenService tokenService,
-            ILogger<AuthService> logger)
+            EncryptionService encryption,
+            ILogger<AuthService> logger,
+            MfaLoginStore mfaLoginStore)
         {
             _userRepository = userRepository;
             _consentRepository = consentRepository;
             _mfaChallengeRepository = mfaChallengeRepository;
             _outboxRepository = outboxRepository;
+            _refreshTokenRepository = refreshTokenRepository;
             _userManager = userManager;
             _signInManager = signInManager;
             _tokenService = tokenService;
+            _encryption = encryption;
             _logger = logger;
+            _mfaLoginStore = mfaLoginStore;
         }
 
         public async Task<Result<RegisterResult>> RegisterAsync(RegisterDTO dto, CancellationToken cancellationToken = default)
@@ -86,23 +95,52 @@ namespace Auth.Application.Services
             return Result.Success(new RegisterResult(user.Id, user.TenantId, user.Email!, user.Role));
         }
 
-        public async Task<Result<TokenResponse>> LoginAsync(LoginDTO dto, CancellationToken cancellationToken = default)
+        public async Task<Result<object>> LoginAsync(LoginDTO dto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
-                return Result.Failure<TokenResponse>(UserErrors.InvalidCredentials);
+                return Result.Failure<object>(UserErrors.InvalidCredentials);
 
             var email = dto.Email.Trim().ToLowerInvariant();
             var user = await _userRepository.FindByEmail(email, cancellationToken);
-            if (user is null) return Result.Failure<TokenResponse>(UserErrors.InvalidCredentials);
-            if (!user.IsActive) return Result.Failure<TokenResponse>(UserErrors.AlreadyInactive);
+            if (user is null) return Result.Failure<object>(UserErrors.InvalidCredentials);
+            if (!user.IsActive) return Result.Failure<object>(UserErrors.AlreadyInactive);
+            if (!user.EmailConfirmed) return Result.Failure<object>(UserErrors.EmailNotConfirmed);
 
             var signIn = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
-            if (signIn.IsLockedOut) return Result.Failure<TokenResponse>(UserErrors.UserLockedOut);
-            if (!signIn.Succeeded) return Result.Failure<TokenResponse>(UserErrors.InvalidCredentials);
+            if (signIn.IsLockedOut) return Result.Failure<object>(UserErrors.UserLockedOut);
+            if (!signIn.Succeeded) return Result.Failure<object>(UserErrors.InvalidCredentials);
+
+            if (user.IsMfaEnabled)
+            {
+                var challenge = await CreateMfaChallengeAsync(user, cancellationToken);
+                var mfaToken = _mfaLoginStore.Create(user.Id, challenge.Id);
+                return Result.Success<object>(new MfaRequiredResponse(mfaToken, challenge.Id.ToString()));
+            }
 
             user.UpdateLastLogin();
             await _userRepository.Update(user, cancellationToken);
+            return Result.Success<object>(await IssueTokensAsync(user, cancellationToken));
+        }
 
+        public async Task<Result<TokenResponse>> CompleteMfaLoginAsync(string mfaToken, string code, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(mfaToken) || string.IsNullOrWhiteSpace(code))
+                return Result.Failure<TokenResponse>(UserErrors.MfaCodeInvalid);
+            if (!_mfaLoginStore.TryConsume(mfaToken, out var entry))
+                return Result.Failure<TokenResponse>(UserErrors.MfaCodeInvalid);
+
+            var user = await _userRepository.GetById(new UserId(entry.UserId), cancellationToken);
+            if (user is null) return Result.Failure<TokenResponse>(UserErrors.NotFound(entry.UserId));
+
+            var challenge = await _mfaChallengeRepository.GetById(new MfaChallengeId(entry.ChallengeId), cancellationToken);
+            if (challenge is null || challenge.IsExpired(DateTime.UtcNow))
+                return Result.Failure<TokenResponse>(UserErrors.MfaChallengeNotFound);
+            var secret = _encryption.Decrypt(new EncryptedField(challenge.SecretCiphertext, challenge.SecretNonce, challenge.SecretTag));
+            if (!IsValidTotp(secret, code.Trim()))
+                return Result.Failure<TokenResponse>(UserErrors.MfaCodeInvalid);
+
+            user.UpdateLastLogin();
+            await _userRepository.Update(user, cancellationToken);
             return await IssueTokensAsync(user, cancellationToken);
         }
 
@@ -112,16 +150,25 @@ namespace Auth.Application.Services
                 return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
 
             var hash = _tokenService.HashToken(refreshToken);
-            var user = await _userRepository.FindByRefreshTokenHash(hash, cancellationToken);
-            if (user is null) return Result.Failure<TokenResponse>(UserErrors.RefreshTokenReused);
-            if (user.RefreshTokenExpiryTime is null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            var existing = await _refreshTokenRepository.GetByHashAsync(hash, cancellationToken);
+            if (existing is null) return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
+            if (existing.RevokedAt is not null)
             {
-                user.SetRefreshToken(string.Empty, DateTime.MinValue);
-                await _userRepository.Update(user, cancellationToken);
+                await RevokeTokenFamilyAsync(existing, cancellationToken);
+                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenReused);
+            }
+            if (existing.ExpiresAt <= DateTime.UtcNow)
+            {
+                existing.Revoke(DateTime.UtcNow, null, null);
+                await _refreshTokenRepository.Update(existing, cancellationToken);
                 return Result.Failure<TokenResponse>(UserErrors.RefreshTokenExpired);
             }
 
-            return await IssueTokensAsync(user, cancellationToken);
+            var id = new UserId(existing.UserId);
+            var user = await _userRepository.GetById(id, cancellationToken);
+            if (user is null) return Result.Failure<TokenResponse>(UserErrors.NotFound(existing.UserId));
+
+            return await IssueTokensAsync(user, existing, cancellationToken);
         }
 
         public async Task<Result> LogoutAsync(int userId, CancellationToken cancellationToken = default)
@@ -131,9 +178,10 @@ namespace Auth.Application.Services
             if (user is null)
                 return Result.Failure(UserErrors.NotFound(userId));
 
-            user.SetRefreshToken(string.Empty, DateTime.MinValue);
-            await _userRepository.Update(user, cancellationToken);
-
+            var active = await _refreshTokenRepository.ListActiveByUserAsync(userId, cancellationToken);
+            var now = DateTime.UtcNow;
+            foreach (var token in active) token.Revoke(now, null, null);
+            await _refreshTokenRepository.UpdateRange(active, cancellationToken);
             return Result.Success();
         }
 
@@ -161,8 +209,8 @@ namespace Auth.Application.Services
             if (existing is not null)
                 return Result.Failure(UserErrors.TermsNotAccepted);
 
-            var documentHash = ComputeHash($"{userId}:{dto.TermsVersion}:{dto.PrivacyVersion}");
-            var consent = new Consent(new UserId(userId), new TenantId(user.TenantId), dto.TermsVersion, dto.PrivacyVersion, documentHash, null, null, DateTime.UtcNow);
+            var documentHash = ComputeHash($"{userId}:{dto.DocumentType}:{dto.TermsVersion}:{dto.PrivacyVersion}");
+            var consent = new Consent(new UserId(userId), new TenantId(user.TenantId), dto.DocumentType, $"{dto.TermsVersion}/{dto.PrivacyVersion}", dto.TermsVersion, dto.PrivacyVersion, documentHash, dto.IpAddress, dto.UserAgent, DateTime.UtcNow);
             await _consentRepository.Create(consent, cancellationToken);
             user.RecordConsent(dto.TermsVersion, dto.PrivacyVersion);
             await _userRepository.Update(user, cancellationToken);
@@ -205,6 +253,8 @@ namespace Auth.Application.Services
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             _logger.LogInformation("Reset de senha solicitado para {Email}", email);
+            user.AddDomainEvent(new PasswordResetRequestedDomainEvent(user.Id, user.TenantId, user.Email!, token));
+            await _userRepository.Update(user, cancellationToken);
             return Result.Success();
         }
 
@@ -226,8 +276,10 @@ namespace Auth.Application.Services
                 return Result.Failure(UserErrors.PasswordResetInvalid);
             }
 
-            user.SetRefreshToken(string.Empty, DateTime.MinValue);
-            await _userRepository.Update(user, cancellationToken);
+            var activeTokens = await _refreshTokenRepository.ListActiveByUserAsync(user.Id, cancellationToken);
+            var now = DateTime.UtcNow;
+            foreach (var token in activeTokens) token.Revoke(now, null, null);
+            await _refreshTokenRepository.UpdateRange(activeTokens, cancellationToken);
             return Result.Success();
         }
 
@@ -244,15 +296,17 @@ namespace Auth.Application.Services
             var account = Uri.EscapeDataString(user.Email ?? user.Id.ToString());
             var qrCodeUri = $"otpauth://totp/{issuer}:{account}?secret={secret}&issuer={issuer}&digits=6&period=30";
 
+            var encrypted = _encryption.Encrypt(secret);
+
             var activeChallenge = await _mfaChallengeRepository.GetActiveByUser(userId, cancellationToken);
             if (activeChallenge is not null)
             {
-                activeChallenge.SetActive(secret, qrCodeUri, expiresAt);
+                activeChallenge.SetActive(encrypted.Ciphertext, encrypted.Nonce, encrypted.Tag, qrCodeUri, expiresAt);
                 await _mfaChallengeRepository.Update(activeChallenge, cancellationToken);
             }
             else
             {
-                await _mfaChallengeRepository.Create(new MfaChallenge(user.Id, user.TenantId, secret, qrCodeUri, false, null, expiresAt), cancellationToken);
+                await _mfaChallengeRepository.Create(new MfaChallenge(user.Id, user.TenantId, encrypted.Ciphertext, encrypted.Nonce, encrypted.Tag, qrCodeUri, false, null, expiresAt), cancellationToken);
             }
 
             return Result.Success(new MfaSetupResult(secret, qrCodeUri));
@@ -269,7 +323,8 @@ namespace Auth.Application.Services
 
             var challenge = await _mfaChallengeRepository.GetActiveByUser(userId, cancellationToken);
             if (challenge is null) return Result.Failure(UserErrors.MfaChallengeNotFound);
-            if (!IsValidTotp(challenge.SecretEncrypted, dto.Code.Trim())) return Result.Failure(UserErrors.MfaCodeInvalid);
+            var secret = _encryption.Decrypt(new EncryptedField(challenge.SecretCiphertext, challenge.SecretNonce, challenge.SecretTag));
+            if (!IsValidTotp(secret, dto.Code.Trim())) return Result.Failure(UserErrors.MfaCodeInvalid);
 
             challenge.SetConfirmed();
             await _mfaChallengeRepository.Update(challenge, cancellationToken);
@@ -279,7 +334,47 @@ namespace Auth.Application.Services
             return Result.Success();
         }
 
-        private async Task<Result<TokenResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken)
+        public async Task<Result<string>> RequestEmailVerificationAsync(string email, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return Result.Failure<string>(ContactErrors.EmailRequired);
+            var user = await _userRepository.FindByEmail(email.Trim().ToLowerInvariant(), cancellationToken);
+            if (user is null) return Result.Success<string>(string.Empty);
+
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            user.AddDomainEvent(new EmailVerificationRequestedDomainEvent(user.Id, user.TenantId, user.Email!, token));
+            return Result.Success(token);
+        }
+
+        public async Task<Result> VerifyEmailAsync(string email, string token, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+                return Result.Failure(UserErrors.InvalidCredentials);
+            var user = await _userRepository.FindByEmail(email.Trim().ToLowerInvariant(), cancellationToken);
+            if (user is null) return Result.Failure(UserErrors.NotFound(0));
+
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                _logger.LogWarning("Falha ao verificar e-mail: {Errors}", errors);
+                return Result.Failure(UserErrors.InvalidCredentials);
+            }
+            return Result.Success();
+        }
+
+        private async Task<Result<TokenResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken) =>
+            await IssueTokensAsync(user, null, cancellationToken);
+
+        private async Task<MfaChallenge> CreateMfaChallengeAsync(User user, CancellationToken cancellationToken)
+        {
+            var secret = GenerateBase32Secret();
+            var encrypted = _encryption.Encrypt(secret);
+            var challenge = new MfaChallenge(user.Id, user.TenantId, encrypted.Ciphertext, encrypted.Nonce, encrypted.Tag, null, false, null, DateTime.UtcNow.AddMinutes(10));
+            await _mfaChallengeRepository.Create(challenge, cancellationToken);
+            return challenge;
+        }
+
+        private async Task<Result<TokenResponse>> IssueTokensAsync(User user, RefreshToken? previous, CancellationToken cancellationToken)
         {
             var roles = await _userManager.GetRolesAsync(user);
             var permissions = await _userManager.GetClaimsAsync(user);
@@ -289,10 +384,24 @@ namespace Auth.Application.Services
 
             var refresh = _tokenService.GenerateRefreshToken();
             var expiry = DateTime.UtcNow.AddDays(7);
-            user.SetRefreshToken(_tokenService.HashToken(refresh), expiry);
-            await _userRepository.Update(user, cancellationToken);
+            var created = new RefreshToken(user.Id, user.TenantId, _tokenService.HashToken(refresh), DateTime.UtcNow, expiry, previous?.CreatedByIp, previous?.UserAgent);
+            await _refreshTokenRepository.Create(created, cancellationToken);
+
+            if (previous is not null)
+            {
+                previous.Revoke(DateTime.UtcNow, previous.CreatedByIp, created.Id);
+                await _refreshTokenRepository.Update(previous, cancellationToken);
+            }
 
             return Result.Success(new TokenResponse(tokenResult.Value!, refresh, expiry, new DTOs.Users.UserSummaryDTO(user.Id, user.Name.FullName, user.Email!, user.Role)));
+        }
+
+        private async Task RevokeTokenFamilyAsync(RefreshToken reused, CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+            var userTokens = await _refreshTokenRepository.ListActiveByUserAsync(reused.UserId, cancellationToken);
+            foreach (var token in userTokens) token.Revoke(now, null, null);
+            await _refreshTokenRepository.UpdateRange(userTokens, cancellationToken);
         }
 
         private async Task PersistOutboxAsync(User user, Guid correlationId, CancellationToken cancellationToken)

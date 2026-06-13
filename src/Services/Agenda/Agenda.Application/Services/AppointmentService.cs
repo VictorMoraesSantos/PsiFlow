@@ -69,10 +69,6 @@ namespace Agenda.Application.Services
                 entity.EndsAt = dto.EndsAt;
                 entity.Modality = dto.Modality;
                 entity.Status = dto.Status;
-                entity.LateCancel = dto.LateCancel;
-                entity.CanceledAt = dto.CanceledAt;
-                entity.CanceledBy = dto.CanceledBy;
-                entity.CancelReason = dto.CancelReason;
                 entity.MarkAsUpdated();
                 await _repository.Update(entity, cancellationToken);
                 return Result.Success(true);

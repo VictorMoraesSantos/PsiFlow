@@ -13,6 +13,8 @@ namespace Patients.Application.DTOs.Patient
         string TreatmentStatus,
         string? EmergencyContactName,
         string? EmergencyContactPhone,
+        string? Address,
+        string? DocumentNumber,
         DateTime CreatedAt,
         DateTime? UpdatedAt,
         DateTime? DeactivatedAt,
@@ -27,6 +29,8 @@ namespace Patients.Application.DTOs.Patient
         DateOnly? BirthDate,
         string? EmergencyContactName,
         string? EmergencyContactPhone,
+        string? Address,
+        string? DocumentNumber,
         string Status = "active",
         string TreatmentStatus = "screening");
 
@@ -40,7 +44,9 @@ namespace Patients.Application.DTOs.Patient
         string Status,
         string TreatmentStatus,
         string? EmergencyContactName,
-        string? EmergencyContactPhone);
+        string? EmergencyContactPhone,
+        string? Address,
+        string? DocumentNumber);
 
     public sealed record PatientFilterDTO(
         int? TenantId,

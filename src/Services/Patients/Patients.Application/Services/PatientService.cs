@@ -4,6 +4,7 @@ using Patients.Application.Contracts;
 using Patients.Application.DTOs.Patient;
 using Patients.Application.Mapping;
 using Patients.Domain.Errors;
+using Patients.Domain.Events;
 using Patients.Domain.Filters;
 using Patients.Domain.Repositories;
 using System.Linq.Expressions;
@@ -40,6 +41,8 @@ namespace Patients.Application.Services
                     return Result.Failure<int>(PatientErrors.BirthDateInFuture);
                 if (!string.IsNullOrWhiteSpace(dto.EmergencyContactName) && string.IsNullOrWhiteSpace(dto.EmergencyContactPhone))
                     return Result.Failure<int>(PatientErrors.EmergencyContactPhoneRequired);
+                if (IsMinor(dto.BirthDate) && (string.IsNullOrWhiteSpace(dto.EmergencyContactName) || string.IsNullOrWhiteSpace(dto.EmergencyContactPhone)))
+                    return Result.Failure<int>(PatientErrors.ResponsibleLegalRequiredForMinor);
 
                 if (dto.TenantId > 0)
                 {
@@ -49,7 +52,8 @@ namespace Patients.Application.Services
 
                 var entity = dto.ToEntity();
                 await _repository.Create(entity, cancellationToken);
-                return Result.Success(0);
+                entity.AddDomainEvent(new PatientCreatedDomainEvent(entity.Id, entity.TenantId, entity.FullName, entity.Email));
+                return Result.Success(entity.Id);
             }
             catch (Exception ex)
             {
@@ -86,6 +90,12 @@ namespace Patients.Application.Services
                     return Result.Failure<bool>(PatientErrors.EmailInvalid);
                 if (string.IsNullOrWhiteSpace(dto.Phone))
                     return Result.Failure<bool>(PatientErrors.PhoneRequired);
+                if (dto.BirthDate is { } bd && bd > DateOnly.FromDateTime(DateTime.UtcNow))
+                    return Result.Failure<bool>(PatientErrors.BirthDateInFuture);
+                if (!string.IsNullOrWhiteSpace(dto.EmergencyContactName) && string.IsNullOrWhiteSpace(dto.EmergencyContactPhone))
+                    return Result.Failure<bool>(PatientErrors.EmergencyContactPhoneRequired);
+                if (IsMinor(dto.BirthDate) && (string.IsNullOrWhiteSpace(dto.EmergencyContactName) || string.IsNullOrWhiteSpace(dto.EmergencyContactPhone)))
+                    return Result.Failure<bool>(PatientErrors.ResponsibleLegalRequiredForMinor);
                 var entity = await _repository.GetById(dto.Id, cancellationToken);
                 if (entity is null) return Result.Failure<bool>(PatientErrors.NotFound(dto.Id));
                 entity.TenantId = dto.TenantId;
@@ -97,6 +107,8 @@ namespace Patients.Application.Services
                 entity.TreatmentStatus = dto.TreatmentStatus;
                 entity.EmergencyContactName = dto.EmergencyContactName;
                 entity.EmergencyContactPhone = dto.EmergencyContactPhone;
+                entity.Address = dto.Address;
+                entity.DocumentNumber = dto.DocumentNumber;
                 entity.MarkAsUpdated();
                 await _repository.Update(entity, cancellationToken);
                 return Result.Success(true);
@@ -146,6 +158,38 @@ namespace Patients.Application.Services
         {
             var entity = await _repository.GetById(id, cancellationToken);
             return entity is null ? Result.Failure<PatientDTO?>(PatientErrors.NotFound(id)) : Result.Success<PatientDTO?>(entity.ToDTO());
+        }
+
+        public async Task<Result<PatientDTO?>> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken = default)
+        {
+            var entity = await _repository.Find(x => x.Id == id && x.TenantId == tenantId, cancellationToken);
+            var found = entity.FirstOrDefault();
+            return found is null ? Result.Failure<PatientDTO?>(PatientErrors.NotFound(id)) : Result.Success<PatientDTO?>(found.ToDTO());
+        }
+
+        public async Task<Result<IEnumerable<PatientDTO?>>> ListByTenantAsync(int tenantId, CancellationToken cancellationToken = default)
+        {
+            var entities = await _repository.Find(x => x.TenantId == tenantId, cancellationToken);
+            return Result.Success<IEnumerable<PatientDTO?>>(entities.Select(x => x is null ? null : (PatientDTO?)x.ToDTO()));
+        }
+
+        public Task<Result<bool>> DeleteAsync(int id, int tenantId, CancellationToken cancellationToken = default) =>
+            DeleteInternalAsync(id, tenantId, cancellationToken);
+
+        private async Task<Result<bool>> DeleteInternalAsync(int id, int tenantId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var entity = (await _repository.Find(x => x.Id == id && x.TenantId == tenantId, cancellationToken)).FirstOrDefault();
+                if (entity is null) return Result.Failure<bool>(PatientErrors.NotFound(id));
+                await _repository.Delete(entity, cancellationToken);
+                return Result.Success(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao excluir Patient {Id}", id);
+                return Result.Failure<bool>(Error.Failure(ex.Message));
+            }
         }
 
         public async Task<Result<IEnumerable<PatientDTO?>>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -211,5 +255,13 @@ namespace Patients.Application.Services
         private static string? NormalizeNullableText(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         private static string? NormalizeNullablePhone(string? value) => string.IsNullOrWhiteSpace(value) ? null : new string(value.Where(char.IsDigit).ToArray());
         private static bool IsValidEmail(string value) => MailAddress.TryCreate(value, out _);
+        private static bool IsMinor(DateOnly? birthDate)
+        {
+            if (birthDate is null) return false;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var age = today.Year - birthDate.Value.Year;
+            if (birthDate.Value > today.AddYears(-age)) age--;
+            return age < 18;
+        }
     }
 }

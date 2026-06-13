@@ -6,7 +6,7 @@ public sealed class UpdatePatientCommandValidator : AbstractValidator<UpdatePati
 {
     public UpdatePatientCommandValidator()
     {
-        RuleFor(command => command.Id).GreaterThan(0);
+        RuleFor(command => command.Patient.Id).GreaterThan(0);
         RuleFor(command => command.Patient.TenantId).GreaterThan(0);
         RuleFor(command => command.Patient.FullName).NotEmpty().MinimumLength(2).MaximumLength(160);
         RuleFor(command => command.Patient.Email).NotEmpty().EmailAddress();

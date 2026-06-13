@@ -25,6 +25,7 @@ namespace Auth.Infrastructure
             services.AddIdentityServices(configuration);
             services.AddAuthApplication();
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+            services.Configure<Auth.Infrastructure.Persistence.Seeds.AuthSeedOptions>(configuration.GetSection("AuthSeed"));
             services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<JwtSettings>>().Value);
             return services;
         }
@@ -37,6 +38,8 @@ namespace Auth.Infrastructure
             services.AddScoped<IOutboxRepository, OutboxRepository>();
             services.AddScoped<IPermissionRepository, PermissionRepository>();
             services.AddScoped<IPermissionGroupRepository, PermissionGroupRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
             return services;
         }
 
@@ -48,6 +51,7 @@ namespace Auth.Infrastructure
             if (string.IsNullOrWhiteSpace(jwtSettings.KeyId)) jwtSettings.KeyId = "psiflow-auth-rsa-1";
 
             services.AddSingleton(jwtSettings);
+            services.AddSingleton<Auth.Application.Services.EncryptionService>();
             services.AddSingleton<JwtRsaKeyProvider>();
             services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
             services.AddAuthorization();

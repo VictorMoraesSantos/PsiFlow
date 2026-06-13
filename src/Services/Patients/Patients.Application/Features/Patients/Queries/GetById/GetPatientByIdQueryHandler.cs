@@ -15,5 +15,5 @@ public sealed class GetPatientByIdQueryHandler : IQueryHandler<GetPatientByIdQue
     }
 
     public Task<Result<PatientDTO?>> Handle(GetPatientByIdQuery query, CancellationToken cancellationToken) =>
-        _service.GetByIdAsync(query.Id, cancellationToken);
+        _service.GetByIdAndTenantAsync(query.Id, query.TenantId, cancellationToken);
 }

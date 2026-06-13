@@ -30,11 +30,37 @@ namespace Auth.Application.Services
             }
 
             SigningKey = new RsaSecurityKey(_rsa) { KeyId = settings.KeyId };
+
+            var publicKeys = new List<JsonWebKey> { BuildJwk(SigningKey) };
+            foreach (var previous in settings.PreviousKeys ?? new List<JwtPreviousKey>())
+            {
+                if (string.IsNullOrWhiteSpace(previous.KeyId) || string.IsNullOrWhiteSpace(previous.PublicKeyPem))
+                    continue;
+                try
+                {
+                    using var rsa = RSA.Create();
+                    rsa.ImportFromPem(previous.PublicKeyPem);
+                    var previousKey = new RsaSecurityKey(rsa) { KeyId = previous.KeyId };
+                    publicKeys.Add(BuildJwk(previousKey));
+                }
+                catch
+                {
+                    // ignora chave mal-formada para nao impedir startup
+                }
+            }
+            PublicKeys = publicKeys;
         }
 
         public RsaSecurityKey SigningKey { get; }
+        public IReadOnlyList<JsonWebKey> PublicKeys { get; }
 
-        public JsonWebKey PublicJwk => JsonWebKeyConverter.ConvertFromRSASecurityKey(SigningKey);
+        private static JsonWebKey BuildJwk(RsaSecurityKey key)
+        {
+            var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(key);
+            jwk.Use = "sig";
+            jwk.Alg = SecurityAlgorithms.RsaSha256;
+            return jwk;
+        }
 
         public void Dispose() => _rsa.Dispose();
 

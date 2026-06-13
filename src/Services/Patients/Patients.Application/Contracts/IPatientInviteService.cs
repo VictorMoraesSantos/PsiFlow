@@ -9,6 +9,6 @@ public interface IPatientInviteService
     Task<Result<object>> GetSessionsSummaryAsync(int patientId, CancellationToken cancellationToken);
     Task<Result<object>> CreateInviteAsync(string email, string? phone, int? patientId, int tenantId, int userId, CancellationToken cancellationToken);
     Task<Result<object>> PreviewInviteAsync(string token, CancellationToken cancellationToken);
-    Task<Result<object>> AcceptInviteAsync(string token, int userId, CancellationToken cancellationToken);
+    Task<Result<object>> AcceptInviteAsync(string token, int userId, string userEmail, string? ipAddress, string? userAgent, CancellationToken cancellationToken);
     Task<Result> RevokeInviteAsync(int inviteId, int tenantId, CancellationToken cancellationToken);
 }

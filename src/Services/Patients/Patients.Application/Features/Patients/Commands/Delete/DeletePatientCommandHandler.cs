@@ -6,13 +6,16 @@ namespace Patients.Application.Features.Patients.Commands.Delete;
 
 public sealed class DeletePatientCommandHandler : ICommandHandler<DeletePatientCommand, bool>
 {
-    private readonly IPatientService _service;
+    private readonly IPatientInviteService _service;
 
-    public DeletePatientCommandHandler(IPatientService service)
+    public DeletePatientCommandHandler(IPatientInviteService service)
     {
         _service = service;
     }
 
-    public Task<Result<bool>> Handle(DeletePatientCommand command, CancellationToken cancellationToken) =>
-        _service.DeleteAsync(command.Id, cancellationToken);
+    public async Task<Result<bool>> Handle(DeletePatientCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _service.DeactivateAsync(command.Id, "Soft delete requested", command.TenantId, command.UserId, cancellationToken);
+        return result.IsSuccess ? Result.Success(true) : Result.Failure<bool>(result.Error!);
+    }
 }

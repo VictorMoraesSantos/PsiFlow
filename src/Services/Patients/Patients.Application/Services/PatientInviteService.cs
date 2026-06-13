@@ -1,6 +1,7 @@
 using BuildingBlocks.Results;
 using Patients.Application.Contracts;
 using Patients.Domain.Entities;
+using Patients.Domain.Events;
 using Patients.Domain.Repositories;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,6 +33,7 @@ public sealed class PatientInviteService : IPatientInviteService
         patient.DeactivatedAt = DateTime.UtcNow;
         patient.DeactivationReason = reason;
         patient.MarkAsUpdated();
+        patient.AddDomainEvent(new PatientDeactivatedDomainEvent(patient.Id, patient.TenantId, from, patient.Status, reason, userId));
         await _statusHistoryRepository.Create(new PatientStatusHistory { TenantId = tenantId, PatientId = patientId, FromStatus = from, ToStatus = "inactive", Reason = reason, ChangedBy = userId }, cancellationToken);
         await _patientRepository.Update(patient, cancellationToken);
         return Result.Success();
@@ -60,6 +62,7 @@ public sealed class PatientInviteService : IPatientInviteService
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
         var invite = new PatientInvite { TenantId = tenantId, PatientId = patientId, Email = normalizedEmail, Phone = phone, TokenHash = Hash(token), ExpiresAt = DateTime.UtcNow.AddDays(7), CreatedBy = userId };
         await _inviteRepository.Create(invite, cancellationToken);
+        invite.AddDomainEvent(new PatientInvitedDomainEvent(invite.Id, invite.TenantId, invite.PatientId, invite.Email, invite.Phone, token));
         return Result.Success<object>(new { invite.Id, token, invite.ExpiresAt });
     }
 
@@ -71,18 +74,26 @@ public sealed class PatientInviteService : IPatientInviteService
             : Result.Success<object>(new { invite.Email, invite.Status, invite.ExpiresAt, isExpired = invite.ExpiresAt <= DateTime.UtcNow });
     }
 
-    public async Task<Result<object>> AcceptInviteAsync(string token, int userId, CancellationToken cancellationToken)
+    public async Task<Result<object>> AcceptInviteAsync(string token, int userId, string userEmail, string? ipAddress, string? userAgent, CancellationToken cancellationToken)
     {
         var invite = await _inviteRepository.GetByTokenHashAsync(Hash(token), cancellationToken);
         if (invite is null) return Result.Failure<object>(Error.NotFound("Invite not found."));
-        if (invite.Status != "pending" || invite.ExpiresAt <= DateTime.UtcNow) return Result.Failure<object>(Error.Failure("Invite is not active."));
+        if (invite.Status == "accepted") return Result.Failure<object>(Error.Conflict("Invite already accepted."));
+        if (invite.Status == "revoked") return Result.Failure<object>(Error.Failure("Invite revoked."));
+        if (invite.ExpiresAt <= DateTime.UtcNow) return Result.Failure<object>(Error.Failure("Invite expired."));
+        if (!string.Equals(invite.Email, userEmail.Trim(), StringComparison.OrdinalIgnoreCase)) return Result.Failure<object>(Error.Failure("Invite does not belong to authenticated user."));
         invite.Status = "accepted";
         invite.AcceptedAt = DateTime.UtcNow;
+        invite.AcceptedByUserId = userId;
+        invite.AcceptedByIp = ipAddress;
+        invite.AcceptedByUserAgent = userAgent;
         if (invite.PatientId is int patientId)
         {
             var patient = await _patientRepository.GetByIdAndTenantAsync(patientId, invite.TenantId, cancellationToken);
             if (patient is not null) patient.UserId = userId;
         }
+        await _inviteRepository.Update(invite, cancellationToken);
+        invite.AddDomainEvent(new PatientInviteAcceptedDomainEvent(invite.Id, invite.TenantId, invite.PatientId, invite.Email, userId));
         return Result.Success<object>(new { invite.Id, invite.Status });
     }
 

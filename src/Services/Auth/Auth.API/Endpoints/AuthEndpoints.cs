@@ -41,6 +41,12 @@ namespace Auth.API.Endpoints
                 return result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
+            group.MapPost("/mfa/complete", async (MfaCompleteRequest request, IAuthService authService, CancellationToken ct) =>
+            {
+                var result = await authService.CompleteMfaLoginAsync(request.MfaToken, request.Code, ct);
+                return result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
+
             group.MapPost("/refresh", async (RefreshDTO request, ISender sender, CancellationToken ct) =>
             {
                 var result = await sender.Send(new RefreshCommand(request.RefreshToken), ct);
@@ -64,7 +70,8 @@ namespace Auth.API.Endpoints
             group.MapPost("/consent", async (ConsentDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
-                var result = await sender.Send(new RecordConsentCommand(userId, request), ct);
+                var payload = request with { IpAddress = http.Connection.RemoteIpAddress?.ToString(), UserAgent = http.Request.Headers.UserAgent.ToString() };
+                var result = await sender.Send(new RecordConsentCommand(userId, payload), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
             }).RequireAuthorization(Roles.RequireAuthenticated);
 
@@ -100,6 +107,18 @@ namespace Auth.API.Endpoints
                 var result = await sender.Send(new VerifyMfaCommand(userId, request), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
             }).RequireAuthorization(Roles.RequirePsychologist).RequireRateLimiting("auth-sensitive");
+
+            group.MapPost("/request-email-verification", async (EmailVerificationRequest request, IAuthService authService, CancellationToken ct) =>
+            {
+                var result = await authService.RequestEmailVerificationAsync(request.Email, ct);
+                return result.IsSuccess ? Results.Ok(new { token = result.Value }) : ToProblem(result.Error!);
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
+
+            group.MapPost("/verify-email", async (EmailVerificationConfirm request, IAuthService authService, CancellationToken ct) =>
+            {
+                var result = await authService.VerifyEmailAsync(request.Email, request.Token, ct);
+                return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             var users = app.MapGroup("/v1/users").WithTags("Users");
 
@@ -149,3 +168,7 @@ namespace Auth.API.Endpoints
         }
     }
 }
+
+public sealed record EmailVerificationRequest(string Email);
+public sealed record EmailVerificationConfirm(string Email, string Token);
+public sealed record MfaCompleteRequest(string MfaToken, string Code);

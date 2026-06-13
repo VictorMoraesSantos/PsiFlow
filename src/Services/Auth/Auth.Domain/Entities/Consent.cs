@@ -7,6 +7,8 @@ namespace Auth.Domain.Entities
     {
         public UserId UserId { get; private set; }
         public TenantId TenantId { get; private set; }
+        public string DocumentType { get; private set; } = "terms_privacy";
+        public string Version { get; private set; } = string.Empty;
         public string TermsVersion { get; private set; } = string.Empty;
         public string PrivacyVersion { get; private set; } = string.Empty;
         public string DocumentHash { get; private set; } = string.Empty;
@@ -19,6 +21,8 @@ namespace Auth.Domain.Entities
         public Consent(
             UserId userId,
             TenantId tenantId,
+            string documentType,
+            string version,
             string termsVersion,
             string privacyVersion,
             string documentHash,
@@ -28,6 +32,8 @@ namespace Auth.Domain.Entities
         {
             UserId = userId;
             TenantId = tenantId;
+            DocumentType = string.IsNullOrWhiteSpace(documentType) ? "terms_privacy" : documentType;
+            Version = string.IsNullOrWhiteSpace(version) ? $"{termsVersion}/{privacyVersion}" : version;
             TermsVersion = termsVersion;
             PrivacyVersion = privacyVersion;
             DocumentHash = documentHash;

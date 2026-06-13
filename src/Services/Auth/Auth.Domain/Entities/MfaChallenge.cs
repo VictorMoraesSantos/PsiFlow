@@ -7,7 +7,9 @@ namespace Auth.Domain.Entities
     {
         public UserId UserId { get; private set; }
         public TenantId TenantId { get; private set; }
-        public string SecretEncrypted { get; private set; } = string.Empty;
+        public string SecretCiphertext { get; private set; } = string.Empty;
+        public string SecretNonce { get; private set; } = string.Empty;
+        public string SecretTag { get; private set; } = string.Empty;
         public string? QrCodeUri { get; private set; }
         public bool IsConfirmed { get; private set; }
         public DateTime? ConfirmedAt { get; private set; }
@@ -17,7 +19,9 @@ namespace Auth.Domain.Entities
         public MfaChallenge(
             UserId userId,
             TenantId tenantId,
-            string secretEncrypted,
+            string secretCiphertext,
+            string secretNonce,
+            string secretTag,
             string? qrCodeUri,
             bool isConfirmed,
             DateTime? confirmedAt,
@@ -25,16 +29,20 @@ namespace Auth.Domain.Entities
         {
             UserId = userId;
             TenantId = tenantId;
-            SecretEncrypted = secretEncrypted;
+            SecretCiphertext = secretCiphertext;
+            SecretNonce = secretNonce;
+            SecretTag = secretTag;
             QrCodeUri = qrCodeUri;
             IsConfirmed = isConfirmed;
             ConfirmedAt = confirmedAt;
             ExpiresAt = expiresAt;
         }
 
-        public void SetActive(string secretEncrypted, string? qrCodeUri, DateTime expiresAt)
+        public void SetActive(string secretCiphertext, string secretNonce, string secretTag, string? qrCodeUri, DateTime expiresAt)
         {
-            SecretEncrypted = secretEncrypted;
+            SecretCiphertext = secretCiphertext;
+            SecretNonce = secretNonce;
+            SecretTag = secretTag;
             QrCodeUri = qrCodeUri;
             ExpiresAt = expiresAt;
         }

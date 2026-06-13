@@ -17,8 +17,6 @@ namespace Auth.Domain.Entities
         public DateTime? Birthday { get; private set; }
         public DateTime? LastLoginAt { get; private set; }
         public bool IsActive { get; private set; } = true;
-        public string? RefreshTokenHash { get; set; }
-        public DateTime? RefreshTokenExpiryTime { get; set; }
         public string? ConsentTermsVersion { get; private set; }
         public string? ConsentPrivacyVersion { get; private set; }
         public DateTime? ConsentAcceptedAt { get; private set; }
@@ -45,7 +43,7 @@ namespace Auth.Domain.Entities
             UserName = contact.Email;
             NormalizedEmail = contact.Email.ToUpperInvariant();
             NormalizedUserName = contact.Email.ToUpperInvariant();
-            EmailConfirmed = true;
+            EmailConfirmed = false;
             Role = role;
             Crp = crp;
             TenantId = tenantId ?? new TenantId(0);
@@ -116,13 +114,6 @@ namespace Auth.Domain.Entities
         public void UpdateLastLogin()
         {
             LastLoginAt = DateTime.UtcNow;
-            MarkAsUpdated();
-        }
-
-        public void SetRefreshToken(string tokenHash, DateTime expiry)
-        {
-            RefreshTokenHash = tokenHash;
-            RefreshTokenExpiryTime = expiry;
             MarkAsUpdated();
         }
 

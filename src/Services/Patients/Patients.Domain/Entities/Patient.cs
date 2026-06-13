@@ -16,6 +16,8 @@ public class Patient : BaseEntity<int>, IAggregateRoot
     public string TreatmentStatus { get; set; } = "screening";
     public string? EmergencyContactName { get; set; }
     public string? EmergencyContactPhone { get; set; }
+    public string? Address { get; set; }
+    public string? DocumentNumber { get; set; }
     public DateTime? DeactivatedAt { get; set; }
     public string? DeactivationReason { get; set; }
 }

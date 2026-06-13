@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Notifications.Application.Email;
 using Notifications.Domain.Repositories;
+using Notifications.Infrastructure.Email;
 using Notifications.Infrastructure.Persistence.Repositories;
+using Notifications.Infrastructure.Workers;
 using PsiFlow.Notifications.Infrastructure.Persistence.Data;
 
 namespace Notifications.Infrastructure
@@ -17,6 +20,19 @@ namespace Notifications.Infrastructure
             services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
             services.AddScoped<IScheduledNotificationRepository, ScheduledNotificationRepository>();
             services.AddHostedService<NotificationsDatabaseInitializer>();
+            services.AddHostedService<ScheduledNotificationWorker>();
+
+            var provider = (configuration["EmailProvider"] ?? "fake").Trim().ToLowerInvariant();
+            switch (provider)
+            {
+                case "resend":
+                    services.AddSingleton<IEmailProvider, ResendEmailProvider>();
+                    break;
+                default:
+                    services.AddSingleton<IEmailProvider, FakeEmailProvider>();
+                    break;
+            }
+
             return services;
         }
     }

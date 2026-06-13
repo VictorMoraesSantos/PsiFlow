@@ -15,6 +15,11 @@ namespace Auth.Infrastructure.Persistence.Configuration
                     id => id.Value,
                     value => new ConsentId(value))
                 .ValueGeneratedOnAdd();
+            builder.Property(x => x.DocumentType).IsRequired().HasMaxLength(64);
+            builder.Property(x => x.Version).IsRequired().HasMaxLength(64);
+            builder.Property(x => x.DocumentHash).IsRequired().HasMaxLength(256);
+            builder.Property(x => x.IpAddress).HasMaxLength(64);
+            builder.Property(x => x.UserAgent).HasMaxLength(256);
         }
     }
 }

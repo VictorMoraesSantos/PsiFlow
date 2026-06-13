@@ -50,4 +50,27 @@ public sealed class ScheduledNotificationRepository(NotificationsDbContext dbCon
         entry.State = EntityState.Deleted;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ScheduledNotification>> ClaimDueAsync(DateTime now, int maxBatch, int maxAttempts, CancellationToken cancellationToken)
+    {
+        var due = await dbContext.ScheduledNotifications
+            .Where(x => x.Status == "pending" && x.ScheduledFor <= now && x.AttemptCount < maxAttempts)
+            .OrderBy(x => x.ScheduledFor)
+            .Take(maxBatch)
+            .ToListAsync(cancellationToken);
+
+        foreach (var item in due) item.Status = "processing";
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return due;
+    }
+
+    public async Task<IReadOnlyList<ScheduledNotification>> CancelByTypeAsync(string notificationType, string status, CancellationToken cancellationToken)
+    {
+        var items = await dbContext.ScheduledNotifications
+            .Where(x => x.NotificationType == notificationType && x.Status == status)
+            .ToListAsync(cancellationToken);
+        foreach (var item in items) item.Status = "cancelled";
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return items;
+    }
 }

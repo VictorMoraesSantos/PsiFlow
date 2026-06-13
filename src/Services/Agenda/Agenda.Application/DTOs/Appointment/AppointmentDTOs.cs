@@ -40,11 +40,7 @@ namespace Agenda.Application.DTOs.Appointment
         DateTime StartsAt,
         DateTime EndsAt,
         string Modality,
-        string Status,
-        bool LateCancel,
-        DateTime? CanceledAt,
-        int? CanceledBy,
-        string? CancelReason);
+        string Status);
 
     public sealed record AppointmentFilterDTO(
         int? TenantId,

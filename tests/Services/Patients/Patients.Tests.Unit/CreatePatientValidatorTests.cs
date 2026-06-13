@@ -15,6 +15,7 @@ public sealed class CreatePatientValidatorTests
             "+5511999999999",
             DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-30)),
             "12345678900",
+            "11988887777",
             "Main Street",
             "Initial notes");
 

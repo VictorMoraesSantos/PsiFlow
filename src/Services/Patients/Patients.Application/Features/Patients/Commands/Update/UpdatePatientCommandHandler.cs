@@ -22,6 +22,6 @@ public sealed class UpdatePatientCommandHandler : ICommandHandler<UpdatePatientC
         if (!validation.IsValid)
             return Result.Failure<bool>(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
 
-        return await _service.UpdateAsync(command.Patient with { Id = command.Id }, cancellationToken);
+        return await _service.UpdateAsync(command.Patient, cancellationToken);
     }
 }

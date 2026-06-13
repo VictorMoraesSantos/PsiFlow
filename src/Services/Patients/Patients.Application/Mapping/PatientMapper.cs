@@ -16,6 +16,8 @@ namespace Patients.Application.Mapping
             entity.TreatmentStatus,
             entity.EmergencyContactName,
             entity.EmergencyContactPhone,
+            entity.Address,
+            entity.DocumentNumber,
             entity.CreatedAt,
             entity.UpdatedAt,
             entity.DeactivatedAt,
@@ -31,6 +33,8 @@ namespace Patients.Application.Mapping
             BirthDate = dto.BirthDate,
             EmergencyContactName = dto.EmergencyContactName,
             EmergencyContactPhone = dto.EmergencyContactPhone,
+            Address = dto.Address,
+            DocumentNumber = dto.DocumentNumber,
             Status = dto.Status,
             TreatmentStatus = dto.TreatmentStatus
         };

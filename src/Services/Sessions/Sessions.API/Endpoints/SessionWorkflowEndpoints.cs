@@ -15,7 +15,7 @@ public static class SessionWorkflowEndpoints
             ToHttp(await sender.Send(new GetPatientSessionsQuery(patientId, TenantId(user)), ct))).RequireAuthorization(Permissions.Sessions.View);
 
         app.MapPost("/v1/sessions/{sessionId:int}/start", async (int sessionId, StatusReasonRequest? request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            await ChangeStatus(sessionId, "started", request, user, sender, ct)).RequireAuthorization(Permissions.Sessions.Edit);
+            await ChangeStatus(sessionId, "in_progress", request, user, sender, ct)).RequireAuthorization(Permissions.Sessions.Edit);
 
         app.MapPost("/v1/sessions/{sessionId:int}/complete", async (int sessionId, StatusReasonRequest? request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             await ChangeStatus(sessionId, "completed", request, user, sender, ct)).RequireAuthorization(Permissions.Sessions.Edit);
