@@ -23,12 +23,12 @@ namespace Auth.Application.Services
             {
                 var claims = new List<Claim>
                 {
-                    new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                    new(JwtRegisteredClaimNames.Email, email),
-                    new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new("tenant_id", tenantId.ToString()),
-                    new(ClaimTypes.Role, role),
-                    new("roles", string.Join(",", roles))
+                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Email, email),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim("tenant_id", tenantId.ToString()),
+                    new Claim(ClaimTypes.Role, role),
+                    new Claim("roles", string.Join(",", roles))
                 };
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));

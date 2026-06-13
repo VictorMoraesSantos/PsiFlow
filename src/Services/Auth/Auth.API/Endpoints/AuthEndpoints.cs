@@ -12,7 +12,7 @@ namespace Auth.API.Endpoints
         {
             var group = app.MapGroup("/v1/auth").WithTags("Auth");
 
-            group.MapPost("/register", async (RegisterRequest request, IAuthService authService, CancellationToken ct) =>
+            group.MapPost("/register", async (RegisterDTO request, IAuthService authService, CancellationToken ct) =>
             {
                 var result = await authService.RegisterAsync(request, ct);
                 return result.IsSuccess

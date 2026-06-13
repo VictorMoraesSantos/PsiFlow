@@ -28,5 +28,17 @@ namespace Auth.Domain.Entities
             IsConfirmed = isConfirmed;
             ConfirmedAt = confirmedAt;
         }
+
+        public void SetActive(string secretEncrypted, string? qrCodeUri)
+        {
+            SecretEncrypted = secretEncrypted;
+            QrCodeUri = qrCodeUri;
+        }
+
+        public void SetConfirmed()
+        {
+            IsConfirmed = true;
+            ConfirmedAt = DateTime.UtcNow;
+        }
     }
 }

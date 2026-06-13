@@ -1,4 +1,3 @@
-﻿using Core.Application.DTO;
 using Core.Application.DTOs;
 
 namespace Agenda.Application.DTOs.Appointment

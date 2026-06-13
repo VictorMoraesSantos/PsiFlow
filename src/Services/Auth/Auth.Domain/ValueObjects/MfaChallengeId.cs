@@ -1,9 +1,5 @@
 using Auth.Domain.Errors;
 using Core.Domain.Exceptions;
-using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Auth.Domain.ValueObjects
 {
