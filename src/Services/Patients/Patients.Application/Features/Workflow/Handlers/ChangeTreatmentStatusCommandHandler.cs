@@ -11,7 +11,7 @@ public sealed class ChangeTreatmentStatusCommandHandler(IPatientInviteService se
     {
         var validation = await validator.ValidateAsync(command, cancellationToken);
         return validation.IsValid
-            ? await service.ChangeTreatmentStatusAsync(command.PatientId, command.TreatmentStatus, command.Reason, command.TenantId, command.UserId, cancellationToken)
+            ? await service.ChangeTreatmentStatusAsync(command.PatientId, command.TreatmentStatus, command.Reason, command.TenantId, command.UserId, command.CorrelationId, cancellationToken)
             : Result.Failure<object>(Error.Failure(string.Join("; ", validation.Errors.Select(x => x.ErrorMessage))));
     }
 }

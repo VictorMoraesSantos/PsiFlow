@@ -32,13 +32,21 @@ namespace Sessions.API.Endpoints
                     : Results.NotFound(new { error = result.Error!.Description });
             }).RequireAuthorization(Permissions.Sessions.View);
 
-            group.MapPost("/", async (CreateSessionDTO dto, ISender sender, CancellationToken ct) =>
+            group.MapPost("/", () => Results.Forbid()).RequireAuthorization(Permissions.Sessions.Create);
+
+            group.MapPost("/from-appointment", async (CreateSessionDTO dto, Sessions.Application.Contracts.ISessionService service, CancellationToken ct) =>
             {
-                var result = await sender.Send(new CreateSessionCommand(dto), ct);
+                var result = await service.CreateFromAppointmentAsync(dto, ct);
                 return result.IsSuccess
                     ? Results.Created($"/v1/sessions/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
             }).RequireAuthorization(Permissions.Sessions.Create);
+
+            group.MapPost("/by-appointment/{appointmentId:int}/cancel", async (int appointmentId, CancelSessionByAppointmentRequest request, Sessions.Application.Contracts.ISessionService service, CancellationToken ct) =>
+            {
+                var result = await service.CancelByAppointmentAsync(appointmentId, request.TenantId, request.Reason, ct);
+                return result.IsSuccess ? Results.NoContent() : Results.BadRequest(new { error = result.Error!.Description });
+            }).RequireAuthorization(Permissions.Sessions.Delete);
 
             group.MapPut("/{id:int}", async (int id, UpdateSessionDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -60,3 +68,5 @@ namespace Sessions.API.Endpoints
         }
     }
 }
+
+public sealed record CancelSessionByAppointmentRequest(int TenantId, string? Reason);

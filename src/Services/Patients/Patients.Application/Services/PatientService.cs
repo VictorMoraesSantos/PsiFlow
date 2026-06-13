@@ -15,10 +15,21 @@ namespace Patients.Application.Services
     public sealed class PatientService : IPatientService
     {
         private readonly IPatientRepository _repository;
+        private readonly IPatientAdministrativeNoteRepository? _administrativeNoteRepository;
+        private readonly IPatientStatusHistoryRepository? _statusHistoryRepository;
+        private readonly IPatientSessionsProvider? _sessionsProvider;
         private readonly ILogger<PatientService> _logger;
-        public PatientService(IPatientRepository repository, ILogger<PatientService> logger)
+        public PatientService(
+            IPatientRepository repository,
+            ILogger<PatientService> logger,
+            IPatientAdministrativeNoteRepository? administrativeNoteRepository = null,
+            IPatientStatusHistoryRepository? statusHistoryRepository = null,
+            IPatientSessionsProvider? sessionsProvider = null)
         {
             _repository = repository;
+            _administrativeNoteRepository = administrativeNoteRepository;
+            _statusHistoryRepository = statusHistoryRepository;
+            _sessionsProvider = sessionsProvider;
             _logger = logger;
         }
 
@@ -162,15 +173,90 @@ namespace Patients.Application.Services
 
         public async Task<Result<PatientDTO?>> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken = default)
         {
-            var entity = await _repository.Find(x => x.Id == id && x.TenantId == tenantId, cancellationToken);
-            var found = entity.FirstOrDefault();
-            return found is null ? Result.Failure<PatientDTO?>(PatientErrors.NotFound(id)) : Result.Success<PatientDTO?>(found.ToDTO());
+            var entity = await _repository.GetById(id, cancellationToken);
+            if (entity is null) return Result.Failure<PatientDTO?>(PatientErrors.NotFound(id));
+            if (entity.TenantId != tenantId) return Result.Failure<PatientDTO?>(Error.Forbidden("Patient belongs to another tenant."));
+            return Result.Success<PatientDTO?>(entity.ToDTO());
         }
 
         public async Task<Result<IEnumerable<PatientDTO?>>> ListByTenantAsync(int tenantId, CancellationToken cancellationToken = default)
         {
             var entities = await _repository.Find(x => x.TenantId == tenantId, cancellationToken);
             return Result.Success<IEnumerable<PatientDTO?>>(entities.Select(x => x is null ? null : (PatientDTO?)x.ToDTO()));
+        }
+
+        public async Task<Result<PatientAdministrativeProfileDTO>> GetAdministrativeProfileAsync(int id, int tenantId, CancellationToken cancellationToken = default)
+        {
+            var patientResult = await GetByIdAndTenantAsync(id, tenantId, cancellationToken);
+            if (!patientResult.IsSuccess) return Result.Failure<PatientAdministrativeProfileDTO>(patientResult.Error!);
+
+            var notes = _administrativeNoteRepository is null
+                ? Enumerable.Empty<PatientAdministrativeNoteDTO>()
+                : (await _administrativeNoteRepository.Find(x => x.PatientId == id && x.TenantId == tenantId, cancellationToken))
+                    .Where(x => x is not null)
+                    .OrderByDescending(x => x!.CreatedAt)
+                    .Select(x => new PatientAdministrativeNoteDTO(x!.Id, x.PatientId, x.Text, x.CreatedBy, x.CreatedAt));
+
+            var timeline = _statusHistoryRepository is null
+                ? Enumerable.Empty<PatientStatusTimelineItemDTO>()
+                : (await _statusHistoryRepository.Find(x => x.PatientId == id && x.TenantId == tenantId, cancellationToken))
+                    .Where(x => x is not null)
+                    .OrderByDescending(x => x!.CreatedAt)
+                    .Select(x => new PatientStatusTimelineItemDTO(x!.Id, x.PatientId, x.FromStatus, x.ToStatus, x.Reason, x.ChangedBy, x.CreatedAt));
+
+            var sessionsResult = _sessionsProvider is null
+                ? Result.Success<IReadOnlyCollection<PatientSessionHistoryDTO>>(Array.Empty<PatientSessionHistoryDTO>())
+                : await _sessionsProvider.GetPatientSessionsAsync(id, tenantId, cancellationToken);
+            if (!sessionsResult.IsSuccess) return Result.Failure<PatientAdministrativeProfileDTO>(sessionsResult.Error!);
+            var sessions = sessionsResult.Value ?? Array.Empty<PatientSessionHistoryDTO>();
+            var summary = new { patientId = id, totalSessions = sessions.Count, completedSessions = sessions.Count(x => x.Status == "completed"), noShows = sessions.Count(x => x.Status == "no_show") };
+
+            return Result.Success(new PatientAdministrativeProfileDTO(patientResult.Value!, notes, timeline, summary, sessions));
+        }
+
+        public async Task<Result<PatientDTO>> PatchAdministrativeProfileAsync(int id, int tenantId, PatchPatientAdministrativeDTO dto, CancellationToken cancellationToken = default)
+        {
+            var entity = await _repository.GetById(id, cancellationToken);
+            if (entity is null) return Result.Failure<PatientDTO>(PatientErrors.NotFound(id));
+            if (entity.TenantId != tenantId) return Result.Failure<PatientDTO>(Error.Forbidden("Patient belongs to another tenant."));
+
+            var updated = new UpdatePatientDTO(
+                entity.Id,
+                entity.TenantId,
+                dto.FullName ?? entity.FullName,
+                dto.Email ?? entity.Email,
+                dto.Phone ?? entity.Phone,
+                dto.BirthDate ?? entity.BirthDate,
+                entity.Status,
+                entity.TreatmentStatus,
+                dto.EmergencyContactName ?? entity.EmergencyContactName,
+                dto.EmergencyContactPhone ?? entity.EmergencyContactPhone,
+                dto.Address ?? entity.Address,
+                dto.DocumentNumber ?? entity.DocumentNumber);
+
+            var result = await UpdateAsync(updated, cancellationToken);
+            return result.IsSuccess ? Result.Success(entity.ToDTO()) : Result.Failure<PatientDTO>(result.Error!);
+        }
+
+        public async Task<Result<PatientAdministrativeNoteDTO>> AddAdministrativeNoteAsync(int id, int tenantId, int userId, CreatePatientAdministrativeNoteDTO dto, CancellationToken cancellationToken = default)
+        {
+            if (_administrativeNoteRepository is null) return Result.Failure<PatientAdministrativeNoteDTO>(Error.Failure("Administrative notes repository is not configured."));
+            if (string.IsNullOrWhiteSpace(dto.Text)) return Result.Failure<PatientAdministrativeNoteDTO>(Error.Failure("Administrative note text is required."));
+
+            var entity = await _repository.GetById(id, cancellationToken);
+            if (entity is null) return Result.Failure<PatientAdministrativeNoteDTO>(PatientErrors.NotFound(id));
+            if (entity.TenantId != tenantId) return Result.Failure<PatientAdministrativeNoteDTO>(Error.Forbidden("Patient belongs to another tenant."));
+
+            var note = new Patients.Domain.Entities.PatientAdministrativeNote
+            {
+                TenantId = tenantId,
+                PatientId = id,
+                Text = dto.Text.Trim(),
+                CreatedBy = userId
+            };
+
+            await _administrativeNoteRepository.Create(note, cancellationToken);
+            return Result.Success(new PatientAdministrativeNoteDTO(note.Id, note.PatientId, note.Text, note.CreatedBy, note.CreatedAt));
         }
 
         public Task<Result<bool>> DeleteAsync(int id, int tenantId, CancellationToken cancellationToken = default) =>
@@ -180,8 +266,9 @@ namespace Patients.Application.Services
         {
             try
             {
-                var entity = (await _repository.Find(x => x.Id == id && x.TenantId == tenantId, cancellationToken)).FirstOrDefault();
+                var entity = await _repository.GetById(id, cancellationToken);
                 if (entity is null) return Result.Failure<bool>(PatientErrors.NotFound(id));
+                if (entity.TenantId != tenantId) return Result.Failure<bool>(Error.Forbidden("Patient belongs to another tenant."));
                 await _repository.Delete(entity, cancellationToken);
                 return Result.Success(true);
             }

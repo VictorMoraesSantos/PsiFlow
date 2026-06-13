@@ -2,6 +2,7 @@ using BuildingBlocks.Results;
 using Sessions.Application.Contracts;
 using Sessions.Domain.Entities;
 using Sessions.Domain.Errors;
+using Sessions.Domain.Events;
 using Sessions.Domain.Repositories;
 
 namespace Sessions.Application.Services;
@@ -10,14 +11,18 @@ public sealed class SessionWorkflowService(
     ISessionRepository sessionRepository,
     ISessionStatusHistoryRepository sessionStatusHistoryRepository,
     IManualPaymentRepository manualPaymentRepository,
-    IReceiptRepository receiptRepository) : ISessionWorkflowService
+    IReceiptRepository receiptRepository,
+    IReceiptNotificationProvider? receiptNotificationProvider = null) : ISessionWorkflowService
 {
     public async Task<Result<IReadOnlyCollection<SessionResult>>> GetPatientSessionsAsync(int patientId, int tenantId, CancellationToken cancellationToken)
     {
         var sessions = await sessionRepository.ListByPatientOrderedAsync(patientId, tenantId, cancellationToken);
-        var result = sessions
-            .Select(session => new SessionResult(session.Id, session.AppointmentId, session.PatientId, session.PsychologistId, session.StartsAt, session.EndsAt, session.Status, session.Modality))
-            .ToList();
+        var result = new List<SessionResult>();
+        foreach (var session in sessions)
+        {
+            var payment = await manualPaymentRepository.GetBySessionAndTenantAsync(session.Id, tenantId, cancellationToken);
+            result.Add(new SessionResult(session.Id, session.AppointmentId, session.PatientId, session.PsychologistId, session.StartsAt, session.EndsAt, session.Status, session.Modality, payment?.Status ?? "pending", OnlineSessionLink: null));
+        }
         return Result.Success<IReadOnlyCollection<SessionResult>>(result);
     }
 
@@ -33,10 +38,12 @@ public sealed class SessionWorkflowService(
         {
             var earliest = session.StartsAt.AddMinutes(-5);
             if (DateTime.UtcNow < earliest) return Result.Failure<bool>(SessionErrors.StartOutsideWindow);
+            // Late starts are allowed for MVP; the status history records when the session actually moved to in_progress.
         }
 
         var previousStatus = session.Status;
         session.Status = request.Status;
+        session.AddDomainEvent(new SessionStatusChangedDomainEvent(session.Id, session.TenantId, session.PatientId, session.PsychologistId, previousStatus, request.Status, userId, request.Reason));
         await sessionStatusHistoryRepository.Create(new SessionStatusHistory
         {
             TenantId = tenantId,
@@ -77,12 +84,13 @@ public sealed class SessionWorkflowService(
             await manualPaymentRepository.Create(payment, cancellationToken);
         }
 
-        payment.Status = "received";
+        payment.Status = ManualPaymentStatus.Received;
         payment.AmountCents = request.AmountCents ?? payment.AmountCents;
         payment.Currency = request.Currency ?? payment.Currency;
         payment.Notes = request.Notes ?? payment.Notes;
         payment.ReceivedAt = DateTime.UtcNow;
         payment.MarkedBy = userId;
+        payment.AddDomainEvent(new PaymentMarkedReceivedDomainEvent(payment.Id, payment.SessionId, payment.TenantId, payment.AmountCents, payment.Currency, payment.ReceivedAt.Value, userId));
         await manualPaymentRepository.SaveChangesAsync(cancellationToken);
         return Result.Success(ToResult(payment));
     }
@@ -107,6 +115,13 @@ public sealed class SessionWorkflowService(
 
         receipt.Status = "sent";
         receipt.SentAt = DateTime.UtcNow;
+        receipt.AddDomainEvent(new ReceiptRequestedDomainEvent(receipt.Id, sessionId, payment.Id, tenantId));
+        if (receiptNotificationProvider is not null)
+        {
+            var notification = await receiptNotificationProvider.SendReceiptAsync(new ReceiptNotificationRequest(tenantId, sessionId, payment.Id, payment.AmountCents, payment.Currency, payment.ReceivedAt), cancellationToken);
+            if (!notification.IsSuccess) return Result.Failure<ReceiptResult>(notification.Error!);
+            receipt.NotificationId = notification.Value;
+        }
         await receiptRepository.SaveChangesAsync(cancellationToken);
         return Result.Success(new ReceiptResult(receipt.Id, receipt.SessionId, receipt.PaymentId, receipt.Status, receipt.SentAt, receipt.NotificationId));
     }

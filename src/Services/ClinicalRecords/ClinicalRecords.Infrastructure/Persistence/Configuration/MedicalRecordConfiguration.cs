@@ -15,5 +15,6 @@ public sealed class MedicalRecordConfiguration : IEntityTypeConfiguration<Medica
         builder.Property(entity => entity.Status).HasMaxLength(32).IsRequired();
         builder.Property(entity => entity.CreatedAt).IsRequired();
         builder.Property(entity => entity.UpdatedAt).IsRequired();
+        builder.HasIndex(entity => new { entity.TenantId, entity.PatientId }).IsUnique();
     }
 }

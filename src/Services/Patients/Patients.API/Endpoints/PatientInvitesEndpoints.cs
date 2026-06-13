@@ -12,17 +12,17 @@ public static class PatientInvitesEndpoints
     {
         app.MapPost("/v1/patients/{patientId:int}/deactivate", async (int patientId, DeactivatePatientRequest request, ISender sender, HttpContext http, CancellationToken ct) =>
         {
-            var result = await sender.Send(new DeactivatePatientCommand(patientId, request.Reason, http.GetTenantId(), http.GetUserId()), ct);
+            var result = await sender.Send(new DeactivatePatientCommand(patientId, request.Reason, http.GetTenantId(), http.GetUserId(), http.TraceIdentifier), ct);
             return ToHttp(result, StatusCodes.Status204NoContent);
         }).RequireAuthorization(Permissions.Patients.Edit);
 
         app.MapPost("/v1/patients/{patientId:int}/status", async (int patientId, ChangeTreatmentStatusRequest request, ISender sender, HttpContext http, CancellationToken ct) =>
         {
-            var result = await sender.Send(new ChangeTreatmentStatusCommand(patientId, request.TreatmentStatus, request.Reason, http.GetTenantId(), http.GetUserId()), ct);
+            var result = await sender.Send(new ChangeTreatmentStatusCommand(patientId, request.TreatmentStatus, request.Reason, http.GetTenantId(), http.GetUserId(), http.TraceIdentifier), ct);
             return ToHttp(result);
         }).RequireAuthorization(Permissions.Patients.Edit);
 
-        app.MapGet("/v1/patients/{patientId:int}/sessions-summary", async (int patientId, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new GetPatientSessionsSummaryQuery(patientId), ct))).RequireAuthorization(Permissions.Patients.View);
+        app.MapGet("/v1/patients/{patientId:int}/sessions-summary", async (int patientId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new GetPatientSessionsSummaryQuery(patientId, http.GetTenantId()), ct))).RequireAuthorization(Permissions.Patients.View);
 
         app.MapPost("/v1/patient-invites", async (InvitePatientRequest request, ISender sender, HttpContext http, CancellationToken ct) =>
         {
@@ -53,6 +53,7 @@ public static class PatientInvitesEndpoints
         {
             ErrorType.NotFound => Results.NotFound(new { error = result.Error.Description }),
             ErrorType.Conflict => Results.Conflict(new { error = result.Error.Description }),
+            ErrorType.Forbidden => Results.Forbid(),
             _ => Results.BadRequest(new { error = result.Error.Description })
         };
 
@@ -62,6 +63,7 @@ public static class PatientInvitesEndpoints
         {
             ErrorType.NotFound => Results.NotFound(new { error = result.Error.Description }),
             ErrorType.Conflict => Results.Conflict(new { error = result.Error.Description }),
+            ErrorType.Forbidden => Results.Forbid(),
             _ => Results.BadRequest(new { error = result.Error.Description })
         };
 }

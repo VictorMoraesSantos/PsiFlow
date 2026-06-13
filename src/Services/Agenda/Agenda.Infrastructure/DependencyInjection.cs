@@ -1,5 +1,8 @@
 using Agenda.Domain.Repositories;
+using Agenda.Application.Contracts;
+using Agenda.Infrastructure.Notifications;
 using Agenda.Infrastructure.Persistence.Repositories;
+using Agenda.Infrastructure.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +18,9 @@ namespace Agenda.Infrastructure
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
             services.AddScoped<IScheduleBlockRepository, ScheduleBlockRepository>();
+            services.AddHttpClient<IAppointmentNotificationProvider, HttpAppointmentNotificationProvider>();
+            services.AddHttpClient<IAppointmentSessionProvider, HttpAppointmentSessionProvider>();
+            services.AddSingleton<IPatientRelationshipProvider, AllowTenantPatientRelationshipProvider>();
             services.AddHostedService<AgendaDatabaseInitializer>();
             return services;
         }

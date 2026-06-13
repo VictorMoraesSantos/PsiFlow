@@ -2,6 +2,7 @@ using Agenda.Application.Contracts;
 using Agenda.Application.DTOs.Appointment;
 using Agenda.Application.Mapping;
 using Agenda.Domain.Errors;
+using Agenda.Domain.Events;
 using Agenda.Domain.Filters;
 using Agenda.Domain.Repositories;
 using BuildingBlocks.Results;
@@ -13,10 +14,27 @@ namespace Agenda.Application.Services
     public sealed class AppointmentService : IAppointmentService
     {
         private readonly IAppointmentRepository _repository;
+        private readonly IAvailabilityRepository? _availabilityRepository;
+        private readonly IScheduleBlockRepository? _scheduleBlockRepository;
+        private readonly IAppointmentNotificationProvider? _notificationProvider;
+        private readonly IAppointmentSessionProvider? _sessionProvider;
+        private readonly IPatientRelationshipProvider? _patientRelationshipProvider;
         private readonly ILogger<AppointmentService> _logger;
-        public AppointmentService(IAppointmentRepository repository, ILogger<AppointmentService> logger)
+        public AppointmentService(
+            IAppointmentRepository repository,
+            ILogger<AppointmentService> logger,
+            IAvailabilityRepository? availabilityRepository = null,
+            IScheduleBlockRepository? scheduleBlockRepository = null,
+            IAppointmentNotificationProvider? notificationProvider = null,
+            IAppointmentSessionProvider? sessionProvider = null,
+            IPatientRelationshipProvider? patientRelationshipProvider = null)
         {
             _repository = repository;
+            _availabilityRepository = availabilityRepository;
+            _scheduleBlockRepository = scheduleBlockRepository;
+            _notificationProvider = notificationProvider;
+            _sessionProvider = sessionProvider;
+            _patientRelationshipProvider = patientRelationshipProvider;
             _logger = logger;
         }
 
@@ -28,10 +46,43 @@ namespace Agenda.Application.Services
                     return Result.Failure<int>(AppointmentErrors.CreateError);
                 if (dto.EndsAt <= dto.StartsAt)
                     return Result.Failure<int>(AppointmentErrors.CreateError);
+                if (_patientRelationshipProvider is not null)
+                {
+                    var relationship = await _patientRelationshipProvider.IsPatientLinkedToTenantAsync(dto.PatientId, dto.TenantId, cancellationToken);
+                    if (!relationship.IsSuccess) return Result.Failure<int>(relationship.Error!);
+                    if (!relationship.Value) return Result.Failure<int>(Error.Forbidden("Patient is not linked to tenant."));
+                }
+                if (_availabilityRepository is not null)
+                {
+                    var weekday = (int)dto.StartsAt.DayOfWeek;
+                    var start = TimeOnly.FromDateTime(dto.StartsAt);
+                    var end = TimeOnly.FromDateTime(dto.EndsAt);
+                    var availabilities = await _availabilityRepository.Find(item => item.TenantId == dto.TenantId && item.IsActive && item.Weekday == weekday && item.Modality == dto.Modality && item.StartTime <= start && item.EndTime >= end, cancellationToken);
+                    if (!availabilities.Any(item => item is not null)) return Result.Failure<int>(AppointmentErrors.OutsideAvailability);
+                }
+                if (_scheduleBlockRepository is not null)
+                {
+                    var blocks = await _scheduleBlockRepository.ListForPeriodAsync(dto.TenantId, dto.StartsAt, dto.EndsAt, cancellationToken);
+                    if (blocks.Count > 0) return Result.Failure<int>(AppointmentErrors.BlockedByScheduleBlock);
+                }
+                var conflicts = await _repository.ListForPeriodAsync(dto.TenantId, dto.StartsAt, dto.EndsAt, "canceled", cancellationToken);
+                if (conflicts.Any(item => item.PsychologistId == dto.PsychologistId)) return Result.Failure<int>(Error.Conflict("Appointment conflicts with existing appointment."));
 
                 var entity = dto.ToEntity();
-                await _repository.Create(entity, cancellationToken);
-                return Result.Success(0);
+                var created = await _repository.CreateIfSlotIsFreeAsync(entity, cancellationToken);
+                if (!created) return Result.Failure<int>(Error.Conflict("Appointment conflicts with existing appointment."));
+                entity.AddDomainEvent(new AppointmentScheduledDomainEvent(entity.Id, entity.TenantId, entity.PatientId, entity.PsychologistId, entity.StartsAt, entity.EndsAt, entity.Modality));
+                if (_notificationProvider is not null)
+                {
+                    var notification = await _notificationProvider.SendAppointmentScheduledAsync(new AppointmentScheduledNotification(entity.TenantId, entity.Id, entity.PatientId, entity.PsychologistId, entity.StartsAt, entity.EndsAt, entity.Modality), cancellationToken);
+                    if (!notification.IsSuccess) return Result.Failure<int>(notification.Error!);
+                }
+                if (_sessionProvider is not null)
+                {
+                    var session = await _sessionProvider.CreateSessionForAppointmentAsync(new AppointmentSessionRequest(entity.TenantId, entity.Name, entity.Id, entity.PatientId, entity.PsychologistId, entity.StartsAt, entity.EndsAt, entity.Modality), cancellationToken);
+                    if (!session.IsSuccess) return Result.Failure<int>(session.Error!);
+                }
+                return Result.Success(entity.Id);
             }
             catch (Exception ex)
             {

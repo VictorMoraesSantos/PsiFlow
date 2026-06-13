@@ -53,4 +53,27 @@ namespace Patients.Application.DTOs.Patient
         string? Search,
         int? Page = 1,
         int? PageSize = 20) : DomainQueryFilterDto(Page, PageSize);
+
+    public sealed record PatientAdministrativeProfileDTO(
+        PatientDTO Patient,
+        IEnumerable<PatientAdministrativeNoteDTO> AdministrativeNotes,
+        IEnumerable<PatientStatusTimelineItemDTO> Timeline,
+        object SessionsSummary,
+        IEnumerable<Patients.Application.Contracts.PatientSessionHistoryDTO> SessionsHistory);
+
+    public sealed record PatchPatientAdministrativeDTO(
+        string? FullName,
+        string? Email,
+        string? Phone,
+        DateOnly? BirthDate,
+        string? EmergencyContactName,
+        string? EmergencyContactPhone,
+        string? Address,
+        string? DocumentNumber);
+
+    public sealed record CreatePatientAdministrativeNoteDTO(string Text);
+
+    public sealed record PatientAdministrativeNoteDTO(int Id, int PatientId, string Text, int CreatedBy, DateTime CreatedAt);
+
+    public sealed record PatientStatusTimelineItemDTO(int Id, int PatientId, string FromStatus, string ToStatus, string? Reason, int ChangedBy, DateTime CreatedAt);
 }

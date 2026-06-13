@@ -15,5 +15,8 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.Property(entity => entity.Status).HasMaxLength(32).IsRequired();
         builder.Property(entity => entity.CreatedAt).IsRequired();
         builder.Property(entity => entity.UpdatedAt).IsRequired();
+        builder.HasIndex(entity => new { entity.TenantId, entity.PsychologistId, entity.StartsAt, entity.EndsAt })
+            .IsUnique()
+            .HasFilter("status <> 'canceled'");
     }
 }

@@ -4,9 +4,9 @@ namespace Patients.Application.Contracts;
 
 public interface IPatientInviteService
 {
-    Task<Result> DeactivateAsync(int patientId, string? reason, int tenantId, int userId, CancellationToken cancellationToken);
-    Task<Result<object>> ChangeTreatmentStatusAsync(int patientId, string treatmentStatus, string? reason, int tenantId, int userId, CancellationToken cancellationToken);
-    Task<Result<object>> GetSessionsSummaryAsync(int patientId, CancellationToken cancellationToken);
+    Task<Result> DeactivateAsync(int patientId, string? reason, int tenantId, int userId, string? correlationId, CancellationToken cancellationToken);
+    Task<Result<object>> ChangeTreatmentStatusAsync(int patientId, string treatmentStatus, string? reason, int tenantId, int userId, string? correlationId, CancellationToken cancellationToken);
+    Task<Result<object>> GetSessionsSummaryAsync(int patientId, int tenantId, CancellationToken cancellationToken);
     Task<Result<object>> CreateInviteAsync(string email, string? phone, int? patientId, int tenantId, int userId, CancellationToken cancellationToken);
     Task<Result<object>> PreviewInviteAsync(string token, CancellationToken cancellationToken);
     Task<Result<object>> AcceptInviteAsync(string token, int userId, string userEmail, string? ipAddress, string? userAgent, CancellationToken cancellationToken);

@@ -1,3 +1,4 @@
+using BuildingBlocks.Results;
 using Patients.Application.Services;
 using Patients.Domain.Entities;
 using Patients.Domain.Events;
@@ -83,6 +84,7 @@ public sealed class PatientInviteServiceTests
         var result = await service.AcceptInviteAsync(token, 99, "other@example.com", "127.0.0.1", "test-agent", CancellationToken.None);
 
         Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Forbidden, result.Error!.Type);
         Assert.Equal("pending", invite.Status);
     }
 
@@ -94,7 +96,7 @@ public sealed class PatientInviteServiceTests
         var historyRepository = new InMemoryPatientStatusHistoryRepository();
         var service = CreateService(patientRepository, statusHistoryRepository: historyRepository);
 
-        var result = await service.DeactivateAsync(patient.Id, "requested", tenantId: 1, userId: 42, CancellationToken.None);
+        var result = await service.DeactivateAsync(patient.Id, "requested", tenantId: 1, userId: 42, correlationId: "corr-1", CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("inactive", patient.Status);
@@ -113,9 +115,10 @@ public sealed class PatientInviteServiceTests
         var historyRepository = new InMemoryPatientStatusHistoryRepository();
         var service = CreateService(patientRepository, statusHistoryRepository: historyRepository);
 
-        var result = await service.DeactivateAsync(patient.Id, "requested", tenantId: 2, userId: 42, CancellationToken.None);
+        var result = await service.DeactivateAsync(patient.Id, "requested", tenantId: 2, userId: 42, correlationId: "corr-1", CancellationToken.None);
 
         Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Forbidden, result.Error!.Type);
         Assert.Equal("active", patient.Status);
         Assert.False(patientRepository.UpdateCalled);
         Assert.Empty(historyRepository.Items);

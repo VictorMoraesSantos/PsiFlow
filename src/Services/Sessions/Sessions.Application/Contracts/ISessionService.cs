@@ -9,5 +9,7 @@ namespace Sessions.Application.Contracts
         IUpdateService<UpdateSessionDTO>,
         IDeleteService<int>
     {
+        Task<BuildingBlocks.Results.Result<SessionDTO>> CreateFromAppointmentAsync(CreateSessionDTO dto, CancellationToken cancellationToken = default);
+        Task<BuildingBlocks.Results.Result<bool>> CancelByAppointmentAsync(int appointmentId, int tenantId, string? reason, CancellationToken cancellationToken = default);
     }
 }

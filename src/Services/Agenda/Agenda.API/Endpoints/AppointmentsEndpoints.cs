@@ -5,6 +5,7 @@ using Agenda.Application.Features.Appointments.Commands.Update;
 using Agenda.Application.Features.Appointments.Queries.GetAll;
 using Agenda.Application.Features.Appointments.Queries.GetById;
 using BuildingBlocks.CQRS.Sender;
+using System.Security.Claims;
 using static BuildingBlocks.Authorization.Policies;
 
 namespace Agenda.API.Endpoints
@@ -32,9 +33,10 @@ namespace Agenda.API.Endpoints
                     : Results.NotFound(new { error = result.Error!.Description });
             }).RequireAuthorization(Permissions.Agenda.View);
 
-            group.MapPost("/", async (CreateAppointmentDTO dto, ISender sender, CancellationToken ct) =>
+            group.MapPost("/", async (CreateAppointmentDTO dto, ISender sender, HttpContext http, CancellationToken ct) =>
             {
-                var result = await sender.Send(new CreateAppointmentCommand(dto), ct);
+                var payload = dto with { TenantId = http.GetTenantId(), CreatedBy = http.GetUserId() };
+                var result = await sender.Send(new CreateAppointmentCommand(payload), ct);
                 return result.IsSuccess
                     ? Results.Created($"/v1/appointments/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
@@ -59,4 +61,10 @@ namespace Agenda.API.Endpoints
             return app;
         }
     }
+}
+
+internal static class AppointmentHttpContextExtensions
+{
+    public static int GetTenantId(this HttpContext http) => int.TryParse(http.User.FindFirstValue("tenant_id"), out var id) ? id : 0;
+    public static int GetUserId(this HttpContext http) => int.TryParse(http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? http.User.FindFirstValue("sub"), out var id) ? id : 0;
 }

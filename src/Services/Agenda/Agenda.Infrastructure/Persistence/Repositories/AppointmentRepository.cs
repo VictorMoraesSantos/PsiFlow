@@ -6,6 +6,7 @@ using Core.Domain.Filters;
 using Core.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using PsiFlow.Agenda.Infrastructure.Persistence.Data;
+using System.Data;
 
 namespace Agenda.Infrastructure.Persistence.Repositories;
 
@@ -21,4 +22,23 @@ public sealed class AppointmentRepository(AgendaDbContext dbContext) : Repositor
 
     public async Task<Appointment?> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken = default) =>
         await dbContext.Appointments.FirstOrDefaultAsync(item => item.Id == id && item.TenantId == tenantId, cancellationToken);
+
+    public async Task<bool> CreateIfSlotIsFreeAsync(Appointment appointment, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var hasConflict = await dbContext.Appointments.AnyAsync(item =>
+            item.TenantId == appointment.TenantId &&
+            item.PsychologistId == appointment.PsychologistId &&
+            item.Status != "canceled" &&
+            item.StartsAt < appointment.EndsAt &&
+            item.EndsAt > appointment.StartsAt,
+            cancellationToken);
+
+        if (hasConflict) return false;
+
+        await dbContext.Appointments.AddAsync(appointment, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
 }

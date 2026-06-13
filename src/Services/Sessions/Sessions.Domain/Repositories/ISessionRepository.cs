@@ -7,5 +7,6 @@ namespace Sessions.Domain.Repositories;
 public interface ISessionRepository : IRepository<Session, int, SessionQueryFilter>
 {
     Task<Session?> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken);
+    Task<Session?> GetByAppointmentAndTenantAsync(int appointmentId, int tenantId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<Session>> ListByPatientOrderedAsync(int patientId, int tenantId, CancellationToken cancellationToken);
 }

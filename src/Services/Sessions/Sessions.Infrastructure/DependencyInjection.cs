@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PsiFlow.Sessions.Infrastructure.Persistence.Data;
+using Sessions.Application.Contracts;
 using Sessions.Domain.Repositories;
+using Sessions.Infrastructure.Notifications;
 using Sessions.Infrastructure.Persistence.Repositories;
 
 namespace Sessions.Infrastructure
@@ -16,6 +18,7 @@ namespace Sessions.Infrastructure
             services.AddScoped<ISessionStatusHistoryRepository, SessionStatusHistoryRepository>();
             services.AddScoped<IManualPaymentRepository, ManualPaymentRepository>();
             services.AddScoped<IReceiptRepository, ReceiptRepository>();
+            services.AddHttpClient<IReceiptNotificationProvider, HttpReceiptNotificationProvider>();
             services.AddHostedService<SessionsDatabaseInitializer>();
             return services;
         }

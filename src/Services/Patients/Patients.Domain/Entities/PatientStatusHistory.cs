@@ -10,4 +10,5 @@ public class PatientStatusHistory : BaseEntity<int>
     public string ToStatus { get; set; } = string.Empty;
     public string? Reason { get; set; }
     public int ChangedBy { get; set; }
+    public string? CorrelationId { get; set; }
 }

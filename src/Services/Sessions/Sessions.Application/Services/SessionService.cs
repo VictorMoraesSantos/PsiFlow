@@ -40,6 +40,42 @@ namespace Sessions.Application.Services
             }
         }
 
+        public async Task<Result<SessionDTO>> CreateFromAppointmentAsync(CreateSessionDTO dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (dto.AppointmentId <= 0 || dto.PatientId <= 0 || dto.PsychologistId <= 0 || dto.TenantId <= 0)
+                    return Result.Failure<SessionDTO>(SessionErrors.CreateError);
+                if (dto.EndsAt <= dto.StartsAt)
+                    return Result.Failure<SessionDTO>(SessionErrors.CreateError);
+
+                var existing = await _repository.GetByAppointmentAndTenantAsync(dto.AppointmentId, dto.TenantId, cancellationToken);
+                if (existing is not null) return Result.Success(existing.ToDTO());
+
+                var entity = dto with { Status = "scheduled" };
+                var session = entity.ToEntity();
+                await _repository.Create(session, cancellationToken);
+                return Result.Success(session.ToDTO());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao criar Session a partir do Appointment {AppointmentId}", dto.AppointmentId);
+                return Result.Failure<SessionDTO>(Error.Failure(ex.Message));
+            }
+        }
+
+        public async Task<Result<bool>> CancelByAppointmentAsync(int appointmentId, int tenantId, string? reason, CancellationToken cancellationToken = default)
+        {
+            var session = await _repository.GetByAppointmentAndTenantAsync(appointmentId, tenantId, cancellationToken);
+            if (session is null) return Result.Success(true);
+            if (session.Status == "canceled") return Result.Success(true);
+            if (session.Status is "completed" or "no_show") return Result.Failure<bool>(Error.Failure("Cannot cancel terminal session."));
+            session.Status = "canceled";
+            session.MarkAsUpdated();
+            await _repository.Update(session, cancellationToken);
+            return Result.Success(true);
+        }
+
         public async Task<Result<IEnumerable<int>>> CreateRangeAsync(IEnumerable<CreateSessionDTO> dtos, CancellationToken cancellationToken = default)
         {
             try

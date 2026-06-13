@@ -16,6 +16,9 @@ public sealed class SessionRepository(SessionsDbContext dbContext) : Repository<
     public Task<Session?> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken) =>
         dbContext.Sessions.FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId, cancellationToken);
 
+    public Task<Session?> GetByAppointmentAndTenantAsync(int appointmentId, int tenantId, CancellationToken cancellationToken) =>
+        dbContext.Sessions.FirstOrDefaultAsync(x => x.AppointmentId == appointmentId && x.TenantId == tenantId, cancellationToken);
+
     public async Task<IReadOnlyCollection<Session>> ListByPatientOrderedAsync(int patientId, int tenantId, CancellationToken cancellationToken) =>
         await dbContext.Sessions.AsNoTracking()
             .Where(x => x.PatientId == patientId && x.TenantId == tenantId)

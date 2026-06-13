@@ -37,5 +37,11 @@
             var error = new Error(description, ErrorType.Conflict);
             return error;
         }
+
+        public static Error Forbidden(string description)
+        {
+            var error = new Error(description, ErrorType.Forbidden);
+            return error;
+        }
     }
 }

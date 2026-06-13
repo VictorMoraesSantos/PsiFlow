@@ -54,4 +54,14 @@ public sealed class AvailabilityRepository(AgendaDbContext dbContext) : IAvailab
             item.StartTime < endTime &&
             item.EndTime > startTime,
             cancellationToken);
+
+    public async Task ReplaceTenantWeekAsync(int tenantId, IEnumerable<Availability> availabilities, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var existing = await dbContext.Availabilities.Where(item => item.TenantId == tenantId).ToListAsync(cancellationToken);
+        dbContext.Availabilities.RemoveRange(existing);
+        await dbContext.Availabilities.AddRangeAsync(availabilities, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
 }

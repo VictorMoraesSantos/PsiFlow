@@ -11,7 +11,7 @@ public interface ISessionWorkflowService
     Task<Result<ReceiptResult>> SendReceiptAsync(int sessionId, int tenantId, CancellationToken cancellationToken);
 }
 
-public sealed record SessionResult(int Id, int AppointmentId, int PatientId, int PsychologistId, DateTime StartsAt, DateTime EndsAt, string Status, string Modality);
+public sealed record SessionResult(int Id, int AppointmentId, int PatientId, int PsychologistId, DateTime StartsAt, DateTime EndsAt, string Status, string Modality, string PaymentStatus, string? OnlineSessionLink);
 public sealed record ChangeSessionStatusRequest(string Status, string? Reason);
 public sealed record MarkPaymentReceivedRequest(int? AmountCents, string? Currency, string? Notes);
 public sealed record PaymentResult(int Id, int SessionId, string Status, int? AmountCents, string Currency, DateTime? ReceivedAt, int? MarkedBy, string? Notes);

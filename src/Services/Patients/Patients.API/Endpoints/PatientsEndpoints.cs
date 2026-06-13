@@ -1,4 +1,5 @@
 using BuildingBlocks.CQRS.Sender;
+using Patients.Application.Contracts;
 using Patients.Application.DTOs.Patient;
 using Patients.Application.Features.Patients.Commands.Create;
 using Patients.Application.Features.Patients.Commands.Delete;
@@ -30,7 +31,13 @@ namespace Patients.API.Endpoints
                 var result = await sender.Send(new GetPatientByIdQuery(id, http.GetTenantId()), ct);
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
-                    : Results.NotFound(new { error = result.Error!.Description });
+                    : ToError(result.Error!);
+            }).RequireAuthorization(Permissions.Patients.View);
+
+            group.MapGet("/{id:int}/administrative-profile", async (int id, IPatientService service, HttpContext http, CancellationToken ct) =>
+            {
+                var result = await service.GetAdministrativeProfileAsync(id, http.GetTenantId(), ct);
+                return result.IsSuccess ? Results.Ok(result.Value) : ToError(result.Error!);
             }).RequireAuthorization(Permissions.Patients.View);
 
             group.MapPost("/", async (CreatePatientDTO dto, ISender sender, HttpContext http, CancellationToken ct) =>
@@ -48,7 +55,19 @@ namespace Patients.API.Endpoints
                 var result = await sender.Send(new UpdatePatientCommand(payload), ct);
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
-                    : Results.BadRequest(new { error = result.Error!.Description });
+                    : ToError(result.Error!);
+            }).RequireAuthorization(Permissions.Patients.Edit);
+
+            group.MapPatch("/{id:int}/administrative-profile", async (int id, PatchPatientAdministrativeDTO dto, IPatientService service, HttpContext http, CancellationToken ct) =>
+            {
+                var result = await service.PatchAdministrativeProfileAsync(id, http.GetTenantId(), dto, ct);
+                return result.IsSuccess ? Results.Ok(result.Value) : ToError(result.Error!);
+            }).RequireAuthorization(Permissions.Patients.Edit);
+
+            group.MapPost("/{id:int}/administrative-notes", async (int id, CreatePatientAdministrativeNoteDTO dto, IPatientService service, HttpContext http, CancellationToken ct) =>
+            {
+                var result = await service.AddAdministrativeNoteAsync(id, http.GetTenantId(), http.GetUserId(), dto, ct);
+                return result.IsSuccess ? Results.Created($"/v1/patients/{id}/administrative-notes/{result.Value!.Id}", result.Value) : ToError(result.Error!);
             }).RequireAuthorization(Permissions.Patients.Edit);
 
             group.MapDelete("/{id:int}", async (int id, ISender sender, HttpContext http, CancellationToken ct) =>
@@ -56,11 +75,18 @@ namespace Patients.API.Endpoints
                 var result = await sender.Send(new DeletePatientCommand(id, http.GetTenantId(), http.GetUserId()), ct);
                 return result.IsSuccess
                     ? Results.NoContent()
-                    : Results.NotFound(new { error = result.Error!.Description });
+                    : ToError(result.Error!);
             }).RequireAuthorization(Permissions.Patients.Delete);
 
             return app;
         }
+
+        private static IResult ToError(BuildingBlocks.Results.Error error) => error.Type switch
+        {
+            BuildingBlocks.Results.ErrorType.NotFound => Results.NotFound(new { error = error.Description }),
+            BuildingBlocks.Results.ErrorType.Forbidden => Results.Forbid(),
+            _ => Results.BadRequest(new { error = error.Description })
+        };
     }
 }
 

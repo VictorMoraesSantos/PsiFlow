@@ -8,5 +8,6 @@ namespace Agenda.Domain.Repositories
     {
         Task<IReadOnlyCollection<Appointment>> ListForPeriodAsync(int tenantId, DateTime from, DateTime to, string excludeStatus, CancellationToken cancellationToken = default);
         Task<Appointment?> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken = default);
+        Task<bool> CreateIfSlotIsFreeAsync(Appointment appointment, CancellationToken cancellationToken = default);
     }
 }

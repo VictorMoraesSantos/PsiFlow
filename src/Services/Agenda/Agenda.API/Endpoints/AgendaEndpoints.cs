@@ -17,6 +17,9 @@ public static class AgendaEndpoints
         app.MapGet("/v1/availability/weekly", async (ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new GetWeeklyAvailabilitiesQuery(TenantId(user)), ct))).RequireAuthorization(Permissions.Agenda.View);
 
+        app.MapPut("/v1/availability/weekly", async (WeeklyAvailabilityReplaceRequest request, ClaimsPrincipal user, IAgendaService service, CancellationToken ct) =>
+            ToHttp(await service.ReplaceWeeklyAvailabilitiesAsync(request, TenantId(user), ct))).RequireAuthorization(Permissions.Agenda.Edit);
+
         app.MapPatch("/v1/availability/weekly/{availabilityId:int}", async (int availabilityId, WeeklyAvailabilityRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new UpdateWeeklyAvailabilityCommand(availabilityId, request, TenantId(user)), ct))).RequireAuthorization(Permissions.Agenda.Edit);
 
@@ -35,8 +38,29 @@ public static class AgendaEndpoints
         app.MapGet("/v1/available-slots", async (DateTime from, DateTime to, string? modality, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new GetAvailableSlotsQuery(new AvailableSlotsRequest(from, to, modality), TenantId(user)), ct))).RequireAuthorization(Permissions.Agenda.View);
 
+        app.MapGet("/v1/agenda/daily", async (DateOnly date, ClaimsPrincipal user, IAgendaService service, CancellationToken ct) =>
+        {
+            var from = date.ToDateTime(TimeOnly.MinValue);
+            return ToHttp(await service.GetAgendaAsync(from, from.AddDays(1), TenantId(user), PatientId(user), ct));
+        }).RequireAuthorization(Permissions.Agenda.View);
+
+        app.MapGet("/v1/agenda/weekly", async (DateOnly weekStart, ClaimsPrincipal user, IAgendaService service, CancellationToken ct) =>
+        {
+            var from = weekStart.ToDateTime(TimeOnly.MinValue);
+            return ToHttp(await service.GetAgendaAsync(from, from.AddDays(7), TenantId(user), PatientId(user), ct));
+        }).RequireAuthorization(Permissions.Agenda.View);
+
+        app.MapGet("/v1/agenda/monthly", async (int year, int month, ClaimsPrincipal user, IAgendaService service, CancellationToken ct) =>
+        {
+            var from = new DateTime(year, month, 1);
+            return ToHttp(await service.GetAgendaAsync(from, from.AddMonths(1), TenantId(user), PatientId(user), ct));
+        }).RequireAuthorization(Permissions.Agenda.View);
+
         app.MapPost("/v1/appointments/{appointmentId:int}/cancel", async (int appointmentId, CancelAppointmentRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
             ToHttp(await sender.Send(new CancelAppointmentCommand(appointmentId, request, TenantId(user), UserId(user)), ct))).RequireAuthorization(Permissions.Agenda.Edit);
+
+        app.MapPost("/v1/appointments/{appointmentId:int}/reschedule", async (int appointmentId, RescheduleAppointmentRequest request, ClaimsPrincipal user, IAgendaService service, CancellationToken ct) =>
+            ToHttp(await service.RescheduleAppointmentAsync(appointmentId, request, TenantId(user), UserId(user), ct))).RequireAuthorization(Permissions.Agenda.Edit);
 
         return app;
     }
@@ -51,6 +75,7 @@ public static class AgendaEndpoints
 
     private static int TenantId(ClaimsPrincipal user) => ReadIntClaim(user, "tenant_id");
     private static int UserId(ClaimsPrincipal user) => ReadIntClaim(user, ClaimTypes.NameIdentifier, "sub", "user_id");
+    private static int? PatientId(ClaimsPrincipal user) => ReadIntClaim(user, "patient_id") is var id && id > 0 ? id : null;
 
     private static int ReadIntClaim(ClaimsPrincipal user, params string[] names) =>
         names.Select(name => user.FindFirstValue(name)).Select(value => int.TryParse(value, out var id) ? id : 0).FirstOrDefault(id => id > 0);

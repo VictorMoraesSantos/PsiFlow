@@ -25,6 +25,7 @@
   <Folder Name="/Services/Agenda/">
     <Project Path="src/Services/Agenda/Agenda.API/Agenda.API.csproj" />
     <Project Path="src/Services/Agenda/Agenda.Application/Agenda.Application.csproj" />
+    <Project Path="src/Services/Agenda/Agenda.Contracts/Agenda.Contracts.csproj" />
     <Project Path="src/Services/Agenda/Agenda.Domain/Agenda.Domain.csproj" />
     <Project Path="src/Services/Agenda/Agenda.Infrastructure/Agenda.Infrastructure.csproj" />
   </Folder>
@@ -61,6 +62,7 @@
   <Folder Name="/Services/Sessions/">
     <Project Path="src/Services/Sessions/Sessions.API/Sessions.API.csproj" />
     <Project Path="src/Services/Sessions/Sessions.Application/Sessions.Application.csproj" />
+    <Project Path="src/Services/Sessions/Sessions.Contracts/Sessions.Contracts.csproj" />
     <Project Path="src/Services/Sessions/Sessions.Domain/Sessions.Domain.csproj" />
     <Project Path="src/Services/Sessions/Sessions.Infrastructure/Sessions.Infrastructure.csproj" />
   </Folder>

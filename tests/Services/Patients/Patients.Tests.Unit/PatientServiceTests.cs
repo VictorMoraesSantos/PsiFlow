@@ -1,3 +1,4 @@
+using BuildingBlocks.Results;
 using Microsoft.Extensions.Logging.Abstractions;
 using Patients.Application.DTOs.Patient;
 using Patients.Application.Services;
@@ -25,5 +26,28 @@ public sealed class PatientServiceTests
         var result = await service.CreateAsync(dto, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task GetByIdAndTenantAsync_WhenPatientBelongsToAnotherTenant_ShouldReturnForbidden()
+    {
+        var patient = new global::Patients.Domain.Entities.Patient
+        {
+            TenantId = 1,
+            FullName = "Maria Silva",
+            Email = "maria@example.com",
+            Phone = "11999999999"
+        };
+
+        typeof(Core.Domain.Aggregates.BaseEntity<int>)
+            .GetProperty(nameof(Core.Domain.Aggregates.BaseEntity<int>.Id), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(patient, 10);
+
+        var service = new PatientService(new InMemoryPatientRepository(patient), NullLogger<PatientService>.Instance);
+
+        var result = await service.GetByIdAndTenantAsync(10, tenantId: 2, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Forbidden, result.Error!.Type);
     }
 }

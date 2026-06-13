@@ -7,18 +7,25 @@ public interface IAgendaService
     Task<Result<WeeklyAvailabilityResult>> CreateWeeklyAvailabilityAsync(WeeklyAvailabilityRequest request, int tenantId, CancellationToken cancellationToken);
     Task<Result<IReadOnlyCollection<WeeklyAvailabilityResult>>> GetWeeklyAvailabilitiesAsync(int tenantId, CancellationToken cancellationToken);
     Task<Result<bool>> UpdateWeeklyAvailabilityAsync(int availabilityId, WeeklyAvailabilityRequest request, int tenantId, CancellationToken cancellationToken);
+    Task<Result<IReadOnlyCollection<WeeklyAvailabilityResult>>> ReplaceWeeklyAvailabilitiesAsync(WeeklyAvailabilityReplaceRequest request, int tenantId, CancellationToken cancellationToken);
     Task<Result<bool>> DeleteWeeklyAvailabilityAsync(int availabilityId, int tenantId, CancellationToken cancellationToken);
     Task<Result<ScheduleBlockResult>> CreateScheduleBlockAsync(ScheduleBlockRequest request, int tenantId, int userId, CancellationToken cancellationToken);
     Task<Result<IReadOnlyCollection<ScheduleBlockResult>>> GetScheduleBlocksAsync(int tenantId, CancellationToken cancellationToken);
     Task<Result<bool>> DeleteScheduleBlockAsync(int blockId, int tenantId, CancellationToken cancellationToken);
     Task<Result<IReadOnlyCollection<AvailableSlotResult>>> GetAvailableSlotsAsync(AvailableSlotsRequest request, int tenantId, CancellationToken cancellationToken);
+    Task<Result<IReadOnlyCollection<AgendaCalendarItemResult>>> GetAgendaAsync(DateTime from, DateTime to, int tenantId, int? patientId, CancellationToken cancellationToken);
     Task<Result<bool>> CancelAppointmentAsync(int appointmentId, CancelAppointmentRequest request, int tenantId, int userId, CancellationToken cancellationToken);
+    Task<Result<RescheduleAppointmentResult>> RescheduleAppointmentAsync(int appointmentId, RescheduleAppointmentRequest request, int tenantId, int userId, CancellationToken cancellationToken);
 }
 
 public sealed record WeeklyAvailabilityRequest(int Weekday, TimeOnly StartTime, TimeOnly EndTime, int SlotDurationMinutes, string? Modality, string? Timezone, bool IsActive = true);
+public sealed record WeeklyAvailabilityReplaceRequest(IReadOnlyCollection<WeeklyAvailabilityRequest> Items);
 public sealed record WeeklyAvailabilityResult(int Id, int Weekday, TimeOnly StartTime, TimeOnly EndTime, int SlotDurationMinutes, string Modality, string Timezone, bool IsActive);
 public sealed record ScheduleBlockRequest(DateTime StartsAt, DateTime EndsAt, string? Reason);
 public sealed record ScheduleBlockResult(int Id, DateTime StartsAt, DateTime EndsAt, string? Reason);
 public sealed record AvailableSlotsRequest(DateTime From, DateTime To, string? Modality);
 public sealed record AvailableSlotResult(DateTime StartsAt, DateTime EndsAt, string Modality);
+public sealed record AgendaCalendarItemResult(int AppointmentId, int PatientId, int PsychologistId, DateTime StartsAt, DateTime EndsAt, string Status, string Modality, string? OnlineSessionLink);
 public sealed record CancelAppointmentRequest(string? Reason);
+public sealed record RescheduleAppointmentRequest(DateTime StartsAt, DateTime EndsAt, string? Modality, string? Reason);
+public sealed record RescheduleAppointmentResult(int PreviousAppointmentId, int NewAppointmentId);

@@ -15,7 +15,7 @@ public sealed class DeletePatientCommandHandler : ICommandHandler<DeletePatientC
 
     public async Task<Result<bool>> Handle(DeletePatientCommand command, CancellationToken cancellationToken)
     {
-        var result = await _service.DeactivateAsync(command.Id, "Soft delete requested", command.TenantId, command.UserId, cancellationToken);
+        var result = await _service.DeactivateAsync(command.Id, "Soft delete requested", command.TenantId, command.UserId, null, cancellationToken);
         return result.IsSuccess ? Result.Success(true) : Result.Failure<bool>(result.Error!);
     }
 }
