@@ -6,11 +6,17 @@ namespace Auth.Domain.ValueObjects
     public record ConsentId
     {
         public int Value { get; }
+
         public ConsentId(int value)
         {
-            if (value < 0)
-                throw new DomainException(ConsentErrors.InvalidId);
             Value = value;
+        }
+
+        public static ConsentId Create(int value)
+        {
+            if (value <= 0)
+                throw new DomainException(ConsentErrors.InvalidId);
+            return new ConsentId(value);
         }
 
         public override string ToString() => Value.ToString();

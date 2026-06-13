@@ -1,12 +1,13 @@
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Users;
 using Auth.Application.Mapping;
+using Auth.Domain.Entities;
 using Auth.Domain.Errors;
-using Auth.Domain.Events;
 using Auth.Domain.Filters;
 using Auth.Domain.Repositories;
 using Auth.Domain.ValueObjects;
 using BuildingBlocks.Results;
+using Core.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
@@ -65,10 +66,13 @@ namespace Auth.Application.Services
                 var user = await _repository.GetById(id, cancellationToken);
                 if (user is null) return Result.Failure(UserErrors.NotFound(userId));
 
-                user.Deactivate();
-                user.AddDomainEvent(new UserDeactivatedDomainEvent(user.Id, user.TenantId, "self_delete"));
+                user.Deactivate("self_delete");
                 await _repository.Update(user, cancellationToken);
                 return Result.Success();
+            }
+            catch (DomainException ex)
+            {
+                return Result.Failure(Error.Failure(ex.Message));
             }
             catch (Exception ex)
             {
@@ -193,6 +197,10 @@ namespace Auth.Application.Services
                 await _repository.Update(user, cancellationToken);
                 return Result.Success(true);
             }
+            catch (DomainException ex)
+            {
+                return Result.Failure<bool>(Error.Failure(ex.Message));
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar usuario {Id}", dto.Id);
@@ -213,6 +221,10 @@ namespace Auth.Application.Services
                 user.UpdateProfile(name, contact);
                 await _repository.Update(user, cancellationToken);
                 return Result.Success();
+            }
+            catch (DomainException ex)
+            {
+                return Result.Failure(Error.Failure(ex.Message));
             }
             catch (Exception ex)
             {

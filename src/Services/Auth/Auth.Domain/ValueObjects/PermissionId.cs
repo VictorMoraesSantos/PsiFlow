@@ -6,12 +6,19 @@ namespace Auth.Domain.ValueObjects
     public record PermissionId
     {
         public int Value { get; }
+
         public PermissionId(int value)
         {
-            if (value == 0)
-                throw new DomainException(PermissionErrors.InvalidId);
             Value = value;
         }
+
+        public static PermissionId Create(int value)
+        {
+            if (value <= 0)
+                throw new DomainException(PermissionErrors.InvalidId);
+            return new PermissionId(value);
+        }
+
         public override string ToString() => Value.ToString();
         public static implicit operator int(PermissionId id) => id.Value;
     }

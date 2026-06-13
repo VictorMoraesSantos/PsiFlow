@@ -6,11 +6,17 @@ namespace Auth.Domain.ValueObjects
     public record TenantId
     {
         public int Value { get; }
+
         public TenantId(int value)
+        {
+            Value = value;
+        }
+
+        public static TenantId Create(int value)
         {
             if (value < 0)
                 throw new DomainException(TenantErrors.InvalidId);
-            Value = value;
+            return new TenantId(value);
         }
 
         public override string ToString() => Value.ToString();

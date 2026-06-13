@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using DomainEncryptedField = Auth.Domain.ValueObjects.EncryptedField;
 
 namespace Auth.Application.Services
 {
@@ -15,17 +16,20 @@ namespace Auth.Application.Services
             _key = SHA256.HashData(Encoding.UTF8.GetBytes(settings.EncryptionKey));
         }
 
-        public EncryptedField Encrypt(string plaintext)
+        public DomainEncryptedField Encrypt(string plaintext)
         {
             var nonce = RandomNumberGenerator.GetBytes(12);
             var tag = new byte[16];
             var cipher = new byte[plaintext.Length];
             using var aes = new AesGcm(_key, tag.Length);
             aes.Encrypt(nonce, Encoding.UTF8.GetBytes(plaintext), cipher, tag);
-            return new EncryptedField(Convert.ToBase64String(cipher), Convert.ToBase64String(nonce), Convert.ToBase64String(tag));
+            return new DomainEncryptedField(
+                Convert.ToBase64String(cipher),
+                Convert.ToBase64String(nonce),
+                Convert.ToBase64String(tag));
         }
 
-        public string Decrypt(EncryptedField field)
+        public string Decrypt(DomainEncryptedField field)
         {
             var cipher = Convert.FromBase64String(field.Ciphertext);
             var nonce = Convert.FromBase64String(field.Nonce);
@@ -36,6 +40,4 @@ namespace Auth.Application.Services
             return Encoding.UTF8.GetString(plain);
         }
     }
-
-    public sealed record EncryptedField(string Ciphertext, string Nonce, string Tag);
 }

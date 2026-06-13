@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Auth.Infrastructure
@@ -25,6 +26,7 @@ namespace Auth.Infrastructure
             services.AddIdentityServices(configuration);
             services.AddAuthApplication();
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+            services.PostConfigure<JwtSettings>(settings => ApplyDevelopmentFallbacks(settings, configuration));
             services.Configure<Auth.Infrastructure.Persistence.Seeds.AuthSeedOptions>(configuration.GetSection("AuthSeed"));
             services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<JwtSettings>>().Value);
             return services;
@@ -49,6 +51,7 @@ namespace Auth.Infrastructure
             if (string.IsNullOrWhiteSpace(jwtSettings.Issuer)) jwtSettings.Issuer = "psiflow-auth";
             if (string.IsNullOrWhiteSpace(jwtSettings.Audience)) jwtSettings.Audience = "psiflow-api";
             if (string.IsNullOrWhiteSpace(jwtSettings.KeyId)) jwtSettings.KeyId = "psiflow-auth-rsa-1";
+            ApplyDevelopmentFallbacks(jwtSettings, configuration);
 
             services.AddSingleton(jwtSettings);
             services.AddSingleton<Auth.Application.Services.EncryptionService>();
@@ -78,6 +81,24 @@ namespace Auth.Infrastructure
             .AddDefaultTokenProviders();
 
             return services;
+        }
+
+        private const string DevelopmentEncryptionKey = "dev-only-jwt-encryption-key-replace-in-production-must-be-32-bytes!";
+
+        private static void ApplyDevelopmentFallbacks(JwtSettings settings, IConfiguration configuration)
+        {
+            if (settings is null) return;
+            if (!string.IsNullOrWhiteSpace(settings.EncryptionKey)) return;
+            if (!IsDevelopmentEnvironment(configuration)) return;
+            settings.EncryptionKey = DevelopmentEncryptionKey;
+        }
+
+        private static bool IsDevelopmentEnvironment(IConfiguration configuration)
+        {
+            var env = configuration["ASPNETCORE_ENVIRONMENT"]
+                ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                ?? Environments.Development;
+            return string.Equals(env, Environments.Development, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

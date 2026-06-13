@@ -89,6 +89,13 @@ namespace Auth.Infrastructure.Persistence.Seeds
             var existing = await userManager.FindByEmailAsync(PermissionGroupSeed.AdminEmail);
             if (existing is not null)
             {
+                if (!existing.EmailConfirmed || existing.LockoutEnd is not null)
+                {
+                    existing.ConfirmEmail();
+                    await userManager.UpdateAsync(existing);
+                    await userManager.SetLockoutEndDateAsync(existing, null);
+                    await userManager.ResetAccessFailedCountAsync(existing);
+                }
                 if (!await userManager.IsInRoleAsync(existing, PermissionGroupSeed.AdminRole))
                     await userManager.AddToRoleAsync(existing, PermissionGroupSeed.AdminRole);
                 await AssignAllPermissionClaimsAsync(userManager, existing, context, cancellationToken);
@@ -97,14 +104,16 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             var name = new Name("Admin", "PsiFlow");
             var contact = new Contact(PermissionGroupSeed.AdminEmail, "+5511999999999");
-            var user = new User(
+            var termsVersion = DocumentVersion.Create("v1", "terms");
+            var privacyVersion = DocumentVersion.Create("v1", "privacy");
+            var user = User.Register(
                 name,
                 contact,
                 PermissionGroupSeed.AdminRole,
                 tenantId: null,
                 crp: null,
-                termsVersion: "v1",
-                privacyVersion: "v1");
+                termsVersion: termsVersion,
+                privacyVersion: privacyVersion);
 
             var result = await userManager.CreateAsync(user, PermissionGroupSeed.AdminPassword);
             if (!result.Succeeded)
@@ -113,6 +122,8 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 return;
             }
 
+            user.ConfirmEmail();
+            await userManager.UpdateAsync(user);
             await userManager.AddToRoleAsync(user, PermissionGroupSeed.AdminRole);
             await AssignAllPermissionClaimsAsync(userManager, user, context, cancellationToken);
             _logger.LogInformation("Admin user criado: {Email}", PermissionGroupSeed.AdminEmail);
@@ -123,6 +134,13 @@ namespace Auth.Infrastructure.Persistence.Seeds
             var existing = await userManager.FindByEmailAsync(PermissionGroupSeed.PsychologistEmail);
             if (existing is not null)
             {
+                if (!existing.EmailConfirmed || existing.LockoutEnd is not null)
+                {
+                    existing.ConfirmEmail();
+                    await userManager.UpdateAsync(existing);
+                    await userManager.SetLockoutEndDateAsync(existing, null);
+                    await userManager.ResetAccessFailedCountAsync(existing);
+                }
                 if (!await userManager.IsInRoleAsync(existing, PermissionGroupSeed.PsychologistRole))
                     await userManager.AddToRoleAsync(existing, PermissionGroupSeed.PsychologistRole);
                 await AssignGroupPermissionClaimsAsync(userManager, existing, "patients", "sessions", "agenda", "clinical_records", "online_session");
@@ -131,14 +149,16 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             var name = new Name("Psicologa", "Demo");
             var contact = new Contact(PermissionGroupSeed.PsychologistEmail, "+5511988887777");
-            var user = new User(
+            var termsVersion = DocumentVersion.Create("v1", "terms");
+            var privacyVersion = DocumentVersion.Create("v1", "privacy");
+            var user = User.Register(
                 name,
                 contact,
                 PermissionGroupSeed.PsychologistRole,
                 tenantId: null,
                 crp: "06/123456",
-                termsVersion: "v1",
-                privacyVersion: "v1");
+                termsVersion: termsVersion,
+                privacyVersion: privacyVersion);
 
             var result = await userManager.CreateAsync(user, PermissionGroupSeed.PsychologistPassword);
             if (!result.Succeeded)
@@ -147,6 +167,8 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 return;
             }
 
+            user.ConfirmEmail();
+            await userManager.UpdateAsync(user);
             await userManager.AddToRoleAsync(user, PermissionGroupSeed.PsychologistRole);
             await AssignGroupPermissionClaimsAsync(userManager, user, "patients", "sessions", "agenda", "clinical_records", "online_session");
             _logger.LogInformation("Psychologist user criado: {Email}", PermissionGroupSeed.PsychologistEmail);
@@ -157,6 +179,13 @@ namespace Auth.Infrastructure.Persistence.Seeds
             var existing = await userManager.FindByEmailAsync(PermissionGroupSeed.PatientEmail);
             if (existing is not null)
             {
+                if (!existing.EmailConfirmed || existing.LockoutEnd is not null)
+                {
+                    existing.ConfirmEmail();
+                    await userManager.UpdateAsync(existing);
+                    await userManager.SetLockoutEndDateAsync(existing, null);
+                    await userManager.ResetAccessFailedCountAsync(existing);
+                }
                 if (!await userManager.IsInRoleAsync(existing, PermissionGroupSeed.PatientRole))
                     await userManager.AddToRoleAsync(existing, PermissionGroupSeed.PatientRole);
                 await AssignGroupPermissionClaimsAsync(userManager, existing, "patients", "sessions", "agenda", "online_session");
@@ -165,14 +194,16 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             var name = new Name("Paciente", "Demo");
             var contact = new Contact(PermissionGroupSeed.PatientEmail, "+5511977776666");
-            var user = new User(
+            var termsVersion = DocumentVersion.Create("v1", "terms");
+            var privacyVersion = DocumentVersion.Create("v1", "privacy");
+            var user = User.Register(
                 name,
                 contact,
                 PermissionGroupSeed.PatientRole,
                 tenantId: null,
                 crp: null,
-                termsVersion: "v1",
-                privacyVersion: "v1");
+                termsVersion: termsVersion,
+                privacyVersion: privacyVersion);
 
             var result = await userManager.CreateAsync(user, PermissionGroupSeed.PatientPassword);
             if (!result.Succeeded)
@@ -181,6 +212,8 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 return;
             }
 
+            user.ConfirmEmail();
+            await userManager.UpdateAsync(user);
             await userManager.AddToRoleAsync(user, PermissionGroupSeed.PatientRole);
             await AssignGroupPermissionClaimsAsync(userManager, user, "patients", "sessions", "agenda", "online_session");
             _logger.LogInformation("Patient user criado: {Email}", PermissionGroupSeed.PatientEmail);
