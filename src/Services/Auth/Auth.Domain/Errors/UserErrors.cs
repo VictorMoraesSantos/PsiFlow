@@ -28,6 +28,8 @@ namespace Auth.Domain.Errors
         public static Error TermsNotAccepted => Error.Failure("Os termos e a politica de privacidade devem ser aceitos.");
         public static Error EmailNotConfirmed => Error.Failure("E-mail ainda nao foi confirmado.");
         public static Error CreateError => Error.Failure("Falha ao criar usuario.");
+        public static Error RegistrationUnavailable => Error.Failure("Nao foi possivel concluir o cadastro.");
+        public static Error PasswordResetInvalid => Error.Failure("Nao foi possivel concluir o reset de senha.");
         public static Error UpdateError => Error.Failure("Falha ao atualizar usuario.");
         public static Error DeleteError => Error.Failure("Falha ao excluir usuario.");
         public static Error ActivateError => Error.Failure("Falha ao ativar usuario.");

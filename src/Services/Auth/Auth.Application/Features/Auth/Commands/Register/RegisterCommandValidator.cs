@@ -6,7 +6,8 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
 {
     public RegisterCommandValidator()
     {
-        RuleFor(command => command.Data.Role).NotEmpty().Must(role => role is "psychologist" or "patient" or "saas_admin");
+        RuleFor(command => command.Data.Role).NotEmpty().Must(role => role is "psychologist" or "patient")
+            .WithMessage("Cadastro publico permite apenas psychologist ou patient.");
         RuleFor(command => command.Data)
             .Must(data => !string.IsNullOrWhiteSpace(data.FirstName) || !string.IsNullOrWhiteSpace(data.FullName))
             .WithMessage("Nome e obrigatorio.");

@@ -1,6 +1,5 @@
 using Agenda.Application.Contracts;
 using Agenda.Application.Features.Workflow;
-using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using System.Security.Claims;

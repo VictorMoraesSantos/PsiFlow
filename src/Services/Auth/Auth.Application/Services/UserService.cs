@@ -7,7 +7,6 @@ using Auth.Domain.Filters;
 using Auth.Domain.Repositories;
 using Auth.Domain.ValueObjects;
 using BuildingBlocks.Results;
-using Core.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 

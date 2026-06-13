@@ -1,4 +1,3 @@
-﻿using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using ClinicalRecords.Application.DTOs.MedicalRecord;
 using ClinicalRecords.Application.Features.MedicalRecords.Commands.Create;

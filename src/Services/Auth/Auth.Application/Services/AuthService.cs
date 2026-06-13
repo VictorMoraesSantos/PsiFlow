@@ -1,3 +1,4 @@
+using Auth.Application.Authorization;
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
 using Auth.Domain.Entities;
@@ -55,7 +56,7 @@ namespace Auth.Application.Services
             var email = dto.Email.Trim().ToLowerInvariant();
             var existing = await _userRepository.FindByEmail(email, cancellationToken);
             if (existing != null)
-                return Result.Failure<RegisterResult>(UserErrors.EmailAlreadyInUse(email));
+                return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
 
             var name = string.IsNullOrWhiteSpace(dto.FirstName)
                 ? new Name(dto.FullName!)
@@ -70,7 +71,7 @@ namespace Auth.Application.Services
             {
                 var errors = string.Join("; ", identity.Errors.Select(e => e.Description));
                 _logger.LogWarning("Falha ao registrar usuario {Email}: {Errors}", email, errors);
-                return Result.Failure<RegisterResult>(UserErrors.EmailAlreadyInUse(email));
+                return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
             }
 
             await _userManager.AddToRoleAsync(user, dto.Role);
@@ -203,7 +204,7 @@ namespace Auth.Application.Services
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            _logger.LogInformation("Reset token gerado para {Email}: {Token}", email, token);
+            _logger.LogInformation("Reset de senha solicitado para {Email}", email);
             return Result.Success();
         }
 
@@ -215,15 +216,18 @@ namespace Auth.Application.Services
 
             var email = dto.Email.Trim().ToLowerInvariant();
             var user = await _userRepository.FindByEmail(email, cancellationToken);
-            if (user is null) return Result.Failure(UserErrors.NotFound(0));
+            if (user is null) return Result.Failure(UserErrors.PasswordResetInvalid);
 
             var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
             if (!result.Succeeded)
             {
                 var errors = string.Join("; ", result.Errors.Select(e => e.Description));
                 _logger.LogWarning("Falha no reset de senha para {Email}: {Errors}", email, errors);
-                return Result.Failure(UserErrors.RefreshTokenInvalid);
+                return Result.Failure(UserErrors.PasswordResetInvalid);
             }
+
+            user.SetRefreshToken(string.Empty, DateTime.MinValue);
+            await _userRepository.Update(user, cancellationToken);
             return Result.Success();
         }
 
@@ -235,6 +239,7 @@ namespace Auth.Application.Services
                 return Result.Failure<MfaSetupResult>(UserErrors.MfaNotAllowed);
 
             var secret = GenerateBase32Secret();
+            var expiresAt = DateTime.UtcNow.AddMinutes(10);
             var issuer = Uri.EscapeDataString("PsiFlow");
             var account = Uri.EscapeDataString(user.Email ?? user.Id.ToString());
             var qrCodeUri = $"otpauth://totp/{issuer}:{account}?secret={secret}&issuer={issuer}&digits=6&period=30";
@@ -242,12 +247,12 @@ namespace Auth.Application.Services
             var activeChallenge = await _mfaChallengeRepository.GetActiveByUser(userId, cancellationToken);
             if (activeChallenge is not null)
             {
-                activeChallenge.SetActive(secret, qrCodeUri);
+                activeChallenge.SetActive(secret, qrCodeUri, expiresAt);
                 await _mfaChallengeRepository.Update(activeChallenge, cancellationToken);
             }
             else
             {
-                await _mfaChallengeRepository.Create(new MfaChallenge(user.Id, user.TenantId, secret, qrCodeUri, false, null), cancellationToken);
+                await _mfaChallengeRepository.Create(new MfaChallenge(user.Id, user.TenantId, secret, qrCodeUri, false, null, expiresAt), cancellationToken);
             }
 
             return Result.Success(new MfaSetupResult(secret, qrCodeUri));
@@ -274,21 +279,21 @@ namespace Auth.Application.Services
             return Result.Success();
         }
 
-    private async Task<Result<TokenResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken)
-    {
-        var roles = await _userManager.GetRolesAsync(user);
-        var permissions = await _userManager.GetClaimsAsync(user);
-        var permissionValues = permissions.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
-        var tokenResult = _tokenService.GenerateToken(user.Id, user.Email ?? string.Empty, user.TenantId, user.Role, roles, permissionValues);
-        if (!tokenResult.IsSuccess) return Result.Failure<TokenResponse>(tokenResult.Error!);
+        private async Task<Result<TokenResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var permissions = await _userManager.GetClaimsAsync(user);
+            var permissionValues = permissions.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+            var tokenResult = _tokenService.GenerateToken(user.Id, user.Email ?? string.Empty, user.EmailConfirmed, user.TenantId, user.Role, roles, permissionValues);
+            if (!tokenResult.IsSuccess) return Result.Failure<TokenResponse>(tokenResult.Error!);
 
-        var refresh = _tokenService.GenerateRefreshToken();
-        var expiry = DateTime.UtcNow.AddDays(7);
-        user.SetRefreshToken(_tokenService.HashToken(refresh), expiry);
-        await _userRepository.Update(user, cancellationToken);
+            var refresh = _tokenService.GenerateRefreshToken();
+            var expiry = DateTime.UtcNow.AddDays(7);
+            user.SetRefreshToken(_tokenService.HashToken(refresh), expiry);
+            await _userRepository.Update(user, cancellationToken);
 
-        return Result.Success(new TokenResponse(tokenResult.Value!, refresh, expiry, new DTOs.Users.UserSummaryDTO(user.Id, user.Name.FullName, user.Email!, user.Role)));
-    }
+            return Result.Success(new TokenResponse(tokenResult.Value!, refresh, expiry, new DTOs.Users.UserSummaryDTO(user.Id, user.Name.FullName, user.Email!, user.Role)));
+        }
 
         private async Task PersistOutboxAsync(User user, Guid correlationId, CancellationToken cancellationToken)
         {
@@ -312,27 +317,24 @@ namespace Auth.Application.Services
 
         private async Task AssignDefaultPermissionClaimsAsync(User user)
         {
-            var groups = user.Role switch
+            var permissions = user.Role switch
             {
                 "saas_admin" => new[] { "*" },
-                "psychologist" => new[] { "patients", "sessions", "agenda", "clinical_records", "online_session" },
-                "patient" => new[] { "patients", "sessions", "agenda", "online_session" },
+                "psychologist" => PermissionCatalog.PsychologistPermissions(),
+                "patient" => PermissionCatalog.PatientPermissions(),
                 _ => Array.Empty<string>()
             };
 
-            if (groups.Length == 0) return;
-            if (groups.Length == 1 && groups[0] == "*")
+            if (permissions.Length == 0) return;
+            if (permissions.Length == 1 && permissions[0] == "*")
             {
                 await _userManager.AddClaimAsync(user, new Claim("permission", "*"));
                 return;
             }
 
-            foreach (var group in groups)
+            foreach (var permission in permissions)
             {
-                foreach (var action in new[] { "view", "create", "edit", "delete" })
-                {
-                    await _userManager.AddClaimAsync(user, new Claim("permission", $"{group}.{action}"));
-                }
+                await _userManager.AddClaimAsync(user, new Claim("permission", permission));
             }
         }
 

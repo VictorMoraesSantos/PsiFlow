@@ -2,21 +2,24 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using System.Collections.Concurrent;
 
 namespace BuildingBlocks.Authentication
 {
     public static class JwtAuthenticationExtensions
     {
+        private static readonly ConcurrentDictionary<string, JsonWebKeySet> JwksCache = new();
+        private static readonly HttpClient HttpClient = new();
+
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
             var jwtSettings = configuration.GetSection("JwtSettings");
             var issuer = jwtSettings["Issuer"];
             var audience = jwtSettings["Audience"];
-            var key = jwtSettings["Key"];
+            var jwksUri = jwtSettings["JwksUri"];
 
-            if (string.IsNullOrEmpty(key))
-                throw new InvalidOperationException("JWT Key is not configured in appsettings.json");
+            if (string.IsNullOrWhiteSpace(jwksUri))
+                throw new InvalidOperationException("JwtSettings:JwksUri is not configured in appsettings.json");
 
             services.AddAuthentication(options =>
                 {
@@ -36,7 +39,7 @@ namespace BuildingBlocks.Authentication
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = issuer,
                         ValidAudience = audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                        IssuerSigningKeyResolver = (_, _, kid, _) => ResolveSigningKeys(jwksUri, kid),
                         ClockSkew = TimeSpan.Zero
                     };
                 });
@@ -44,6 +47,14 @@ namespace BuildingBlocks.Authentication
             services.AddAuthorization();
 
             return services;
+        }
+
+        private static IEnumerable<SecurityKey> ResolveSigningKeys(string jwksUri, string? kid)
+        {
+            var jwks = JwksCache.GetOrAdd(jwksUri, uri => new JsonWebKeySet(HttpClient.GetStringAsync(uri).GetAwaiter().GetResult()));
+            return string.IsNullOrWhiteSpace(kid)
+                ? jwks.Keys
+                : jwks.Keys.Where(key => key.Kid == kid);
         }
     }
 }

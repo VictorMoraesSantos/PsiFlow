@@ -1,5 +1,5 @@
+using Auth.Application.Authorization;
 using Auth.Domain.Entities;
-using Auth.Domain.ValueObjects;
 
 namespace Auth.Infrastructure.Persistence.Seeds
 {
@@ -31,14 +31,13 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
         public static IEnumerable<(string Group, string Action)> DefaultPermissionKeys()
         {
-            foreach (var group in new[] { "patients", "agenda", "sessions", "clinical_records", "notifications", "online_session" })
+            foreach (var permission in PermissionCatalog.PsychologistPermissions().Concat(PermissionCatalog.PatientPermissions()).Concat(PermissionCatalog.SaasAdminPermissions()).Distinct())
             {
-                yield return (group, "view");
-                yield return (group, "create");
-                yield return (group, "edit");
-                yield return (group, "delete");
+                var parts = permission.Split(':', 2);
+                yield return (parts[0], parts[1]);
             }
         }
+
 
         private static PermissionGroup Build(string key, string name)
         {

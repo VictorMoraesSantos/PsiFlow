@@ -1,4 +1,3 @@
-﻿using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using Notifications.Application.DTOs.NotificationTemplate;
 using Notifications.Application.Features.NotificationTemplates.Commands.Create;

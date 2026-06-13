@@ -14,7 +14,7 @@ namespace BuildingBlocks.Authorization
 
             var hasClaim = context.User.Claims.Any(c =>
                 c.Type == AuthorizationExtensions.PermissionClaimType &&
-                (c.Value == requirement.Key || c.Value == SuperAdminClaimValue || c.Value == $"{requirement.Key.Split('.').FirstOrDefault()}.*"));
+                (c.Value == requirement.Key || c.Value == SuperAdminClaimValue || c.Value == $"{requirement.Key.Split(':').FirstOrDefault()}:*"));
 
             if (hasClaim) context.Succeed(requirement);
             return Task.CompletedTask;

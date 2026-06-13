@@ -6,6 +6,6 @@ namespace Auth.Domain.Repositories
 {
     public interface IPermissionRepository : IRepository<Permission, PermissionId>
     {
-        Task<Permission?> FindByClaim(string claimType, string claimValue, CancellationToken cancellationToken = default);
+        Task<Permission?> FindByClaimValue(string claimValue, CancellationToken cancellationToken = default);
     }
 }

@@ -32,15 +32,18 @@ function announceLocalFallback(status?: number) {
 }
 
 export function getAccessToken() {
+  if (typeof window === 'undefined') return null;
   return localStorage.getItem(tokenKey);
 }
 
 export function setSessionTokens(accessToken: string, refreshToken?: string) {
+  if (typeof window === 'undefined') return;
   localStorage.setItem(tokenKey, accessToken);
   if (refreshToken) localStorage.setItem(refreshTokenKey, refreshToken);
 }
 
 export function clearSessionTokens() {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(tokenKey);
   localStorage.removeItem(refreshTokenKey);
 }

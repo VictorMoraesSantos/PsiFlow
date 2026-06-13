@@ -1,4 +1,3 @@
-using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using Notifications.Application.Features.Workflow;

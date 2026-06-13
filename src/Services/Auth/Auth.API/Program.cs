@@ -1,20 +1,15 @@
 using Auth.API.Endpoints;
-using Auth.Application.Settings;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Persistence.Seeds;
 using BuildingBlocks.Authorization;
 using Core.API;
 using Serilog;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((ctx, lc) => lc.ReadFrom.Configuration(ctx.Configuration).Enrich.FromLogContext().WriteTo.Console());
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
-if (string.IsNullOrWhiteSpace(jwtSettings.Key))
-    jwtSettings.Key = "PsiFlow-Dev-Key-CHANGE-IN-PRODUCTION-please-32-bytes!!";
-
-builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -22,6 +17,18 @@ builder.Services.AddPsiFlowAuthorization();
 builder.Services.AddHealthChecks();
 builder.Services.AddHostedService<AuthDataSeeder>();
 builder.Services.AddCoreApi();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("auth-sensitive", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 
 var app = builder.Build();
 
@@ -34,6 +41,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health/live");

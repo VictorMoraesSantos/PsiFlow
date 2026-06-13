@@ -1,4 +1,3 @@
-﻿using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using OnlineSession.Application.DTOs.VideoRoom;
 using OnlineSession.Application.Features.VideoRooms.Commands.Create;

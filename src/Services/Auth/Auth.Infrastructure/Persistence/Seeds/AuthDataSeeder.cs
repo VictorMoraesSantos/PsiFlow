@@ -1,3 +1,4 @@
+using Auth.Application.Authorization;
 using Auth.Domain.Entities;
 using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Data;
@@ -177,9 +178,9 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("permission", WildcardPermissionClaim));
 
-            foreach (var (group, action) in PermissionGroupSeed.DefaultPermissionKeys())
+            foreach (var permission in PermissionCatalog.SaasAdminPermissions())
             {
-                await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("permission", $"{group}.{action}"));
+                await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("permission", permission));
             }
         }
 
@@ -191,13 +192,13 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 await userManager.RemoveClaimAsync(user, claim);
             }
 
-            var actions = new[] { "view", "create", "edit", "delete" };
-            foreach (var group in groups)
+            var permissions = groups.Contains(PermissionGroupSeed.PatientRole)
+                ? PermissionCatalog.PatientPermissions()
+                : PermissionCatalog.PsychologistPermissions();
+
+            foreach (var permission in permissions)
             {
-                foreach (var action in actions)
-                {
-                    await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("permission", $"{group}.{action}"));
-                }
+                await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("permission", permission));
             }
         }
 
@@ -223,6 +224,13 @@ namespace Auth.Infrastructure.Persistence.Seeds
             await context.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS is_mfa_enabled boolean NOT NULL DEFAULT false;",
                 cancellationToken);
+
+            if (await HasTableAsync(context, "auth", "mfa_challenges", cancellationToken))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE auth.mfa_challenges ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone NOT NULL DEFAULT (NOW() + INTERVAL '10 minutes');",
+                    cancellationToken);
+            }
         }
 
         private static async Task<bool> HasTableAsync(ApplicationDbContext context, string schema, string table, CancellationToken cancellationToken)

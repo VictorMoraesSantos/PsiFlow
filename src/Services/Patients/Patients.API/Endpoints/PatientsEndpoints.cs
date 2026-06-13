@@ -1,4 +1,3 @@
-﻿using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using Patients.Application.DTOs.Patient;
 using Patients.Application.Features.Patients.Commands.Create;

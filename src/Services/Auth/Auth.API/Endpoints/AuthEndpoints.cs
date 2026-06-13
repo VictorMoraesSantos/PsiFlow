@@ -1,4 +1,6 @@
+using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
+using Auth.Application.DTOs.Users;
 using Auth.Application.Features.Auth.Commands.ChangePassword;
 using Auth.Application.Features.Auth.Commands.ForgotPassword;
 using Auth.Application.Features.Auth.Commands.Login;
@@ -10,9 +12,10 @@ using Auth.Application.Features.Auth.Commands.ResetPassword;
 using Auth.Application.Features.Auth.Commands.SetupMfa;
 using Auth.Application.Features.Auth.Commands.VerifyMfa;
 using Auth.Application.Features.Auth.Queries.Me;
-using BuildingBlocks.Authorization;
+using Auth.Domain.Entities;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
+using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using static BuildingBlocks.Authorization.Policies;
 
@@ -36,13 +39,13 @@ namespace Auth.API.Endpoints
             {
                 var result = await sender.Send(new LoginCommand(request), ct);
                 return result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
-            }).AllowAnonymous();
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/refresh", async (RefreshDTO request, ISender sender, CancellationToken ct) =>
             {
                 var result = await sender.Send(new RefreshCommand(request.RefreshToken), ct);
                 return result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
-            }).AllowAnonymous();
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/logout", async (HttpContext http, ISender sender, CancellationToken ct) =>
             {
@@ -76,13 +79,13 @@ namespace Auth.API.Endpoints
             {
                 var result = await sender.Send(new ForgotPasswordCommand(request), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
-            }).AllowAnonymous();
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/reset-password", async (ResetPasswordDTO request, ISender sender, CancellationToken ct) =>
             {
                 var result = await sender.Send(new ResetPasswordCommand(request), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
-            }).AllowAnonymous();
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/mfa/setup", async (HttpContext http, ISender sender, CancellationToken ct) =>
             {
@@ -96,7 +99,31 @@ namespace Auth.API.Endpoints
                 if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
                 var result = await sender.Send(new VerifyMfaCommand(userId, request), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
-            }).RequireAuthorization(Roles.RequirePsychologist);
+            }).RequireAuthorization(Roles.RequirePsychologist).RequireRateLimiting("auth-sensitive");
+
+            var users = app.MapGroup("/v1/users").WithTags("Users");
+
+            users.MapPut("/me", async (UpdateCurrentUserProfileDTO request, HttpContext http, IUserService userService, CancellationToken ct) =>
+            {
+                if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
+                var result = await userService.UpdateCurrentUserProfileAsync(userId, request, ct);
+                return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+            }).RequireAuthorization(Roles.RequireAuthenticated);
+
+            users.MapGet("/{userId:int}/permissions", async (int userId, UserManager<User> userManager) =>
+            {
+                var user = await userManager.FindByIdAsync(userId.ToString());
+                if (user is null) return Results.NotFound();
+
+                var roles = await userManager.GetRolesAsync(user);
+                var permissions = (await userManager.GetClaimsAsync(user))
+                    .Where(claim => claim.Type == "permission")
+                    .Select(claim => claim.Value)
+                    .OrderBy(value => value)
+                    .ToArray();
+
+                return Results.Ok(new { userId, roles, permissions });
+            }).RequireAuthorization(Roles.RequireSaasAdmin);
 
             return app;
         }

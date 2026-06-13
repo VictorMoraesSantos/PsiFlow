@@ -12,12 +12,15 @@ namespace Auth.Application.Services
     public class TokenService : ITokenService
     {
         private readonly JwtSettings _settings;
-        public TokenService(JwtSettings settings)
+        private readonly JwtRsaKeyProvider _keyProvider;
+
+        public TokenService(JwtSettings settings, JwtRsaKeyProvider keyProvider)
         {
             _settings = settings;
+            _keyProvider = keyProvider;
         }
 
-        public Result<string> GenerateToken(int userId, string email, int tenantId, string role, IEnumerable<string> roles, IEnumerable<string> permissions)
+        public Result<string> GenerateToken(int userId, string email, bool emailVerified, int tenantId, string role, IEnumerable<string> roles, IEnumerable<string> permissions)
         {
             try
             {
@@ -25,11 +28,16 @@ namespace Auth.Application.Services
                 {
                     new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                     new Claim(JwtRegisteredClaimNames.Email, email),
+                    new Claim("email_verified", emailVerified ? "true" : "false", ClaimValueTypes.Boolean),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim("tenant_id", tenantId.ToString()),
                     new Claim(ClaimTypes.Role, role),
                     new Claim("roles", string.Join(",", roles))
                 };
+
+                if (tenantId > 0)
+                {
+                    claims.Add(new Claim("tenant_id", tenantId.ToString()));
+                }
 
                 foreach (var permission in permissions ?? Array.Empty<string>())
                 {
@@ -37,8 +45,7 @@ namespace Auth.Application.Services
                     claims.Add(new Claim("permission", permission));
                 }
 
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
-                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var creds = new SigningCredentials(_keyProvider.SigningKey, SecurityAlgorithms.RsaSha256);
                 var expires = DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes <= 0 ? 15 : _settings.ExpiryMinutes);
 
                 var token = new JwtSecurityToken(
@@ -79,7 +86,6 @@ namespace Auth.Application.Services
         {
             try
             {
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
                 var validation = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -88,10 +94,10 @@ namespace Auth.Application.Services
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = _settings.Issuer,
                     ValidAudience = _settings.Audience,
-                    IssuerSigningKey = key
+                    IssuerSigningKey = _keyProvider.SigningKey
                 };
                 var principal = new JwtSecurityTokenHandler().ValidateToken(token, validation, out var securityToken);
-                if (securityToken is not JwtSecurityToken jwt || !jwt.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.OrdinalIgnoreCase))
+                if (securityToken is not JwtSecurityToken jwt || !jwt.Header.Alg.Equals(SecurityAlgorithms.RsaSha256, StringComparison.OrdinalIgnoreCase))
                     return Result.Failure<ClaimsPrincipal>(Error.Failure("Algoritmo invalido"));
                 return Result.Success(principal);
             }

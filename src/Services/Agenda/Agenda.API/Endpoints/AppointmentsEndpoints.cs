@@ -1,10 +1,9 @@
-﻿using Agenda.Application.DTOs.Appointment;
+using Agenda.Application.DTOs.Appointment;
 using Agenda.Application.Features.Appointments.Commands.Create;
 using Agenda.Application.Features.Appointments.Commands.Delete;
 using Agenda.Application.Features.Appointments.Commands.Update;
 using Agenda.Application.Features.Appointments.Queries.GetAll;
 using Agenda.Application.Features.Appointments.Queries.GetById;
-using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using static BuildingBlocks.Authorization.Policies;
 

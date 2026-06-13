@@ -1,4 +1,3 @@
-﻿using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using Sessions.Application.DTOs.Session;
 using Sessions.Application.Features.Sessions.Commands.Create;

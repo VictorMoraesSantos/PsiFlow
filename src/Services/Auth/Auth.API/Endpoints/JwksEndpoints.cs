@@ -1,4 +1,4 @@
-using Auth.Application.Settings;
+using Auth.Application.Services;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Auth.API.Endpoints
@@ -7,16 +7,11 @@ namespace Auth.API.Endpoints
     {
         public static IEndpointRouteBuilder MapJwksEndpoint(this IEndpointRouteBuilder app)
         {
-            app.MapGet("/.well-known/jwks.json", (JwtSettings settings) =>
+            app.MapGet("/.well-known/jwks.json", (JwtRsaKeyProvider keyProvider) =>
             {
-                var jwk = new JsonWebKey
-                {
-                    Kty = "oct",
-                    Kid = "psiflow-dev",
-                    Use = "sig",
-                    Alg = SecurityAlgorithms.HmacSha256,
-                    K = Base64UrlEncoder.Encode(settings.Key)
-                };
+                var jwk = keyProvider.PublicJwk;
+                jwk.Use = "sig";
+                jwk.Alg = SecurityAlgorithms.RsaSha256;
 
                 return Results.Json(new { keys = new[] { jwk } });
             }).AllowAnonymous();

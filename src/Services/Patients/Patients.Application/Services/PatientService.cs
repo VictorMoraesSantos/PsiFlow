@@ -7,6 +7,7 @@ using Patients.Domain.Errors;
 using Patients.Domain.Filters;
 using Patients.Domain.Repositories;
 using System.Linq.Expressions;
+using System.Net.Mail;
 
 namespace Patients.Application.Services
 {
@@ -24,12 +25,17 @@ namespace Patients.Application.Services
         {
             try
             {
+                dto = Normalize(dto);
                 if (string.IsNullOrWhiteSpace(dto.FullName) || dto.FullName.Trim().Length < 2)
                     return Result.Failure<int>(PatientErrors.FullNameRequired);
                 if (dto.FullName.Length > 160)
                     return Result.Failure<int>(PatientErrors.FullNameRequired);
                 if (string.IsNullOrWhiteSpace(dto.Email))
                     return Result.Failure<int>(PatientErrors.EmailRequired);
+                if (!IsValidEmail(dto.Email))
+                    return Result.Failure<int>(PatientErrors.EmailInvalid);
+                if (string.IsNullOrWhiteSpace(dto.Phone))
+                    return Result.Failure<int>(PatientErrors.PhoneRequired);
                 if (dto.BirthDate is { } bd && bd > DateOnly.FromDateTime(DateTime.UtcNow))
                     return Result.Failure<int>(PatientErrors.BirthDateInFuture);
                 if (!string.IsNullOrWhiteSpace(dto.EmergencyContactName) && string.IsNullOrWhiteSpace(dto.EmergencyContactPhone))
@@ -37,7 +43,7 @@ namespace Patients.Application.Services
 
                 if (dto.TenantId > 0)
                 {
-                    var existing = await _repository.Find(x => x.TenantId == dto.TenantId && x.Email == dto.Email.Trim().ToLowerInvariant(), cancellationToken);
+                    var existing = await _repository.Find(x => x.TenantId == dto.TenantId && x.Email == dto.Email && x.Status == "active", cancellationToken);
                     if (existing.Any()) return Result.Failure<int>(PatientErrors.DuplicateEmailInTenant);
                 }
 
@@ -71,6 +77,15 @@ namespace Patients.Application.Services
         {
             try
             {
+                dto = Normalize(dto);
+                if (string.IsNullOrWhiteSpace(dto.FullName) || dto.FullName.Length < 2 || dto.FullName.Length > 160)
+                    return Result.Failure<bool>(PatientErrors.FullNameRequired);
+                if (string.IsNullOrWhiteSpace(dto.Email))
+                    return Result.Failure<bool>(PatientErrors.EmailRequired);
+                if (!IsValidEmail(dto.Email))
+                    return Result.Failure<bool>(PatientErrors.EmailInvalid);
+                if (string.IsNullOrWhiteSpace(dto.Phone))
+                    return Result.Failure<bool>(PatientErrors.PhoneRequired);
                 var entity = await _repository.GetById(dto.Id, cancellationToken);
                 if (entity is null) return Result.Failure<bool>(PatientErrors.NotFound(dto.Id));
                 entity.TenantId = dto.TenantId;
@@ -171,5 +186,30 @@ namespace Patients.Application.Services
             var pagination = new PaginationData(filter.Page, filter.PageSize, total, (int)Math.Ceiling(total / (double)(filter.PageSize ?? 20)));
             return Result.Success(((IEnumerable<PatientDTO>)dtos, pagination));
         }
+
+        private static CreatePatientDTO Normalize(CreatePatientDTO dto) => dto with
+        {
+            FullName = NormalizeText(dto.FullName),
+            Email = NormalizeEmail(dto.Email),
+            Phone = NormalizePhone(dto.Phone),
+            EmergencyContactName = NormalizeNullableText(dto.EmergencyContactName),
+            EmergencyContactPhone = NormalizeNullablePhone(dto.EmergencyContactPhone)
+        };
+
+        private static UpdatePatientDTO Normalize(UpdatePatientDTO dto) => dto with
+        {
+            FullName = NormalizeText(dto.FullName),
+            Email = NormalizeEmail(dto.Email),
+            Phone = NormalizePhone(dto.Phone),
+            EmergencyContactName = NormalizeNullableText(dto.EmergencyContactName),
+            EmergencyContactPhone = NormalizeNullablePhone(dto.EmergencyContactPhone)
+        };
+
+        private static string NormalizeText(string value) => value.Trim();
+        private static string NormalizeEmail(string value) => value.Trim().ToLowerInvariant();
+        private static string NormalizePhone(string value) => new(value.Where(char.IsDigit).ToArray());
+        private static string? NormalizeNullableText(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        private static string? NormalizeNullablePhone(string? value) => string.IsNullOrWhiteSpace(value) ? null : new string(value.Where(char.IsDigit).ToArray());
+        private static bool IsValidEmail(string value) => MailAddress.TryCreate(value, out _);
     }
 }

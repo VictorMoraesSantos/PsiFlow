@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ToastProvider } from './components/Toast';
 import { AppShell, type PageId } from './layouts/AppShell';
-import { AgendaPage } from './pages/AgendaPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { LoginPage } from './pages/LoginPage';
-import { NotificationsPage } from './pages/NotificationsPage';
-import { OnlineSessionPage } from './pages/OnlineSessionPage';
-import { PatientsPage } from './pages/PatientsPage';
-import { RecordsPage } from './pages/RecordsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { SessionsPage } from './pages/SessionsPage';
+import { AgendaPage } from './screens/AgendaPage';
+import { DashboardPage } from './screens/DashboardPage';
+import { LoginPage } from './screens/LoginPage';
+import { NotificationsPage } from './screens/NotificationsPage';
+import { OnlineSessionPage } from './screens/OnlineSessionPage';
+import { PatientsPage } from './screens/PatientsPage';
+import { RecordsPage } from './screens/RecordsPage';
+import { SettingsPage } from './screens/SettingsPage';
+import { SessionsPage } from './screens/SessionsPage';
 import { useDashboardData } from './hooks/useDashboardData';
 import { clearSessionTokens, getAccessToken, localFallbackEvent } from './services/api';
 

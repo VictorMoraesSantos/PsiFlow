@@ -8,12 +8,9 @@ namespace Auth.Domain.Entities
 {
     public class Permission : BaseEntity<PermissionId>
     {
-        private const string DefaultClaimType = "permission";
         public PermissionGroupId PermissionGroupId { get; private set; }
         public PermissionGroup? PermissionGroup { get; private set; }
         public PermissionAction Action { get; private set; }
-        public string GroupKey { get; private set; } = string.Empty;
-        public string ClaimType { get; private set; } = DefaultClaimType;
         public string ClaimValue { get; private set; } = string.Empty;
         public string Description { get; private set; } = string.Empty;
         public bool IsActive { get; private set; } = true;
@@ -24,19 +21,14 @@ namespace Auth.Domain.Entities
             PermissionGroupId permissionGroupId,
             string groupKey,
             PermissionAction action,
-            string description,
-            string claimType = DefaultClaimType)
+            string description)
         {
             if (string.IsNullOrWhiteSpace(groupKey))
                 throw new DomainException(PermissionErrors.InvalidKeyGroup);
-            if (string.IsNullOrWhiteSpace(claimType))
-                throw new DomainException(PermissionErrors.InvalidClaimType);
 
             PermissionGroupId = permissionGroupId;
-            GroupKey = Normalize(groupKey);
             Action = action;
-            ClaimType = claimType.Trim().ToLowerInvariant();
-            ClaimValue = BuildClaimValue(GroupKey, action);
+            ClaimValue = BuildClaimValue(groupKey, action);
             Description = description?.Trim() ?? string.Empty;
             IsActive = true;
         }

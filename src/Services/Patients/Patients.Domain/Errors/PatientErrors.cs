@@ -11,6 +11,7 @@ namespace Patients.Domain.Errors
         public static Error DuplicateEmailInTenant => Error.Failure("Ja existe um paciente com este e-mail neste tenant.");
         public static Error FullNameRequired => Error.Failure("Nome completo e obrigatorio.");
         public static Error EmailRequired => Error.Failure("E-mail e obrigatorio.");
+        public static Error EmailInvalid => Error.Failure("E-mail invalido.");
         public static Error PhoneRequired => Error.Failure("Telefone e obrigatorio.");
         public static Error BirthDateInFuture => Error.Failure("Data de nascimento nao pode ser futura.");
         public static Error EmergencyContactPhoneRequired => Error.Failure("Telefone de contato de emergencia e obrigatorio quando nome informado.");

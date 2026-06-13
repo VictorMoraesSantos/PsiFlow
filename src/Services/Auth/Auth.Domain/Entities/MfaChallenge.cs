@@ -11,6 +11,7 @@ namespace Auth.Domain.Entities
         public string? QrCodeUri { get; private set; }
         public bool IsConfirmed { get; private set; }
         public DateTime? ConfirmedAt { get; private set; }
+        public DateTime ExpiresAt { get; private set; }
         protected MfaChallenge() { }
 
         public MfaChallenge(
@@ -19,7 +20,8 @@ namespace Auth.Domain.Entities
             string secretEncrypted,
             string? qrCodeUri,
             bool isConfirmed,
-            DateTime? confirmedAt)
+            DateTime? confirmedAt,
+            DateTime expiresAt)
         {
             UserId = userId;
             TenantId = tenantId;
@@ -27,18 +29,23 @@ namespace Auth.Domain.Entities
             QrCodeUri = qrCodeUri;
             IsConfirmed = isConfirmed;
             ConfirmedAt = confirmedAt;
+            ExpiresAt = expiresAt;
         }
 
-        public void SetActive(string secretEncrypted, string? qrCodeUri)
+        public void SetActive(string secretEncrypted, string? qrCodeUri, DateTime expiresAt)
         {
             SecretEncrypted = secretEncrypted;
             QrCodeUri = qrCodeUri;
+            ExpiresAt = expiresAt;
         }
+
+        public bool IsExpired(DateTime now) => ExpiresAt <= now;
 
         public void SetConfirmed()
         {
             IsConfirmed = true;
             ConfirmedAt = DateTime.UtcNow;
+            QrCodeUri = null;
         }
     }
 }

@@ -15,6 +15,7 @@ namespace Auth.Infrastructure.Persistence.Configuration
                     id => id.Value,
                     value => new MfaChallengeId(value))
                 .ValueGeneratedOnAdd();
+            builder.Property(x => x.ExpiresAt).IsRequired();
         }
     }
 }

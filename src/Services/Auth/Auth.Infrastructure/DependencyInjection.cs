@@ -1,8 +1,10 @@
 using Auth.Application;
+using Auth.Application.Services;
 using Auth.Application.Settings;
 using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
 using Auth.Domain.ValueObjects;
+using Auth.Infrastructure.Authentication;
 using Auth.Infrastructure.Persistence.Data;
 using Auth.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,8 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Microsoft.Extensions.Options;
 
 namespace Auth.Infrastructure
 {
@@ -42,32 +43,20 @@ namespace Auth.Infrastructure
         public static IServiceCollection AddIdentityServices(this IServiceCollection services, IConfiguration configuration)
         {
             var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
-            if (string.IsNullOrWhiteSpace(jwtSettings.Key))
-                jwtSettings.Key = "PsiFlow-Dev-Key-CHANGE-IN-PRODUCTION-please-32-bytes!!";
             if (string.IsNullOrWhiteSpace(jwtSettings.Issuer)) jwtSettings.Issuer = "psiflow-auth";
             if (string.IsNullOrWhiteSpace(jwtSettings.Audience)) jwtSettings.Audience = "psiflow-api";
+            if (string.IsNullOrWhiteSpace(jwtSettings.KeyId)) jwtSettings.KeyId = "psiflow-auth-rsa-1";
 
             services.AddSingleton(jwtSettings);
+            services.AddSingleton<JwtRsaKeyProvider>();
+            services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
             services.AddAuthorization();
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings.Issuer,
-                    ValidAudience = jwtSettings.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
-                    ClockSkew = TimeSpan.FromSeconds(30)
-                };
-            });
+            .AddJwtBearer();
 
             services.AddIdentity<User, IdentityRole<UserId>>(options =>
             {
