@@ -1,26 +1,24 @@
+'use client';
+
 import { Bell, CalendarDays, FileText, HeartPulse, Home, LogOut, MessageSquareText, PanelLeft, Settings, UserRound, Video } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useApp } from '../state/AppContext';
 
 const navItems = [
-  { id: 'dashboard', label: 'Visao geral', icon: Home },
-  { id: 'patients', label: 'Pacientes', icon: UserRound },
-  { id: 'agenda', label: 'Agenda', icon: CalendarDays },
-  { id: 'sessions', label: 'Sessoes', icon: HeartPulse },
-  { id: 'records', label: 'Prontuarios', icon: FileText },
-  { id: 'notifications', label: 'Notificacoes', icon: MessageSquareText },
-  { id: 'online', label: 'Atendimento online', icon: Video },
-  { id: 'settings', label: 'Perfil e configuracoes', icon: Settings },
+  { id: 'dashboard', href: '/dashboard', label: 'Visao geral', icon: Home },
+  { id: 'patients', href: '/patients', label: 'Pacientes', icon: UserRound },
+  { id: 'agenda', href: '/agenda', label: 'Agenda', icon: CalendarDays },
+  { id: 'sessions', href: '/sessions', label: 'Sessoes', icon: HeartPulse },
+  { id: 'records', href: '/records', label: 'Prontuarios', icon: FileText },
+  { id: 'notifications', href: '/notifications', label: 'Notificacoes', icon: MessageSquareText },
+  { id: 'online', href: '/online', label: 'Atendimento online', icon: Video },
+  { id: 'settings', href: '/settings', label: 'Perfil e configuracoes', icon: Settings },
 ] as const;
 
 export type PageId = (typeof navItems)[number]['id'];
-
-type AppShellProps = {
-  currentPage: PageId;
-  onNavigate: (page: PageId) => void;
-  onLogout: () => void;
-  children: React.ReactNode;
-};
 
 function formatTopbarDate(date: Date): string {
   return date.toLocaleDateString('pt-BR', {
@@ -30,7 +28,9 @@ function formatTopbarDate(date: Date): string {
   }).replace(/^./, (char) => char.toUpperCase());
 }
 
-export function AppShell({ currentPage, onNavigate, onLogout, children }: AppShellProps) {
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const { isLocalMode, dismissLocalMode, logout } = useApp();
+  const pathname = usePathname();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [today] = useState(() => formatTopbarDate(new Date()));
   const sidebarRef = useRef<HTMLElement>(null);
@@ -46,11 +46,9 @@ export function AppShell({ currentPage, onNavigate, onLogout, children }: AppShe
     return () => window.removeEventListener('resize', onResize);
   }, [isNavOpen]);
 
-  function navigate(page: PageId) {
-    onNavigate(page);
+  useEffect(() => {
     setIsNavOpen(false);
-    requestAnimationFrame(() => menuButtonRef.current?.focus());
-  }
+  }, [pathname]);
 
   function closeSidebar() {
     setIsNavOpen(false);
@@ -76,18 +74,18 @@ export function AppShell({ currentPage, onNavigate, onLogout, children }: AppShe
         <nav aria-label="Secoes do workspace">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentPage === item.id;
+            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (
-              <button
+              <Link
                 key={item.id}
+                href={item.href}
                 className={isActive ? 'nav-item nav-item--active' : 'nav-item'}
-                type="button"
                 aria-current={isActive ? 'page' : undefined}
-                onClick={() => navigate(item.id)}
+                onClick={() => setIsNavOpen(false)}
               >
                 <Icon aria-hidden="true" size={18} />
                 <span>{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
@@ -124,15 +122,22 @@ export function AppShell({ currentPage, onNavigate, onLogout, children }: AppShe
             <button className="icon-button" type="button" aria-label="Abrir notificacoes">
               <Bell aria-hidden="true" size={19} />
             </button>
-            <button className="profile-chip" type="button" aria-label="Abrir perfil e configuracoes" onClick={() => navigate('settings')}>
+            <Link href="/settings" className="profile-chip" aria-label="Abrir perfil e configuracoes">
               <span aria-hidden="true">DV</span>
               <strong>Dra. Vitoria</strong>
-            </button>
-            <button className="icon-button" type="button" aria-label="Sair da conta" onClick={onLogout}>
+            </Link>
+            <button className="icon-button" type="button" aria-label="Sair da conta" onClick={logout}>
               <LogOut aria-hidden="true" size={19} />
             </button>
           </div>
         </header>
+        {isLocalMode ? (
+          <div className="sync-banner" role="status">
+            <strong>Modo local ativo.</strong>
+            <span>Algumas alteracoes estao apenas neste navegador porque o backend respondeu sem autenticacao ou sem suporte ao metodo.</span>
+            <button type="button" onClick={dismissLocalMode}>Ocultar aviso</button>
+          </div>
+        ) : null}
         <main id="main-content" tabIndex={-1}>
           {children}
         </main>

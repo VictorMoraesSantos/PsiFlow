@@ -1,9 +1,12 @@
+'use client';
+
 import { Bell, Clock, Mail, Save, ShieldCheck, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../components/Button';
 import { Section } from '../components/Section';
 import { useToast } from '../components/Toast';
-import { api, isLocalFallbackStatus } from '../services/api';
+import { updatePreferences, updateProfile } from '../services/auth';
+import { isLocalFallbackStatus } from '../services/http';
 
 type ProfileForm = {
   fullName: string;
@@ -50,7 +53,7 @@ export function SettingsPage() {
     event.preventDefault();
     setIsSavingProfile(true);
     try {
-      await api.put('auth', '/v1/users/me', profile);
+      await updateProfile(profile);
       notify('Perfil atualizado.');
     } catch (error) {
       if (isLocalFallbackStatus(error)) {
@@ -67,7 +70,7 @@ export function SettingsPage() {
     event.preventDefault();
     setIsSavingPreferences(true);
     try {
-      await api.put('auth', '/v1/users/me/settings', preferences);
+      await updatePreferences(preferences);
       notify('Configuracoes atualizadas.');
     } catch (error) {
       if (isLocalFallbackStatus(error)) {
@@ -87,57 +90,107 @@ export function SettingsPage() {
           <div className="settings-avatar" aria-hidden="true">DV</div>
           <div>
             <strong>{profile.fullName}</strong>
-            <span>{profile.specialty} · CRP {profile.crp}</span>
+            <span>
+              {profile.specialty} · CRP {profile.crp}
+            </span>
           </div>
-          <div className="settings-hero__status"><ShieldCheck size={17} aria-hidden="true" /> Verificacao em duas etapas ativa</div>
+          <div className="settings-hero__status">
+            <ShieldCheck size={17} aria-hidden="true" /> Verificacao em duas etapas ativa
+          </div>
         </div>
       </Section>
 
       <div className="settings-grid">
-        <Section title="Perfil profissional" description="Dados usados para identificar voce no workspace e em rotinas operacionais.">
+        <Section
+          title="Perfil profissional"
+          description="Dados usados para identificar voce no workspace e em rotinas operacionais."
+        >
           <form className="resource-form settings-form" onSubmit={saveProfile}>
             <label className="form-field">
               <span>Nome completo</span>
-              <div className="input-with-icon"><UserRound aria-hidden="true" size={17} /><input value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} required /></div>
+              <div className="input-with-icon">
+                <UserRound aria-hidden="true" size={17} />
+                <input
+                  value={profile.fullName}
+                  onChange={(event) => setProfile({ ...profile, fullName: event.target.value })}
+                  required
+                />
+              </div>
             </label>
             <label className="form-field">
               <span>Email</span>
-              <div className="input-with-icon"><Mail aria-hidden="true" size={17} /><input type="email" value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} required /></div>
+              <div className="input-with-icon">
+                <Mail aria-hidden="true" size={17} />
+                <input
+                  type="email"
+                  value={profile.email}
+                  onChange={(event) => setProfile({ ...profile, email: event.target.value })}
+                  required
+                />
+              </div>
             </label>
             <div className="form-grid">
               <label className="form-field">
                 <span>Telefone</span>
-                <input type="tel" value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} />
+                <input
+                  type="tel"
+                  value={profile.phone}
+                  onChange={(event) => setProfile({ ...profile, phone: event.target.value })}
+                />
               </label>
               <label className="form-field">
                 <span>CRP</span>
-                <input value={profile.crp} onChange={(event) => setProfile({ ...profile, crp: event.target.value })} required />
+                <input
+                  value={profile.crp}
+                  onChange={(event) => setProfile({ ...profile, crp: event.target.value })}
+                  required
+                />
               </label>
             </div>
             <label className="form-field">
               <span>Especialidade</span>
-              <input value={profile.specialty} onChange={(event) => setProfile({ ...profile, specialty: event.target.value })} />
+              <input
+                value={profile.specialty}
+                onChange={(event) => setProfile({ ...profile, specialty: event.target.value })}
+              />
             </label>
             <div className="form-actions">
-              <Button type="submit" disabled={isSavingProfile}><Save size={16} aria-hidden="true" />{isSavingProfile ? 'Salvando perfil...' : 'Salvar perfil'}</Button>
+              <Button type="submit" disabled={isSavingProfile}>
+                <Save size={16} aria-hidden="true" />
+                {isSavingProfile ? 'Salvando perfil...' : 'Salvar perfil'}
+              </Button>
             </div>
           </form>
         </Section>
 
-        <Section title="Configuracoes" description="Preferencias que controlam avisos, agenda e seguranca da sua conta.">
+        <Section
+          title="Configuracoes"
+          description="Preferencias que controlam avisos, agenda e seguranca da sua conta."
+        >
           <form className="resource-form settings-form" onSubmit={savePreferences}>
             <label className="form-field">
               <span>Fuso horario</span>
-              <div className="input-with-icon"><Clock aria-hidden="true" size={17} /><select value={preferences.timezone} onChange={(event) => setPreferences({ ...preferences, timezone: event.target.value })}>
-                <option value="America/Sao_Paulo">America/Sao_Paulo</option>
-                <option value="America/Manaus">America/Manaus</option>
-                <option value="America/Recife">America/Recife</option>
-              </select></div>
+              <div className="input-with-icon">
+                <Clock aria-hidden="true" size={17} />
+                <select
+                  value={preferences.timezone}
+                  onChange={(event) => setPreferences({ ...preferences, timezone: event.target.value })}
+                >
+                  <option value="America/Sao_Paulo">America/Sao_Paulo</option>
+                  <option value="America/Manaus">America/Manaus</option>
+                  <option value="America/Recife">America/Recife</option>
+                </select>
+              </div>
             </label>
             <div className="form-grid">
               <label className="form-field">
                 <span>Lembrete de consulta</span>
-                <select value={preferences.appointmentReminder} onChange={(event) => setPreferences({ ...preferences, appointmentReminder: event.target.value })}>
+                <select
+                  value={preferences.appointmentReminder}
+                  onChange={(event) =>
+                    setPreferences({ ...preferences, appointmentReminder: event.target.value })
+                  }
+                >
                   <option value="2h">2 horas antes</option>
                   <option value="24h">24 horas antes</option>
                   <option value="48h">48 horas antes</option>
@@ -145,7 +198,12 @@ export function SettingsPage() {
               </label>
               <label className="form-field">
                 <span>Abertura da sala online</span>
-                <select value={preferences.sessionStartWindow} onChange={(event) => setPreferences({ ...preferences, sessionStartWindow: event.target.value })}>
+                <select
+                  value={preferences.sessionStartWindow}
+                  onChange={(event) =>
+                    setPreferences({ ...preferences, sessionStartWindow: event.target.value })
+                  }
+                >
                   <option value="5min">5 minutos antes</option>
                   <option value="15min">15 minutos antes</option>
                   <option value="30min">30 minutos antes</option>
@@ -153,12 +211,33 @@ export function SettingsPage() {
               </label>
             </div>
             <div className="settings-toggles" aria-label="Preferencias de notificacao e seguranca">
-              <ToggleRow icon={<Bell size={17} aria-hidden="true" />} label="Receber notificacoes por email" description="Avisos operacionais sobre agenda, convites e alteracoes." checked={preferences.emailNotifications} onChange={(checked) => setPreferences({ ...preferences, emailNotifications: checked })} />
-              <ToggleRow icon={<Mail size={17} aria-hidden="true" />} label="Resumo clinico por email" description="Enviar apenas um resumo operacional, sem notas de prontuario." checked={preferences.clinicalSummaryEmail} onChange={(checked) => setPreferences({ ...preferences, clinicalSummaryEmail: checked })} />
-              <ToggleRow icon={<ShieldCheck size={17} aria-hidden="true" />} label="Exigir verificacao em duas etapas" description="Mantem uma etapa adicional no acesso quando a conta exigir maior protecao." checked={preferences.requireMfa} onChange={(checked) => setPreferences({ ...preferences, requireMfa: checked })} />
+              <ToggleRow
+                icon={<Bell size={17} aria-hidden="true" />}
+                label="Receber notificacoes por email"
+                description="Avisos operacionais sobre agenda, convites e alteracoes."
+                checked={preferences.emailNotifications}
+                onChange={(checked) => setPreferences({ ...preferences, emailNotifications: checked })}
+              />
+              <ToggleRow
+                icon={<Mail size={17} aria-hidden="true" />}
+                label="Resumo clinico por email"
+                description="Enviar apenas um resumo operacional, sem notas de prontuario."
+                checked={preferences.clinicalSummaryEmail}
+                onChange={(checked) => setPreferences({ ...preferences, clinicalSummaryEmail: checked })}
+              />
+              <ToggleRow
+                icon={<ShieldCheck size={17} aria-hidden="true" />}
+                label="Exigir verificacao em duas etapas"
+                description="Mantem uma etapa adicional no acesso quando a conta exigir maior protecao."
+                checked={preferences.requireMfa}
+                onChange={(checked) => setPreferences({ ...preferences, requireMfa: checked })}
+              />
             </div>
             <div className="form-actions">
-              <Button type="submit" disabled={isSavingPreferences}><Save size={16} aria-hidden="true" />{isSavingPreferences ? 'Salvando configuracoes...' : 'Salvar configuracoes'}</Button>
+              <Button type="submit" disabled={isSavingPreferences}>
+                <Save size={16} aria-hidden="true" />
+                {isSavingPreferences ? 'Salvando configuracoes...' : 'Salvar configuracoes'}
+              </Button>
             </div>
           </form>
         </Section>
@@ -167,11 +246,26 @@ export function SettingsPage() {
   );
 }
 
-function ToggleRow({ icon, label, description, checked, onChange }: { icon: React.ReactNode; label: string; description: string; checked: boolean; onChange: (checked: boolean) => void }) {
+function ToggleRow({
+  icon,
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
   return (
     <label className="settings-toggle">
       <span className="settings-toggle__icon">{icon}</span>
-      <span className="settings-toggle__copy"><strong>{label}</strong><small>{description}</small></span>
+      <span className="settings-toggle__copy">
+        <strong>{label}</strong>
+        <small>{description}</small>
+      </span>
       <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
     </label>
   );

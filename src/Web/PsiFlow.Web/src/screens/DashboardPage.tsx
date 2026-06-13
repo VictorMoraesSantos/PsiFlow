@@ -1,18 +1,19 @@
+'use client';
+
 import { AlertTriangle, CalendarCheck, CheckCircle2, ClipboardCheck, Clock3, FileText, ShieldCheck, UsersRound, Video } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { MetricTile } from '../components/MetricTile';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { Section } from '../components/Section';
-import type { Appointment, DashboardData, StatusTone } from '../types';
+import { useApp } from '../state/AppContext';
+import type { Appointment, StatusTone } from '../types';
 
-type DashboardPageProps = {
-  data: DashboardData;
-  isLoading: boolean;
-  onNavigate?: (page: 'agenda' | 'records' | 'online' | 'patients' | 'sessions' | 'notifications') => void;
-};
-
-export function DashboardPage({ data, isLoading, onNavigate }: DashboardPageProps) {
+export function DashboardPage() {
+  const { data, isLoading } = useApp();
+  const router = useRouter();
+  const navigate = (path: string) => router.push(path);
   const nextAppointment = data.appointments.find((appointment) => appointment.status !== 'Cancelada') ?? data.appointments[0];
   const nextSession = data.sessions.find((session) => session.status !== 'Finalizada') ?? data.sessions[0];
   const pendingRecords = data.records.filter((record) => record.status !== 'Assinado').length;
@@ -58,8 +59,8 @@ export function DashboardPage({ data, isLoading, onNavigate }: DashboardPageProp
           <h2>{nextAppointment ? `Proxima sessao as ${nextAppointment.time}` : 'Dia sem consultas marcadas'}</h2>
           <p>{nextAppointment ? 'Veja o que exige preparo agora, sem expor notas clinicas na visao geral.' : 'Use este espaco para criar agenda, revisar pendencias e manter o contexto clinico organizado.'}</p>
           <div className="hero-panel__actions">
-            <Button type="button" onClick={() => onNavigate?.(nextAppointment?.kind === 'Online' ? 'online' : 'sessions')}>{primaryAction}</Button>
-            <Button type="button" variant="secondary" onClick={() => onNavigate?.(pendingRecords > 0 ? 'records' : 'agenda')}>{secondaryAction}</Button>
+            <Button type="button" onClick={() => navigate(nextAppointment?.kind === 'Online' ? '/online' : '/sessions')}>{primaryAction}</Button>
+            <Button type="button" variant="secondary" onClick={() => navigate(pendingRecords > 0 ? '/records' : '/agenda')}>{secondaryAction}</Button>
           </div>
         </div>
         <div className="care-card dashboard-next" aria-label="Proximo atendimento">
@@ -74,9 +75,9 @@ export function DashboardPage({ data, isLoading, onNavigate }: DashboardPageProp
       </section>
 
       <div className="metric-grid" aria-label="Indicadores operacionais">
-        <button type="button" className="metric-button" onClick={() => onNavigate?.('agenda')}><MetricTile label="Consultas confirmadas" value={isLoading ? '...' : String(confirmedAppointments)} detail="Agenda de hoje" tone="accent" icon={<CalendarCheck size={24} />} /></button>
-        <button type="button" className="metric-button" onClick={() => onNavigate?.('records')}><MetricTile label="Prontuarios pendentes" value={isLoading ? '...' : String(pendingRecords)} detail="Precisam de revisao ou assinatura" icon={<FileText size={24} />} /></button>
-        <button type="button" className="metric-button" onClick={() => onNavigate?.('patients')}><MetricTile label="Pacientes ativos" value={isLoading ? '...' : String(data.patients.length)} detail="Contextos disponiveis no workspace" icon={<UsersRound size={24} />} /></button>
+        <button type="button" className="metric-button" onClick={() => navigate('/agenda')}><MetricTile label="Consultas confirmadas" value={isLoading ? '...' : String(confirmedAppointments)} detail="Agenda de hoje" tone="accent" icon={<CalendarCheck size={24} />} /></button>
+        <button type="button" className="metric-button" onClick={() => navigate('/records')}><MetricTile label="Prontuarios pendentes" value={isLoading ? '...' : String(pendingRecords)} detail="Precisam de revisao ou assinatura" icon={<FileText size={24} />} /></button>
+        <button type="button" className="metric-button" onClick={() => navigate('/patients')}><MetricTile label="Pacientes ativos" value={isLoading ? '...' : String(data.patients.length)} detail="Contextos disponiveis no workspace" icon={<UsersRound size={24} />} /></button>
       </div>
 
       {isLoading ? <DashboardLoadingState /> : null}
@@ -110,10 +111,10 @@ export function DashboardPage({ data, isLoading, onNavigate }: DashboardPageProp
 
         <Section title="Atalhos do workspace" description="Continue uma tarefa sem perder o contexto do dia.">
           <div className="dashboard-actions-grid">
-            <Button type="button" variant="secondary" onClick={() => onNavigate?.('agenda')}>Abrir agenda</Button>
-            <Button type="button" variant="secondary" onClick={() => onNavigate?.('patients')}>Cadastrar paciente</Button>
-            <Button type="button" variant="secondary" onClick={() => onNavigate?.('records')}>Revisar prontuarios</Button>
-            <Button type="button" variant="secondary" onClick={() => onNavigate?.('notifications')}>Ver notificacoes</Button>
+            <Button type="button" variant="secondary" onClick={() => navigate('/agenda')}>Abrir agenda</Button>
+            <Button type="button" variant="secondary" onClick={() => navigate('/patients')}>Cadastrar paciente</Button>
+            <Button type="button" variant="secondary" onClick={() => navigate('/records')}>Revisar prontuarios</Button>
+            <Button type="button" variant="secondary" onClick={() => navigate('/notifications')}>Ver notificacoes</Button>
           </div>
         </Section>
 

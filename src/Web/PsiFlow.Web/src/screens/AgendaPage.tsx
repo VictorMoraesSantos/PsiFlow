@@ -1,11 +1,22 @@
+'use client';
+
+import { useState } from 'react';
 import { Button } from '../components/Button';
 import { MonthCalendar } from '../components/MonthCalendar';
-import { ResourcePage, statusBadge } from '../components/ResourcePage';
+import { ResourcePage, statusBadge, type ResourceCrud } from '../components/ResourcePage';
 import { Section } from '../components/Section';
 import { useToast } from '../components/Toast';
-import { api, isLocalFallbackStatus } from '../services/api';
-import type { Appointment, DashboardData, FormField, LookupMap, ScheduleBlock, WeeklyAvailability } from '../types';
-import { useState } from 'react';
+import { appointmentsApi, availabilityApi } from '../services/agenda';
+import { isLocalFallbackStatus } from '../services/http';
+import { useApp } from '../state/AppContext';
+import type {
+  Appointment,
+  DashboardData,
+  FormField,
+  LookupMap,
+  ScheduleBlock,
+  WeeklyAvailability,
+} from '../types';
 
 const fields: Array<FormField<Appointment>> = [
   { name: 'name', label: 'Nome da consulta', type: 'text', required: true, placeholder: 'Ex: Sessao de retorno' },
@@ -18,7 +29,21 @@ const fields: Array<FormField<Appointment>> = [
   { name: 'createdBy', label: 'Criado por', type: 'lookup', lookupKey: 'psychologists' },
 ];
 
-const emptyAppointment: Appointment = { id: 0, tenantId: 1, name: '', patientId: 0, psychologistId: 0, startsAt: '', endsAt: '', patientName: '', time: '', kind: 'Online', modality: 'online', status: 'Confirmada', createdBy: 1 };
+const emptyAppointment: Appointment = {
+  id: 0,
+  tenantId: 1,
+  name: '',
+  patientId: 0,
+  psychologistId: 0,
+  startsAt: '',
+  endsAt: '',
+  patientName: '',
+  time: '',
+  kind: 'Online',
+  modality: 'online',
+  status: 'Confirmada',
+  createdBy: 1,
+};
 
 function buildLookups(data: DashboardData): LookupMap {
   return {
@@ -31,9 +56,34 @@ function buildLookups(data: DashboardData): LookupMap {
   };
 }
 
-type AgendaPageProps = { data: DashboardData; onAppointmentsChange: (appointments: Appointment[]) => void };
+const appointmentsCrud: ResourceCrud<Appointment> = {
+  create: (appointment) => appointmentsApi.create(toCreatePayload(appointment)),
+  update: (id, appointment) => appointmentsApi.update(Number(id), toUpdatePayload(appointment)),
+  remove: (id) => appointmentsApi.cancel(Number(id), { reason: 'Removida pelo workspace web' }).then(() => undefined),
+};
 
-export function AgendaPage({ data, onAppointmentsChange }: AgendaPageProps) {
+function toCreatePayload(appointment: Appointment): Appointment {
+  return {
+    ...appointment,
+    name: appointment.name || appointment.patientName,
+    modality: appointment.modality || 'online',
+    status: appointment.status,
+  };
+}
+
+function toUpdatePayload(appointment: Appointment): Appointment {
+  return {
+    ...appointment,
+    name: appointment.name || appointment.patientName,
+    modality: appointment.modality || 'online',
+    status: appointment.status,
+  };
+}
+
+export function AgendaPage() {
+  const { data, setData } = useApp();
+  const onAppointmentsChange = (appointments: Appointment[]) =>
+    setData((current) => ({ ...current, appointments }));
   const { notify } = useToast();
   const [availabilities, setAvailabilities] = useState<WeeklyAvailability[]>([]);
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
@@ -45,8 +95,8 @@ export function AgendaPage({ data, onAppointmentsChange }: AgendaPageProps) {
     setPendingAction('load-setup');
     try {
       const [weekly, scheduleBlocks] = await Promise.all([
-        api.get<WeeklyAvailability[]>('agenda', '/v1/availability/weekly'),
-        api.get<ScheduleBlock[]>('agenda', '/v1/schedule-blocks'),
+        availabilityApi.weekly(),
+        availabilityApi.scheduleBlocks(),
       ]);
       setAvailabilities(weekly);
       setBlocks(scheduleBlocks);
@@ -70,7 +120,7 @@ export function AgendaPage({ data, onAppointmentsChange }: AgendaPageProps) {
     setPendingAction('load-slots');
     setSlotsRange(`${formatDateTime(from.toISOString())} ate ${formatDateTime(to.toISOString())}`);
     try {
-      const available = await api.get<Array<{ startsAt: string; endsAt: string; modality: string }>>('agenda', `/v1/available-slots?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`);
+      const available = await availabilityApi.availableSlots(from.toISOString(), to.toISOString());
       setSlots(available);
       notify('Horarios disponiveis carregados.');
     } catch (error) {
@@ -86,12 +136,18 @@ export function AgendaPage({ data, onAppointmentsChange }: AgendaPageProps) {
   }
 
   async function createAppointmentForDay(date: Date) {
-    notify(`Use "Agendar consulta" para escolher paciente, profissional e horario em ${date.toLocaleDateString('pt-BR')}.`, 'info');
+    notify(
+      `Use "Agendar consulta" para escolher paciente, profissional e horario em ${date.toLocaleDateString('pt-BR')}.`,
+      'info',
+    );
   }
 
   return (
     <div className="resource-layout">
-      <Section title="Calendario mensal" description="Cada dia mostra quantos compromissos existem. Use para se orientar antes de abrir detalhes da agenda.">
+      <Section
+        title="Calendario mensal"
+        description="Cada dia mostra quantos compromissos existem. Use para se orientar antes de abrir detalhes da agenda."
+      >
         <MonthCalendar appointments={data.appointments} onCreateForDay={createAppointmentForDay} />
       </Section>
       <ResourcePage
@@ -99,16 +155,15 @@ export function AgendaPage({ data, onAppointmentsChange }: AgendaPageProps) {
         description="Lista operacional para revisar, editar e cancelar consultas ja cadastradas."
         createLabel="Agendar consulta"
         items={data.appointments}
-        service="agenda"
-        path="/v1/appointments"
+        crud={appointmentsCrud}
         fields={fields}
         lookups={buildLookups(data)}
         emptyValue={emptyAppointment}
         getId={(appointment) => appointment.id}
         getTitle={(appointment) => appointment.name || appointment.patientName || `Consulta ${appointment.id}`}
         onItemsChange={onAppointmentsChange}
-        toCreatePayload={(appointment) => ({ tenantId: appointment.tenantId, name: appointment.name || appointment.patientName, patientId: appointment.patientId, psychologistId: appointment.psychologistId, startsAt: appointment.startsAt, endsAt: appointment.endsAt, modality: appointment.modality || 'online', status: appointment.status === 'Cancelada' ? 'canceled' : 'scheduled', createdBy: appointment.createdBy || 1 })}
-        toUpdatePayload={(appointment) => ({ id: appointment.id, tenantId: appointment.tenantId, name: appointment.name || appointment.patientName, patientId: appointment.patientId, psychologistId: appointment.psychologistId, startsAt: appointment.startsAt, endsAt: appointment.endsAt, modality: appointment.modality || 'online', status: appointment.status === 'Cancelada' ? 'canceled' : 'scheduled', lateCancel: false, canceledAt: null, canceledBy: null, cancelReason: null })}
+        toCreatePayload={toCreatePayload}
+        toUpdatePayload={toUpdatePayload}
         columns={[
           { key: 'time', header: 'Horario', render: (appointment) => <strong>{formatAppointmentTime(appointment)}</strong> },
           { key: 'patientName', header: 'Consulta', render: (appointment) => appointment.name || appointment.patientName || 'Sem nome' },
@@ -117,27 +172,64 @@ export function AgendaPage({ data, onAppointmentsChange }: AgendaPageProps) {
         ]}
         detailFields={[
           { label: 'Paciente', value: (appointment) => appointment.patientName || `Paciente #${appointment.patientId}` },
-          { label: 'Psicologo', value: (appointment) => appointment.psychologistId ? `Psicologo #${appointment.psychologistId}` : 'Nao informado' },
+          { label: 'Psicologo', value: (appointment) => (appointment.psychologistId ? `Psicologo #${appointment.psychologistId}` : 'Nao informado') },
           { label: 'Inicio', value: (appointment) => formatDateTime(appointment.startsAt) },
           { label: 'Fim', value: (appointment) => formatDateTime(appointment.endsAt) },
           { label: 'Modalidade', value: (appointment) => appointment.modality || appointment.kind },
           { label: 'Status', value: (appointment) => statusBadge(appointment.status) },
         ]}
         actions={[
-          { label: 'Cancelar consulta', tone: 'danger', successMessage: 'Consulta cancelada.', run: (appointment) => api.post('agenda', `/v1/appointments/${appointment.id}/cancel`, { reason: 'Cancelada pelo workspace web' }) },
+          {
+            label: 'Cancelar consulta',
+            tone: 'danger',
+            successMessage: 'Consulta cancelada.',
+            run: (appointment) => appointmentsApi.cancel(appointment.id, { reason: 'Cancelada pelo workspace web' }),
+          },
           { label: 'Consultar horarios livres', successMessage: 'Horarios disponiveis carregados.', run: loadSlots },
         ]}
       />
-      <Section title="Disponibilidade e bloqueios" description="Configure janelas semanais, revise bloqueios e consulte slots sem sair da agenda.">
+      <Section
+        title="Disponibilidade e bloqueios"
+        description="Configure janelas semanais, revise bloqueios e consulte slots sem sair da agenda."
+      >
         <div className="workflow-actions">
-          <Button type="button" variant="secondary" disabled={pendingAction !== null} onClick={loadAgendaSetup}>{pendingAction === 'load-setup' ? 'Carregando configuracao...' : 'Carregar configuracao'}</Button>
-          <Button type="button" disabled={pendingAction !== null} onClick={loadSlots}>{pendingAction === 'load-slots' ? 'Consultando slots...' : 'Consultar slots'}</Button>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pendingAction !== null}
+            onClick={loadAgendaSetup}
+          >
+            {pendingAction === 'load-setup' ? 'Carregando configuracao...' : 'Carregar configuracao'}
+          </Button>
+          <Button type="button" disabled={pendingAction !== null} onClick={loadSlots}>
+            {pendingAction === 'load-slots' ? 'Consultando slots...' : 'Consultar slots'}
+          </Button>
         </div>
         {slotsRange ? <p className="workflow-note">Slots consultados: {slotsRange}.</p> : null}
         <div className="workflow-grid">
-          <WorkflowList title="Disponibilidade semanal" empty="Nenhuma janela carregada." items={availabilities.map((item) => `${weekdayLabel(item.weekday)} ${item.startTime} ate ${item.endTime}, ${item.slotDurationMinutes} min, ${item.modality}`)} />
-          <WorkflowList title="Bloqueios" empty="Nenhum bloqueio carregado." items={blocks.map((item) => `${formatDateTime(item.startsAt)} ate ${formatDateTime(item.endsAt)}${item.reason ? `, ${item.reason}` : ''}`)} />
-          <WorkflowList title="Slots disponiveis" empty="Consulte slots para os proximos 7 dias." items={slots.slice(0, 6).map((item) => `${formatDateTime(item.startsAt)} ate ${formatDateTime(item.endsAt)}, ${item.modality}`)} />
+          <WorkflowList
+            title="Disponibilidade semanal"
+            empty="Nenhuma janela carregada."
+            items={availabilities.map(
+              (item) =>
+                `${weekdayLabel(item.weekday)} ${item.startTime} ate ${item.endTime}, ${item.slotDurationMinutes} min, ${item.modality}`,
+            )}
+          />
+          <WorkflowList
+            title="Bloqueios"
+            empty="Nenhum bloqueio carregado."
+            items={blocks.map(
+              (item) =>
+                `${formatDateTime(item.startsAt)} ate ${formatDateTime(item.endsAt)}${item.reason ? `, ${item.reason}` : ''}`,
+            )}
+          />
+          <WorkflowList
+            title="Slots disponiveis"
+            empty="Consulte slots para os proximos 7 dias."
+            items={slots
+              .slice(0, 6)
+              .map((item) => `${formatDateTime(item.startsAt)} ate ${formatDateTime(item.endsAt)}, ${item.modality}`)}
+          />
         </div>
       </Section>
     </div>
@@ -145,7 +237,20 @@ export function AgendaPage({ data, onAppointmentsChange }: AgendaPageProps) {
 }
 
 function WorkflowList({ title, empty, items }: { title: string; empty: string; items: string[] }) {
-  return <div className="workflow-panel"><h3>{title}</h3>{items.length ? <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{empty}</p>}</div>;
+  return (
+    <div className="workflow-panel">
+      <h3>{title}</h3>
+      {items.length ? (
+        <ul>
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>{empty}</p>
+      )}
+    </div>
+  );
 }
 
 function weekdayLabel(value: number) {
@@ -154,11 +259,18 @@ function weekdayLabel(value: number) {
 
 function formatDateTime(value?: string) {
   if (!value) return 'Sem horario';
-  return new Date(value).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return new Date(value).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function formatAppointmentTime(appointment: Appointment) {
   if (appointment.time) return appointment.time;
-  if (appointment.startsAt) return new Date(appointment.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  if (appointment.startsAt) {
+    return new Date(appointment.startsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
   return '--';
 }

@@ -1,5 +1,8 @@
-import { ResourcePage, statusBadge } from '../components/ResourcePage';
-import { api } from '../services/api';
+'use client';
+
+import { ResourcePage, statusBadge, type ResourceCrud } from '../components/ResourcePage';
+import { sessionsApi } from '../services/sessions';
+import { useApp } from '../state/AppContext';
 import type { DashboardData, FormField, LookupMap, Session } from '../types';
 
 const fields: Array<FormField<Session>> = [
@@ -13,12 +16,29 @@ const fields: Array<FormField<Session>> = [
   { name: 'modality', label: 'Modalidade', type: 'select', options: [{ label: 'Online', value: 'online' }, { label: 'Presencial', value: 'in_person' }] },
 ];
 
-const emptySession: Session = { id: 0, tenantId: 1, name: '', appointmentId: 0, patientId: 0, psychologistId: 0, startsAt: '', endsAt: '', patientName: '', status: 'Preparar', modality: 'online', payment: 'Pendente', room: 'Sala online' };
+const emptySession: Session = {
+  id: 0,
+  tenantId: 1,
+  name: '',
+  appointmentId: 0,
+  patientId: 0,
+  psychologistId: 0,
+  startsAt: '',
+  endsAt: '',
+  patientName: '',
+  status: 'Preparar',
+  modality: 'online',
+  payment: 'Pendente',
+  room: 'Sala online',
+};
 
 function buildLookups(data: DashboardData): LookupMap {
   return {
     patients: data.patients.map((patient) => ({ label: patient.fullName ?? patient.name, value: patient.id })),
-    appointments: data.appointments.map((appointment) => ({ label: `${appointment.time || '--:--'} · ${appointment.patientName || appointment.name || `Consulta ${appointment.id}`}`, value: appointment.id })),
+    appointments: data.appointments.map((appointment) => ({
+      label: `${appointment.time || '--:--'} · ${appointment.patientName || appointment.name || `Consulta ${appointment.id}`}`,
+      value: appointment.id,
+    })),
     psychologists: data.sessions
       .map((session) => session.psychologistId)
       .filter((value): value is number => typeof value === 'number')
@@ -27,34 +47,58 @@ function buildLookups(data: DashboardData): LookupMap {
   };
 }
 
-type SessionsPageProps = { data: DashboardData; onSessionsChange: (sessions: Session[]) => void };
+const sessionsCrud: ResourceCrud<Session> = {
+  create: (session) => sessionsApi.create(toPayload(session)),
+  update: (id, session) => sessionsApi.update(Number(id), toPayload(session)),
+  remove: (id) => sessionsApi.cancel(Number(id), { reason: 'Removida pelo workspace web' }).then(() => undefined),
+};
 
-export function SessionsPage({ data, onSessionsChange }: SessionsPageProps) {
+function toPayload(session: Session): Session {
+  return {
+    ...session,
+    name: session.name || session.patientName,
+    modality: session.modality || 'online',
+    status: session.status,
+  };
+}
+
+export function SessionsPage() {
+  const { data, setData } = useApp();
+  const onSessionsChange = (sessions: Session[]) => setData((current) => ({ ...current, sessions }));
+
   return (
     <ResourcePage
       title="Sessoes"
       description="Acompanhe preparo, atendimento, pagamento e encerramento de cada sessao."
       createLabel="Criar sessao"
       items={data.sessions}
-      service="sessions"
-      path="/v1/sessions"
+      crud={sessionsCrud}
       fields={fields}
       lookups={buildLookups(data)}
       emptyValue={emptySession}
       getId={(session) => session.id}
       getTitle={(session) => session.name || session.patientName || `Sessao ${session.id}`}
       onItemsChange={onSessionsChange}
-      toCreatePayload={(session) => ({ tenantId: session.tenantId, name: session.name || session.patientName, appointmentId: session.appointmentId, patientId: session.patientId, psychologistId: session.psychologistId, startsAt: session.startsAt, endsAt: session.endsAt, status: session.status === 'Finalizada' ? 'completed' : session.status === 'Em andamento' ? 'started' : 'scheduled', modality: session.modality || 'online' })}
-      toUpdatePayload={(session) => ({ id: session.id, tenantId: session.tenantId, name: session.name || session.patientName, appointmentId: session.appointmentId, patientId: session.patientId, psychologistId: session.psychologistId, startsAt: session.startsAt, endsAt: session.endsAt, status: session.status === 'Finalizada' ? 'completed' : session.status === 'Em andamento' ? 'started' : 'scheduled', modality: session.modality || 'online' })}
+      toCreatePayload={toPayload}
+      toUpdatePayload={toPayload}
       columns={[
-        { key: 'patientName', header: 'Paciente e horario', render: (session) => <div className="person-cell"><strong>{session.patientName || session.name || `Sessao ${session.id}`}</strong><span>{formatSessionRange(session)}</span></div> },
+        {
+          key: 'patientName',
+          header: 'Paciente e horario',
+          render: (session) => (
+            <div className="person-cell">
+              <strong>{session.patientName || session.name || `Sessao ${session.id}`}</strong>
+              <span>{formatSessionRange(session)}</span>
+            </div>
+          ),
+        },
         { key: 'room', header: 'Local', render: (session) => session.room },
         { key: 'nextStep', header: 'Proximo passo', render: (session) => nextStepLabel(session) },
         { key: 'payment', header: 'Pagamento', render: (session) => statusBadge(session.payment) },
         { key: 'status', header: 'Status', render: (session) => statusBadge(session.status) },
       ]}
       detailFields={[
-        { label: 'Consulta', value: (session) => session.appointmentId ? `Consulta #${session.appointmentId}` : 'Nao vinculada' },
+        { label: 'Consulta', value: (session) => (session.appointmentId ? `Consulta #${session.appointmentId}` : 'Nao vinculada') },
         { label: 'Paciente', value: (session) => session.patientName || `Paciente #${session.patientId}` },
         { label: 'Inicio', value: (session) => formatDateTime(session.startsAt) },
         { label: 'Fim', value: (session) => formatDateTime(session.endsAt) },
@@ -62,16 +106,18 @@ export function SessionsPage({ data, onSessionsChange }: SessionsPageProps) {
         { label: 'Status', value: (session) => statusBadge(session.status) },
       ]}
       actions={[
-        { label: 'Iniciar sessao', successMessage: 'Sessao iniciada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/start`, { reason: 'Iniciada pelo workspace web' }) },
-        { label: 'Concluir sessao', successMessage: 'Sessao concluida.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/complete`, { reason: 'Concluida pelo workspace web' }) },
-        { label: 'Marcar falta', successMessage: 'Falta registrada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/no-show`, { reason: 'Ausencia registrada pelo workspace web' }) },
-        { label: 'Marcar pagamento', successMessage: 'Pagamento marcado.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/payment/mark-received`, { amountCents: 0, currency: 'BRL', notes: 'Pagamento manual registrado pelo workspace web' }) },
-        { label: 'Ver pagamento', successMessage: 'Pagamento carregado.', run: (session) => api.get('sessions', `/v1/sessions/${session.id}/payment`) },
-        { label: 'Enviar recibo', successMessage: 'Recibo solicitado.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/receipt/send`) },
-        { label: 'Cancelar sessao', tone: 'danger', successMessage: 'Sessao cancelada.', run: (session) => api.post('sessions', `/v1/sessions/${session.id}/cancel`, { reason: 'Cancelada pelo workspace web' }) },
+        { label: 'Iniciar sessao', successMessage: 'Sessao iniciada.', run: (session) => sessionsApi.start(session.id, { reason: 'Iniciada pelo workspace web' }) },
+        { label: 'Concluir sessao', successMessage: 'Sessao concluida.', run: (session) => sessionsApi.complete(session.id, { reason: 'Concluida pelo workspace web' }) },
+        { label: 'Marcar falta', successMessage: 'Falta registrada.', run: (session) => sessionsApi.noShow(session.id, { reason: 'Ausencia registrada pelo workspace web' }) },
+        { label: 'Marcar pagamento', successMessage: 'Pagamento marcado.', run: (session) => sessionsApi.markPaymentReceived(session.id, { amountCents: 0, currency: 'BRL', notes: 'Pagamento manual registrado pelo workspace web' }) },
+        { label: 'Ver pagamento', successMessage: 'Pagamento carregado.', run: (session) => sessionsApi.payment(session.id) },
+        { label: 'Enviar recibo', successMessage: 'Recibo solicitado.', run: (session) => sessionsApi.sendReceipt(session.id) },
+        { label: 'Cancelar sessao', tone: 'danger', successMessage: 'Sessao cancelada.', run: (session) => sessionsApi.cancel(session.id, { reason: 'Cancelada pelo workspace web' }) },
       ]}
       summaryLabel={(count) => `${count} ${count === 1 ? 'sessao' : 'sessoes'}`}
-      summaryDescription={(count) => count === 0 ? 'Nenhuma sessao para preparar agora.' : 'Use a lista para retomar contexto, iniciar atendimento e fechar pendencias.'}
+      summaryDescription={(count) =>
+        count === 0 ? 'Nenhuma sessao para preparar agora.' : 'Use a lista para retomar contexto, iniciar atendimento e fechar pendencias.'
+      }
       updatePolicyLabel="Atualiza apos salvar"
       emptyTitle="Nenhuma sessao cadastrada"
       emptyDescription="Crie uma sessao a partir de uma consulta para acompanhar preparo, atendimento e fechamento clinico."
@@ -95,7 +141,13 @@ function formatSessionRange(session: Session) {
 
 function formatDateTime(value?: string) {
   if (!value) return 'Nao informado';
-  return new Date(value).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(value).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function formatTime(value?: string) {

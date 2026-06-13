@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { AppProvider } from '../state/AppContext';
 import '../styles/global.css';
 
 export const metadata: Metadata = {
@@ -13,7 +14,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <AppProvider>{children}</AppProvider>
+      </body>
     </html>
   );
 }

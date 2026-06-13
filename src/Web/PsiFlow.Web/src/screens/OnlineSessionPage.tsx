@@ -1,5 +1,8 @@
-import { ResourcePage, statusBadge } from '../components/ResourcePage';
-import { api } from '../services/api';
+'use client';
+
+import { ResourcePage, statusBadge, type ResourceCrud } from '../components/ResourcePage';
+import { videoRoomsApi, videoSettingsApi } from '../services/onlineSession';
+import { useApp } from '../state/AppContext';
 import type { DashboardData, FormField, LookupMap, VideoRoom } from '../types';
 
 const fields: Array<FormField<VideoRoom>> = [
@@ -17,7 +20,10 @@ const emptyRoom: VideoRoom = { id: 0, tenantId: 1, sessionId: 0, name: '', provi
 
 function buildLookups(data: DashboardData): LookupMap {
   return {
-    sessions: data.sessions.map((session) => ({ label: `${session.startsAt?.slice(11, 16) || '--:--'} · ${session.patientName || session.name || `Sessao ${session.id}`}`, value: session.id })),
+    sessions: data.sessions.map((session) => ({
+      label: `${session.startsAt?.slice(11, 16) || '--:--'} · ${session.patientName || session.name || `Sessao ${session.id}`}`,
+      value: session.id,
+    })),
     psychologists: data.sessions
       .map((session) => session.psychologistId)
       .filter((value): value is number => typeof value === 'number')
@@ -26,9 +32,29 @@ function buildLookups(data: DashboardData): LookupMap {
   };
 }
 
-type OnlineSessionPageProps = { data: DashboardData; onVideoRoomsChange: (rooms: VideoRoom[]) => void };
+const roomsCrud: ResourceCrud<VideoRoom> = {
+  create: (room) => videoRoomsApi.create(toPayload(room)),
+  update: (id, room) => videoRoomsApi.update(Number(id), toPayload(room)),
+  remove: async (id) => {
+    await videoRoomsApi.remove(Number(id));
+  },
+};
 
-export function OnlineSessionPage({ data, onVideoRoomsChange }: OnlineSessionPageProps) {
+function toPayload(room: VideoRoom): VideoRoom {
+  return {
+    ...room,
+    provider: room.provider || 'external',
+    urlEncrypted: room.urlEncrypted || '',
+    urlHash: room.urlHash || '',
+    instructions: room.instructions || null,
+    status: room.status,
+  };
+}
+
+export function OnlineSessionPage() {
+  const { data, setData } = useApp();
+  const onVideoRoomsChange = (videoRooms: VideoRoom[]) => setData((current) => ({ ...current, videoRooms }));
+
   function requireHttpsUrl(room: VideoRoom) {
     const url = room.urlEncrypted?.trim();
     if (!url || !url.startsWith('https://')) {
@@ -43,18 +69,26 @@ export function OnlineSessionPage({ data, onVideoRoomsChange }: OnlineSessionPag
       description="Links seguros por sessao, instrucoes de acesso e historico de cliques."
       createLabel="Criar sala"
       items={data.videoRooms}
-      service="onlineSession"
-      path="/v1/video-rooms"
+      crud={roomsCrud}
       fields={fields}
       lookups={buildLookups(data)}
       emptyValue={emptyRoom}
       getId={(room) => room.id}
       getTitle={(room) => room.name}
       onItemsChange={onVideoRoomsChange}
-      toCreatePayload={(room) => ({ tenantId: room.tenantId, sessionId: room.sessionId, name: room.name, provider: room.provider || 'external', urlEncrypted: room.urlEncrypted || '', urlHash: room.urlHash || '', instructions: room.instructions || null, createdBy: room.createdBy || 1, status: room.status === 'Inativo' ? 'inactive' : room.status === 'Pausado' ? 'paused' : 'active' })}
-      toUpdatePayload={(room) => ({ id: room.id, tenantId: room.tenantId, sessionId: room.sessionId, name: room.name, provider: room.provider || 'external', urlEncrypted: room.urlEncrypted || '', urlHash: room.urlHash || '', instructions: room.instructions || null, createdBy: room.createdBy || 1, status: room.status === 'Inativo' ? 'inactive' : room.status === 'Pausado' ? 'paused' : 'active' })}
+      toCreatePayload={toPayload}
+      toUpdatePayload={toPayload}
       columns={[
-        { key: 'name', header: 'Sessao e sala', render: (room) => <div className="person-cell"><strong>{sessionLabel(data, room.sessionId)}</strong><span>{room.name || `Sala #${room.id}`}</span></div> },
+        {
+          key: 'name',
+          header: 'Sessao e sala',
+          render: (room) => (
+            <div className="person-cell">
+              <strong>{sessionLabel(data, room.sessionId)}</strong>
+              <span>{room.name || `Sala #${room.id}`}</span>
+            </div>
+          ),
+        },
         { key: 'provider', header: 'Provedor', render: (room) => room.provider },
         { key: 'readiness', header: 'Prontidao', render: (room) => readinessLabel(room) },
         { key: 'status', header: 'Status', render: (room) => statusBadge(room.status) },
@@ -62,20 +96,22 @@ export function OnlineSessionPage({ data, onVideoRoomsChange }: OnlineSessionPag
       detailFields={[
         { label: 'Sessao', value: (room) => sessionLabel(data, room.sessionId) },
         { label: 'Provedor', value: (room) => room.provider },
-        { label: 'Link seguro', value: (room) => room.urlEncrypted?.startsWith('https://') ? 'HTTPS informado' : 'Link HTTPS ausente' },
+        { label: 'Link seguro', value: (room) => (room.urlEncrypted?.startsWith('https://') ? 'HTTPS informado' : 'Link HTTPS ausente') },
         { label: 'Hash', value: (room) => room.urlHash || 'Nao informado' },
         { label: 'Instrucoes', value: (room) => room.instructions || 'Nao informado' },
         { label: 'Status', value: (room) => statusBadge(room.status) },
       ]}
       actions={[
-        { label: 'Salvar link desta sessao', successMessage: 'Link seguro da sessao salvo.', run: (room) => api.put('onlineSession', `/v1/sessions/${room.sessionId}/video-room`, { name: room.name, provider: room.provider || 'external', url: requireHttpsUrl(room), instructions: room.instructions || null }) },
-        { label: 'Consultar link', successMessage: 'Link da sessao carregado.', run: (room) => api.get('onlineSession', `/v1/sessions/${room.sessionId}/video-room`) },
-        { label: 'Ver historico de cliques', successMessage: 'Historico de cliques carregado.', run: (room) => api.get('onlineSession', `/v1/sessions/${room.sessionId}/video-room/clicks`) },
-        { label: 'Definir link padrao do workspace', successMessage: 'Link padrao do workspace salvo.', run: (room) => api.put('onlineSession', '/v1/video-settings/default-link', { provider: room.provider, url: requireHttpsUrl(room) }) },
-        { label: 'Ver link padrao', successMessage: 'Link padrao carregado.', run: () => api.get('onlineSession', '/v1/video-settings/default-link') },
+        { label: 'Salvar link desta sessao', successMessage: 'Link seguro da sessao salvo.', run: (room) => videoRoomsApi.setSessionLink(room.sessionId, { name: room.name, provider: room.provider || 'external', url: requireHttpsUrl(room), instructions: room.instructions || null }) },
+        { label: 'Consultar link', successMessage: 'Link da sessao carregado.', run: (room) => videoRoomsApi.getSessionLink(room.sessionId) },
+        { label: 'Ver historico de cliques', successMessage: 'Historico de cliques carregado.', run: (room) => videoRoomsApi.sessionClicks(room.sessionId) },
+        { label: 'Definir link padrao do workspace', successMessage: 'Link padrao do workspace salvo.', run: (room) => videoSettingsApi.setDefaultLink({ provider: room.provider, url: requireHttpsUrl(room) }) },
+        { label: 'Ver link padrao', successMessage: 'Link padrao carregado.', run: () => videoSettingsApi.getDefaultLink() },
       ]}
       summaryLabel={(count) => `${count} ${count === 1 ? 'sala' : 'salas'}`}
-      summaryDescription={(count) => count === 0 ? 'Nenhuma sala online cadastrada.' : 'Confira link HTTPS, sessao vinculada e historico antes do atendimento.'}
+      summaryDescription={(count) =>
+        count === 0 ? 'Nenhuma sala online cadastrada.' : 'Confira link HTTPS, sessao vinculada e historico antes do atendimento.'
+      }
       updatePolicyLabel="Link seguro por sessao"
       emptyTitle="Nenhuma sala online cadastrada"
       emptyDescription="Crie uma sala para uma sessao online e salve um link HTTPS antes de enviar acesso ao paciente."

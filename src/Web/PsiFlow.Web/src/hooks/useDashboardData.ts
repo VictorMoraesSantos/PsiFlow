@@ -1,4 +1,6 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+'use client';
+
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { fallbackData } from '../data/fallbackData';
 import { loadDashboardData } from '../services/api';
 import type { DashboardData } from '../types';
@@ -14,12 +16,15 @@ export function useDashboardData(enabled: boolean): DashboardState {
   const [data, setData] = useState<DashboardData>(fallbackData);
   const [isLoading, setIsLoading] = useState(enabled);
 
-  async function reload() {
+  const reload = useCallback(async () => {
     setIsLoading(true);
-    const nextData = await loadDashboardData();
-    setData(nextData);
-    setIsLoading(false);
-  }
+    try {
+      const nextData = await loadDashboardData();
+      setData(nextData);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
@@ -30,11 +35,16 @@ export function useDashboardData(enabled: boolean): DashboardState {
     let isCurrent = true;
     setIsLoading(true);
 
-    loadDashboardData().then((data) => {
-      if (!isCurrent) return;
-      setData(data);
-      setIsLoading(false);
-    });
+    loadDashboardData()
+      .then((loaded) => {
+        if (!isCurrent) return;
+        setData(loaded);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (!isCurrent) return;
+        setIsLoading(false);
+      });
 
     return () => {
       isCurrent = false;
