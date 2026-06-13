@@ -2,6 +2,7 @@ using Auth.API.Endpoints;
 using Auth.Application.Settings;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Persistence.Seeds;
+using BuildingBlocks.Authorization;
 using Core.API;
 using Serilog;
 
@@ -17,6 +18,7 @@ builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddPsiFlowAuthorization();
 builder.Services.AddHealthChecks();
 builder.Services.AddHostedService<AuthDataSeeder>();
 builder.Services.AddCoreApi();

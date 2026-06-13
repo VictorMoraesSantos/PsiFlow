@@ -2,13 +2,13 @@ import { fallbackData } from '../data/fallbackData';
 import type { Appointment, DashboardData, Id, MedicalRecord, NotificationTemplate, Patient, Session, VideoRoom } from '../types';
 
 export const serviceUrls = {
-  auth: import.meta.env.VITE_AUTH_API_URL ?? 'http://localhost:5001',
-  patients: import.meta.env.VITE_PATIENTS_API_URL ?? 'http://localhost:5002',
-  agenda: import.meta.env.VITE_AGENDA_API_URL ?? 'http://localhost:5003',
-  sessions: import.meta.env.VITE_SESSIONS_API_URL ?? 'http://localhost:5004',
-  clinicalRecords: import.meta.env.VITE_CLINICAL_RECORDS_API_URL ?? 'http://localhost:5005',
-  notifications: import.meta.env.VITE_NOTIFICATIONS_API_URL ?? 'http://localhost:5006',
-  onlineSession: import.meta.env.VITE_ONLINE_SESSION_API_URL ?? 'http://localhost:5007',
+  auth: process.env.NEXT_PUBLIC_AUTH_API_URL ?? 'http://localhost:5001',
+  patients: process.env.NEXT_PUBLIC_PATIENTS_API_URL ?? 'http://localhost:5002',
+  agenda: process.env.NEXT_PUBLIC_AGENDA_API_URL ?? 'http://localhost:5003',
+  sessions: process.env.NEXT_PUBLIC_SESSIONS_API_URL ?? 'http://localhost:5004',
+  clinicalRecords: process.env.NEXT_PUBLIC_CLINICAL_RECORDS_API_URL ?? 'http://localhost:5005',
+  notifications: process.env.NEXT_PUBLIC_NOTIFICATIONS_API_URL ?? 'http://localhost:5006',
+  onlineSession: process.env.NEXT_PUBLIC_ONLINE_SESSION_API_URL ?? 'http://localhost:5007',
 };
 
 const tokenKey = 'psiflow.accessToken';

@@ -10,5 +10,6 @@ namespace Auth.Application.DTOs.Auth
         string? Phone,
         string? Crp,
         string AcceptedTermsVersion,
-        string AcceptedPrivacyVersion);
+        string AcceptedPrivacyVersion,
+        string? FullName = null);
 }

@@ -4,19 +4,19 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5173",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 4173"
+    "dev": "next dev --hostname 0.0.0.0 --port 5173",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port 4173"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "next": "latest",
     "typescript": "latest",
     "react": "latest",
     "react-dom": "latest",
     "lucide-react": "latest"
   },
   "devDependencies": {
+    "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest"
   }

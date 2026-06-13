@@ -8,6 +8,7 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { OnlineSessionPage } from './pages/OnlineSessionPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { RecordsPage } from './pages/RecordsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { SessionsPage } from './pages/SessionsPage';
 import { useDashboardData } from './hooks/useDashboardData';
 import { clearSessionTokens, getAccessToken, localFallbackEvent } from './services/api';
@@ -51,6 +52,7 @@ export function App() {
         {currentPage === 'records' && <RecordsPage data={data} onRecordsChange={(records) => setData((current) => ({ ...current, records }))} />}
         {currentPage === 'notifications' && <NotificationsPage templates={data.templates} onTemplatesChange={(templates) => setData((current) => ({ ...current, templates }))} />}
         {currentPage === 'online' && <OnlineSessionPage data={data} onVideoRoomsChange={(videoRooms) => setData((current) => ({ ...current, videoRooms }))} />}
+        {currentPage === 'settings' && <SettingsPage />}
       </AppShell>
     </ToastProvider>
   );

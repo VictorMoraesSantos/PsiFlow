@@ -14,7 +14,7 @@ public sealed class AgendaService(
     public async Task<Result<WeeklyAvailabilityResult>> CreateWeeklyAvailabilityAsync(WeeklyAvailabilityRequest request, int tenantId, CancellationToken cancellationToken)
     {
         var modality = request.Modality ?? "online";
-        if (await availabilityRepository.GetOverlappingAsync(tenantId, request.Weekday, modality, request.StartTime, request.EndTime, excludedAvailabilityId: null, cancellationToken))
+        if (await availabilityRepository.GetOverlappingAsync(tenantId, request.Weekday, modality, request.StartTime, request.EndTime, excludedId: null, cancellationToken))
         {
             return Result.Failure<WeeklyAvailabilityResult>(AppointmentErrors.OverlappingAvailability);
         }

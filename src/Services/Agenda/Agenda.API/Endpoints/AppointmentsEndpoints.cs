@@ -4,7 +4,9 @@ using Agenda.Application.Features.Appointments.Commands.Delete;
 using Agenda.Application.Features.Appointments.Commands.Update;
 using Agenda.Application.Features.Appointments.Queries.GetAll;
 using Agenda.Application.Features.Appointments.Queries.GetById;
+using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
+using static BuildingBlocks.Authorization.Policies;
 
 namespace Agenda.API.Endpoints
 {
@@ -13,8 +15,7 @@ namespace Agenda.API.Endpoints
         public static IEndpointRouteBuilder MapAppointmentsEndpoints(this IEndpointRouteBuilder app)
         {
             var group = app.MapGroup("/v1/appointments")
-                .WithTags("Appointments")
-                .RequireAuthorization();
+                .WithTags("Appointments");
 
             group.MapGet("/", async (ISender sender, CancellationToken ct) =>
             {
@@ -22,7 +23,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.Problem(result.Error!.Description, statusCode: StatusCodes.Status500InternalServerError);
-            });
+            }).RequireAuthorization(Permissions.Agenda.View);
 
             group.MapGet("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -30,7 +31,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.NotFound(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.Agenda.View);
 
             group.MapPost("/", async (CreateAppointmentDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -38,7 +39,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Created($"/v1/appointments/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.Agenda.Create);
 
             group.MapPut("/{id:int}", async (int id, UpdateAppointmentDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -46,7 +47,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.Agenda.Edit);
 
             group.MapDelete("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -54,7 +55,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.NoContent()
                     : Results.NotFound(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.Agenda.Delete);
 
             return app;
         }

@@ -2,6 +2,7 @@ using BuildingBlocks.CQRS.Extensions;
 using BuildingBlocks.Results;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Notifications.Application.Contracts;
 using Notifications.Application.DTOs.NotificationTemplate;
 using Notifications.Application.Features.NotificationTemplates.Commands.Create;
 using Notifications.Application.Features.NotificationTemplates.Commands.Delete;

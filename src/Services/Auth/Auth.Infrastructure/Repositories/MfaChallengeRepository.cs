@@ -1,5 +1,6 @@
 using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
+using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.Repositories
 {
     public class MfaChallengeRepository(ApplicationDbContext dbContext) : IMfaChallengeRepository
     {
-        public async Task<MfaChallenge?> GetById(int id, CancellationToken cancellationToken = default) =>
+        public async Task<MfaChallenge?> GetById(MfaChallengeId id, CancellationToken cancellationToken = default) =>
             await dbContext.MfaChallenges.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         public async Task<IEnumerable<MfaChallenge?>> GetAll(CancellationToken cancellationToken = default) =>

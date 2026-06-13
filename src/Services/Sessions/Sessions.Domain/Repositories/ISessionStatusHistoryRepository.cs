@@ -5,4 +5,5 @@ namespace Sessions.Domain.Repositories;
 
 public interface ISessionStatusHistoryRepository : IRepository<SessionStatusHistory, int>
 {
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

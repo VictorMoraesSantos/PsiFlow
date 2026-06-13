@@ -1,8 +1,10 @@
+using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using Sessions.Application.Contracts;
 using Sessions.Application.Features.Workflow;
 using System.Security.Claims;
+using static BuildingBlocks.Authorization.Policies;
 
 namespace Sessions.API.Endpoints;
 
@@ -11,28 +13,28 @@ public static class SessionWorkflowEndpoints
     public static IEndpointRouteBuilder MapSessionWorkflowEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/v1/patients/{patientId:int}/sessions", async (int patientId, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            ToHttp(await sender.Send(new GetPatientSessionsQuery(patientId, TenantId(user)), ct))).RequireAuthorization();
+            ToHttp(await sender.Send(new GetPatientSessionsQuery(patientId, TenantId(user)), ct))).RequireAuthorization(Permissions.Sessions.View);
 
         app.MapPost("/v1/sessions/{sessionId:int}/start", async (int sessionId, StatusReasonRequest? request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            await ChangeStatus(sessionId, "started", request, user, sender, ct)).RequireAuthorization();
+            await ChangeStatus(sessionId, "started", request, user, sender, ct)).RequireAuthorization(Permissions.Sessions.Edit);
 
         app.MapPost("/v1/sessions/{sessionId:int}/complete", async (int sessionId, StatusReasonRequest? request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            await ChangeStatus(sessionId, "completed", request, user, sender, ct)).RequireAuthorization();
+            await ChangeStatus(sessionId, "completed", request, user, sender, ct)).RequireAuthorization(Permissions.Sessions.Edit);
 
         app.MapPost("/v1/sessions/{sessionId:int}/no-show", async (int sessionId, StatusReasonRequest? request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            await ChangeStatus(sessionId, "no_show", request, user, sender, ct)).RequireAuthorization();
+            await ChangeStatus(sessionId, "no_show", request, user, sender, ct)).RequireAuthorization(Permissions.Sessions.Edit);
 
         app.MapPost("/v1/sessions/{sessionId:int}/cancel", async (int sessionId, StatusReasonRequest? request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            await ChangeStatus(sessionId, "canceled", request, user, sender, ct)).RequireAuthorization();
+            await ChangeStatus(sessionId, "canceled", request, user, sender, ct)).RequireAuthorization(Permissions.Sessions.Edit);
 
         app.MapPost("/v1/sessions/{sessionId:int}/payment/mark-received", async (int sessionId, MarkPaymentReceivedRequest request, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            ToHttp(await sender.Send(new MarkPaymentReceivedCommand(sessionId, request, TenantId(user), UserId(user)), ct))).RequireAuthorization();
+            ToHttp(await sender.Send(new MarkPaymentReceivedCommand(sessionId, request, TenantId(user), UserId(user)), ct))).RequireAuthorization(Permissions.Sessions.Edit);
 
         app.MapGet("/v1/sessions/{sessionId:int}/payment", async (int sessionId, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            ToHttp(await sender.Send(new GetSessionPaymentQuery(sessionId, TenantId(user)), ct))).RequireAuthorization();
+            ToHttp(await sender.Send(new GetSessionPaymentQuery(sessionId, TenantId(user)), ct))).RequireAuthorization(Permissions.Sessions.View);
 
         app.MapPost("/v1/sessions/{sessionId:int}/receipt/send", async (int sessionId, ClaimsPrincipal user, ISender sender, CancellationToken ct) =>
-            ToHttp(await sender.Send(new SendReceiptCommand(sessionId, TenantId(user)), ct))).RequireAuthorization();
+            ToHttp(await sender.Send(new SendReceiptCommand(sessionId, TenantId(user)), ct))).RequireAuthorization(Permissions.Sessions.Edit);
 
         return app;
     }

@@ -2,6 +2,7 @@ using Auth.Application;
 using Auth.Application.Settings;
 using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
+using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Data;
 using Auth.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -21,7 +22,7 @@ namespace Auth.Infrastructure
             services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddRepositories();
             services.AddIdentityServices(configuration);
-            services.AddApplication();
+            services.AddAuthApplication();
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
             services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<JwtSettings>>().Value);
             return services;
@@ -68,7 +69,7 @@ namespace Auth.Infrastructure
                 };
             });
 
-            services.AddIdentity<User, IdentityRole<int>>(options =>
+            services.AddIdentity<User, IdentityRole<UserId>>(options =>
             {
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 options.Lockout.MaxFailedAccessAttempts = 5;

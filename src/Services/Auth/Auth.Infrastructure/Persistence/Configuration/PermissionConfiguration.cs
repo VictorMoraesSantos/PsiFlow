@@ -15,6 +15,11 @@ namespace Auth.Infrastructure.Persistence.Configuration
                     id => id.Value,
                     value => new PermissionId(value))
                 .ValueGeneratedOnAdd();
+
+            builder.Property(x => x.PermissionGroupId)
+                .HasConversion(
+                    id => id.Value,
+                    value => new PermissionGroupId(value));
         }
     }
 }

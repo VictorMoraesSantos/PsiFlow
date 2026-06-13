@@ -1,10 +1,12 @@
-﻿using BuildingBlocks.CQRS.Sender;
+﻿using BuildingBlocks.Authorization;
+using BuildingBlocks.CQRS.Sender;
 using OnlineSession.Application.DTOs.VideoRoom;
 using OnlineSession.Application.Features.VideoRooms.Commands.Create;
 using OnlineSession.Application.Features.VideoRooms.Commands.Delete;
 using OnlineSession.Application.Features.VideoRooms.Commands.Update;
 using OnlineSession.Application.Features.VideoRooms.Queries.GetAll;
 using OnlineSession.Application.Features.VideoRooms.Queries.GetById;
+using static BuildingBlocks.Authorization.Policies;
 
 namespace OnlineSession.API.Endpoints
 {
@@ -13,8 +15,7 @@ namespace OnlineSession.API.Endpoints
         public static IEndpointRouteBuilder MapVideoRoomsEndpoints(this IEndpointRouteBuilder app)
         {
             var group = app.MapGroup("/v1/video-rooms")
-                .WithTags("VideoRooms")
-                .RequireAuthorization();
+                .WithTags("VideoRooms");
 
             group.MapGet("/", async (ISender sender, CancellationToken ct) =>
             {
@@ -22,7 +23,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.Problem(result.Error!.Description, statusCode: StatusCodes.Status500InternalServerError);
-            });
+            }).RequireAuthorization(Permissions.OnlineSession.View);
 
             group.MapGet("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -30,7 +31,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.NotFound(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.OnlineSession.View);
 
             group.MapPost("/", async (CreateVideoRoomDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -38,7 +39,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Created($"/v1/video-rooms/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.OnlineSession.Create);
 
             group.MapPut("/{id:int}", async (int id, UpdateVideoRoomDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -46,7 +47,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.OnlineSession.Edit);
 
             group.MapDelete("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -54,7 +55,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.NoContent()
                     : Results.NotFound(new { error = result.Error!.Description });
-            });
+            }).RequireAuthorization(Permissions.OnlineSession.Delete);
 
             return app;
         }

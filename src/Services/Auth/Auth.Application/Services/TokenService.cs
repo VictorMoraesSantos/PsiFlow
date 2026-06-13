@@ -17,7 +17,7 @@ namespace Auth.Application.Services
             _settings = settings;
         }
 
-        public Result<string> GenerateToken(int userId, string email, int tenantId, string role, IEnumerable<string> roles)
+        public Result<string> GenerateToken(int userId, string email, int tenantId, string role, IEnumerable<string> roles, IEnumerable<string> permissions)
         {
             try
             {
@@ -30,6 +30,12 @@ namespace Auth.Application.Services
                     new Claim(ClaimTypes.Role, role),
                     new Claim("roles", string.Join(",", roles))
                 };
+
+                foreach (var permission in permissions ?? Array.Empty<string>())
+                {
+                    if (string.IsNullOrWhiteSpace(permission)) continue;
+                    claims.Add(new Claim("permission", permission));
+                }
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

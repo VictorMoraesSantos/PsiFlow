@@ -15,6 +15,10 @@ namespace Auth.Infrastructure.Persistence.Configuration
                     id => id.Value,
                     value => new PermissionGroupId(value))
                 .ValueGeneratedOnAdd();
+
+            builder.HasMany(x => x.Permissions)
+                .WithOne(x => x.PermissionGroup)
+                .HasForeignKey(x => x.PermissionGroupId);
         }
     }
 }

@@ -1,7 +1,9 @@
+using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using Patients.Application.Features.Workflow;
 using System.Security.Claims;
+using static BuildingBlocks.Authorization.Policies;
 
 namespace Patients.API.Endpoints;
 
@@ -13,35 +15,35 @@ public static class PatientInvitesEndpoints
         {
             var result = await sender.Send(new DeactivatePatientCommand(patientId, request.Reason, http.GetTenantId(), http.GetUserId()), ct);
             return ToHttp(result, StatusCodes.Status204NoContent);
-        }).RequireAuthorization();
+        }).RequireAuthorization(Permissions.Patients.Edit);
 
         app.MapPost("/v1/patients/{patientId:int}/status", async (int patientId, ChangeTreatmentStatusRequest request, ISender sender, HttpContext http, CancellationToken ct) =>
         {
             var result = await sender.Send(new ChangeTreatmentStatusCommand(patientId, request.TreatmentStatus, request.Reason, http.GetTenantId(), http.GetUserId()), ct);
             return ToHttp(result);
-        }).RequireAuthorization();
+        }).RequireAuthorization(Permissions.Patients.Edit);
 
-        app.MapGet("/v1/patients/{patientId:int}/sessions-summary", async (int patientId, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new GetPatientSessionsSummaryQuery(patientId), ct))).RequireAuthorization();
+        app.MapGet("/v1/patients/{patientId:int}/sessions-summary", async (int patientId, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new GetPatientSessionsSummaryQuery(patientId), ct))).RequireAuthorization(Permissions.Patients.View);
 
         app.MapPost("/v1/patient-invites", async (InvitePatientRequest request, ISender sender, HttpContext http, CancellationToken ct) =>
         {
             var result = await sender.Send(new CreatePatientInviteCommand(request.Email, request.Phone, request.PatientId, http.GetTenantId(), http.GetUserId()), ct);
             return result.IsSuccess ? Results.Created("/v1/patient-invites", result.Value) : ToHttp(result);
-        }).RequireAuthorization();
+        }).RequireAuthorization(Permissions.Patients.Create);
 
-        app.MapGet("/v1/patient-invites/{token}/preview", async (string token, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new PreviewPatientInviteQuery(token), ct)));
+        app.MapGet("/v1/patient-invites/{token}/preview", async (string token, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new PreviewPatientInviteQuery(token), ct))).AllowAnonymous();
 
         app.MapPost("/v1/patient-invites/{token}/accept", async (string token, AcceptInviteRequest request, ISender sender, CancellationToken ct) =>
         {
             var result = await sender.Send(new AcceptPatientInviteCommand(token, request.UserId), ct);
             return ToHttp(result);
-        });
+        }).AllowAnonymous();
 
         app.MapPost("/v1/patient-invites/{inviteId:int}/revoke", async (int inviteId, ISender sender, HttpContext http, CancellationToken ct) =>
         {
             var result = await sender.Send(new RevokePatientInviteCommand(inviteId, http.GetTenantId()), ct);
             return ToHttp(result, StatusCodes.Status204NoContent);
-        }).RequireAuthorization();
+        }).RequireAuthorization(Permissions.Patients.Delete);
 
         return app;
     }

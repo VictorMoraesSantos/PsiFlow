@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, FileText, HeartPulse, Home, LogOut, MessageSquareText, PanelLeft, UserRound, Video } from 'lucide-react';
+import { Bell, CalendarDays, FileText, HeartPulse, Home, LogOut, MessageSquareText, PanelLeft, Settings, UserRound, Video } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
@@ -10,6 +10,7 @@ const navItems = [
   { id: 'records', label: 'Prontuarios', icon: FileText },
   { id: 'notifications', label: 'Notificacoes', icon: MessageSquareText },
   { id: 'online', label: 'Atendimento online', icon: Video },
+  { id: 'settings', label: 'Perfil e configuracoes', icon: Settings },
 ] as const;
 
 export type PageId = (typeof navItems)[number]['id'];
@@ -123,10 +124,10 @@ export function AppShell({ currentPage, onNavigate, onLogout, children }: AppShe
             <button className="icon-button" type="button" aria-label="Abrir notificacoes">
               <Bell aria-hidden="true" size={19} />
             </button>
-            <div className="profile-chip" aria-label="Perfil logado">
+            <button className="profile-chip" type="button" aria-label="Abrir perfil e configuracoes" onClick={() => navigate('settings')}>
               <span aria-hidden="true">DV</span>
               <strong>Dra. Vitoria</strong>
-            </div>
+            </button>
             <button className="icon-button" type="button" aria-label="Sair da conta" onClick={onLogout}>
               <LogOut aria-hidden="true" size={19} />
             </button>

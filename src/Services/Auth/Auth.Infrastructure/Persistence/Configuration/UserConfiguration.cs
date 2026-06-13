@@ -15,6 +15,24 @@ namespace Auth.Infrastructure.Persistence.Configuration
                     id => id.Value,
                     value => new UserId(value))
                 .ValueGeneratedOnAdd();
+
+            builder.Property(x => x.TenantId)
+                .HasConversion(
+                    id => id.Value,
+                    value => new TenantId(value));
+
+            builder.OwnsOne(x => x.Name, name =>
+            {
+                name.Property(x => x.FirstName).HasColumnName("FirstName");
+                name.Property(x => x.LastName).HasColumnName("LastName");
+                name.Ignore(x => x.FullName);
+            });
+
+            builder.OwnsOne(x => x.Contact, contact =>
+            {
+                contact.Property(x => x.Email).HasColumnName("ContactEmail");
+                contact.Property(x => x.Phone).HasColumnName("Phone");
+            });
         }
     }
 }

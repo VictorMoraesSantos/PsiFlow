@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Exceptions;
+using Core.Domain.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +13,7 @@ namespace Core.API.Middleware
             {
                 NotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
                 ValidationException => (StatusCodes.Status400BadRequest, "Erro de validação"),
+                DomainException => (StatusCodes.Status400BadRequest, "Regra de dominio violada"),
                 BadRequestException => (StatusCodes.Status400BadRequest, "Requisição inválida"),
                 KeyNotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
                 InvalidOperationException => (StatusCodes.Status409Conflict, "Conflito de operação"),

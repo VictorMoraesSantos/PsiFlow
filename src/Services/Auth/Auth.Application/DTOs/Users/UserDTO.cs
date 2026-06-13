@@ -1,4 +1,4 @@
-using Core.Application.DTO;
+using Core.Application.DTOs;
 
 namespace Auth.Application.DTOs.Users
 {
@@ -12,5 +12,5 @@ namespace Auth.Application.DTOs.Users
         int TenantId,
         bool IsActive,
         DateTime? LastLoginAt)
-        : DTOBase(Id, CreatedAt, UpdatedAt);
+        : DTOBase<int>(Id, CreatedAt, UpdatedAt);
 }

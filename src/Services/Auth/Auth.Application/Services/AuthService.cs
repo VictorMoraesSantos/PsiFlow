@@ -8,6 +8,7 @@ using Auth.Domain.ValueObjects;
 using BuildingBlocks.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -56,7 +57,11 @@ namespace Auth.Application.Services
             if (existing != null)
                 return Result.Failure<RegisterResult>(UserErrors.EmailAlreadyInUse(email));
 
-            var name = new Name(dto.FirstName, dto.LastName);
+            var name = string.IsNullOrWhiteSpace(dto.FirstName)
+                ? new Name(dto.FullName!)
+                : string.IsNullOrWhiteSpace(dto.LastName)
+                    ? new Name(dto.FirstName)
+                    : new Name(dto.FirstName, dto.LastName);
             var contact = new Contact(dto.Email, dto.Phone);
             var user = new User(name, contact, dto.Role, null, dto.Role == "psychologist" ? dto.Crp!.Trim() : null, dto.AcceptedTermsVersion, dto.AcceptedPrivacyVersion);
 
@@ -69,6 +74,7 @@ namespace Auth.Application.Services
             }
 
             await _userManager.AddToRoleAsync(user, dto.Role);
+            await AssignDefaultPermissionClaimsAsync(user);
 
             var correlationId = Guid.NewGuid();
             user.AddDomainEvent(new UserRegisteredDomainEvent(user.Id, user.TenantId, user.Email!, user.Role, user.Name.FullName, correlationId));
@@ -268,19 +274,21 @@ namespace Auth.Application.Services
             return Result.Success();
         }
 
-        private async Task<Result<TokenResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-            var tokenResult = _tokenService.GenerateToken(user.Id, user.Email ?? string.Empty, user.TenantId, user.Role, roles);
-            if (!tokenResult.IsSuccess) return Result.Failure<TokenResponse>(tokenResult.Error!);
+    private async Task<Result<TokenResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken)
+    {
+        var roles = await _userManager.GetRolesAsync(user);
+        var permissions = await _userManager.GetClaimsAsync(user);
+        var permissionValues = permissions.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+        var tokenResult = _tokenService.GenerateToken(user.Id, user.Email ?? string.Empty, user.TenantId, user.Role, roles, permissionValues);
+        if (!tokenResult.IsSuccess) return Result.Failure<TokenResponse>(tokenResult.Error!);
 
-            var refresh = _tokenService.GenerateRefreshToken();
-            var expiry = DateTime.UtcNow.AddDays(7);
-            user.SetRefreshToken(_tokenService.HashToken(refresh), expiry);
-            await _userRepository.Update(user, cancellationToken);
+        var refresh = _tokenService.GenerateRefreshToken();
+        var expiry = DateTime.UtcNow.AddDays(7);
+        user.SetRefreshToken(_tokenService.HashToken(refresh), expiry);
+        await _userRepository.Update(user, cancellationToken);
 
-            return Result.Success(new TokenResponse(tokenResult.Value!, refresh, expiry, new DTOs.Users.UserSummaryDTO(user.Id, user.Name.FullName, user.Email!, user.Role)));
-        }
+        return Result.Success(new TokenResponse(tokenResult.Value!, refresh, expiry, new DTOs.Users.UserSummaryDTO(user.Id, user.Name.FullName, user.Email!, user.Role)));
+    }
 
         private async Task PersistOutboxAsync(User user, Guid correlationId, CancellationToken cancellationToken)
         {
@@ -300,6 +308,32 @@ namespace Auth.Application.Services
             }
             user.ClearDomainEvents();
             await _userRepository.Update(user, cancellationToken);
+        }
+
+        private async Task AssignDefaultPermissionClaimsAsync(User user)
+        {
+            var groups = user.Role switch
+            {
+                "saas_admin" => new[] { "*" },
+                "psychologist" => new[] { "patients", "sessions", "agenda", "clinical_records", "online_session" },
+                "patient" => new[] { "patients", "sessions", "agenda", "online_session" },
+                _ => Array.Empty<string>()
+            };
+
+            if (groups.Length == 0) return;
+            if (groups.Length == 1 && groups[0] == "*")
+            {
+                await _userManager.AddClaimAsync(user, new Claim("permission", "*"));
+                return;
+            }
+
+            foreach (var group in groups)
+            {
+                foreach (var action in new[] { "view", "create", "edit", "delete" })
+                {
+                    await _userManager.AddClaimAsync(user, new Claim("permission", $"{group}.{action}"));
+                }
+            }
         }
 
         private static string ComputeHash(string input)

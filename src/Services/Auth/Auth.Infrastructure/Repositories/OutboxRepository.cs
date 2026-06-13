@@ -1,5 +1,6 @@
 using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
+using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.Repositories
 {
     public class OutboxRepository(ApplicationDbContext dbContext) : IOutboxRepository
     {
-        public async Task<OutboxMessage?> GetById(Guid id, CancellationToken cancellationToken = default) =>
+        public async Task<OutboxMessage?> GetById(OutboxMessageId id, CancellationToken cancellationToken = default) =>
             await dbContext.OutboxMessages.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         public async Task<IEnumerable<OutboxMessage?>> GetAll(CancellationToken cancellationToken = default) =>

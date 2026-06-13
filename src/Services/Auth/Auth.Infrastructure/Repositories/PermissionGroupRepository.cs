@@ -1,5 +1,6 @@
 using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
+using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.Repositories
 {
     public class PermissionGroupRepository(ApplicationDbContext dbContext) : IPermissionGroupRepository
     {
-        public async Task<PermissionGroup?> GetById(int id, CancellationToken cancellationToken = default) =>
+        public async Task<PermissionGroup?> GetById(PermissionGroupId id, CancellationToken cancellationToken = default) =>
             await dbContext.PermissionGroups.Include(x => x.Permissions).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         public async Task<IEnumerable<PermissionGroup?>> GetAll(CancellationToken cancellationToken = default) =>

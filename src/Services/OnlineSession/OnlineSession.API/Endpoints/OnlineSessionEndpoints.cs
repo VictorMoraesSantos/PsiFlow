@@ -1,7 +1,9 @@
+using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using OnlineSession.Application.Features.Workflow;
 using System.Security.Claims;
+using static BuildingBlocks.Authorization.Policies;
 
 namespace OnlineSession.API.Endpoints;
 
@@ -10,11 +12,11 @@ public static class OnlineSessionEndpoints
     public static IEndpointRouteBuilder MapOnlineSessionEndpoints(this IEndpointRouteBuilder app)
     {
         var grp = app.MapGroup("/v1/sessions/{sessionId:int}/video-room").WithTags("VideoRoom");
-        grp.MapPut("/", async (int sessionId, VideoRoomBody body, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new UpsertVideoRoomCommand(sessionId, http.GetTenantId(), http.GetUserId(), body.Name, body.Provider ?? "external", body.Url, body.Instructions), ct))).RequireAuthorization("RequirePsychologist");
-        grp.MapGet("/", async (int sessionId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new GetVideoRoomQuery(sessionId, http.GetTenantId()), ct))).RequireAuthorization("RequirePsychologistOrPatient");
-        grp.MapPost("/click", async (int sessionId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new RecordVideoRoomClickCommand(sessionId, http.GetTenantId(), http.GetUserIdOrNull(), http.User.FindFirstValue(ClaimTypes.Role), http.Connection.RemoteIpAddress?.ToString(), http.Request.Headers.UserAgent.ToString()), ct), StatusCodes.Status204NoContent)).RequireAuthorization("RequirePsychologistOrPatient");
-        grp.MapGet("/clicks", async (int sessionId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new GetVideoRoomClicksQuery(sessionId, http.GetTenantId()), ct))).RequireAuthorization("RequirePsychologist");
-        var settings = app.MapGroup("/v1/video-settings/default-link").WithTags("VideoSettings").RequireAuthorization("RequirePsychologist");
+        grp.MapPut("/", async (int sessionId, VideoRoomBody body, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new UpsertVideoRoomCommand(sessionId, http.GetTenantId(), http.GetUserId(), body.Name, body.Provider ?? "external", body.Url, body.Instructions), ct))).RequireAuthorization(Permissions.OnlineSession.Edit);
+        grp.MapGet("/", async (int sessionId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new GetVideoRoomQuery(sessionId, http.GetTenantId()), ct))).RequireAuthorization(Permissions.OnlineSession.View);
+        grp.MapPost("/click", async (int sessionId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new RecordVideoRoomClickCommand(sessionId, http.GetTenantId(), http.GetUserIdOrNull(), http.User.FindFirstValue(ClaimTypes.Role), http.Connection.RemoteIpAddress?.ToString(), http.Request.Headers.UserAgent.ToString()), ct), StatusCodes.Status204NoContent)).RequireAuthorization(Permissions.OnlineSession.Edit);
+        grp.MapGet("/clicks", async (int sessionId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new GetVideoRoomClicksQuery(sessionId, http.GetTenantId()), ct))).RequireAuthorization(Permissions.OnlineSession.View);
+        var settings = app.MapGroup("/v1/video-settings/default-link").WithTags("VideoSettings").RequireAuthorization(Permissions.OnlineSession.Edit);
         settings.MapPut("/", async (DefaultVideoSettingsBody body, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new UpsertDefaultVideoSettingsCommand(http.GetTenantId(), body.Provider ?? "external", body.Url), ct), StatusCodes.Status204NoContent));
         settings.MapGet("/", async (ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new GetDefaultVideoSettingsQuery(http.GetTenantId()), ct)));
         return app;

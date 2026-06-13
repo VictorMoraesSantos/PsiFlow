@@ -1,7 +1,9 @@
+using BuildingBlocks.Authorization;
 using BuildingBlocks.CQRS.Sender;
 using BuildingBlocks.Results;
 using Notifications.Application.Features.Workflow;
 using System.Security.Claims;
+using static BuildingBlocks.Authorization.Policies;
 
 namespace Notifications.API.Endpoints;
 
@@ -9,15 +11,15 @@ public static class NotificationWorkflowEndpoints
 {
     public static IEndpointRouteBuilder MapNotificationWorkflowEndpoints(this IEndpointRouteBuilder app)
     {
-        var tpl = app.MapGroup("/v1/notification-templates").WithTags("NotificationTemplates").RequireAuthorization("RequireSaasAdmin");
-        tpl.MapPost("/{templateId:int}/versions", async (int templateId, TemplateVersionBody body, ISender sender, HttpContext http, CancellationToken ct) => { var r = await sender.Send(new CreateTemplateVersionCommand(templateId, body.Subject, body.BodyHtml, body.BodyText, http.GetUserId()), ct); return r.IsSuccess ? Results.Created($"/v1/notification-templates/{templateId}/versions", r.Value) : ToHttp(r); });
-        var log = app.MapGroup("/v1/notification-logs").WithTags("NotificationLogs").RequireAuthorization("RequireSaasAdmin");
-        log.MapGet("/", async (ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new GetNotificationLogsQuery(), ct)));
-        log.MapGet("/{notificationId:int}", async (int notificationId, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new GetNotificationLogQuery(notificationId), ct)));
-        var ops = app.MapGroup("/v1/notifications").WithTags("Notifications").RequireAuthorization("RequireSaasAdmin");
-        ops.MapPost("/test-email", async (TestEmailBody body, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new SendTestEmailCommand(body.RecipientEmail, body.TemplateKey, http.GetTenantId()), ct)));
-        ops.MapPost("/retry/{notificationId:int}", async (int notificationId, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new RetryNotificationCommand(notificationId), ct), StatusCodes.Status204NoContent));
-        ops.MapPost("/schedule-reminders", async (ScheduleReminderBody body, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new ScheduleReminderCommand(body.NotificationType, body.ScheduledFor, body.RecipientEmail, body.RecipientUserId, http.GetTenantId(), body.PayloadJson), ct)));
+        var tpl = app.MapGroup("/v1/notification-templates").WithTags("NotificationTemplates");
+        tpl.MapPost("/{templateId:int}/versions", async (int templateId, TemplateVersionBody body, ISender sender, HttpContext http, CancellationToken ct) => { var r = await sender.Send(new CreateTemplateVersionCommand(templateId, body.Subject, body.BodyHtml, body.BodyText, http.GetUserId()), ct); return r.IsSuccess ? Results.Created($"/v1/notification-templates/{templateId}/versions", r.Value) : ToHttp(r); }).RequireAuthorization(Permissions.Notifications.Create);
+        var log = app.MapGroup("/v1/notification-logs").WithTags("NotificationLogs");
+        log.MapGet("/", async (ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new GetNotificationLogsQuery(), ct))).RequireAuthorization(Permissions.Notifications.View);
+        log.MapGet("/{notificationId:int}", async (int notificationId, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new GetNotificationLogQuery(notificationId), ct))).RequireAuthorization(Permissions.Notifications.View);
+        var ops = app.MapGroup("/v1/notifications").WithTags("Notifications");
+        ops.MapPost("/test-email", async (TestEmailBody body, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new SendTestEmailCommand(body.RecipientEmail, body.TemplateKey, http.GetTenantId()), ct))).RequireAuthorization(Permissions.Notifications.Create);
+        ops.MapPost("/retry/{notificationId:int}", async (int notificationId, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new RetryNotificationCommand(notificationId), ct), StatusCodes.Status204NoContent)).RequireAuthorization(Permissions.Notifications.Edit);
+        ops.MapPost("/schedule-reminders", async (ScheduleReminderBody body, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new ScheduleReminderCommand(body.NotificationType, body.ScheduledFor, body.RecipientEmail, body.RecipientUserId, http.GetTenantId(), body.PayloadJson), ct))).RequireAuthorization(Permissions.Notifications.Create);
         return app;
     }
 

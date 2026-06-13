@@ -2,6 +2,7 @@ using Auth.Domain.Entities;
 using Auth.Domain.Filters;
 using Auth.Domain.Filters.Specifications;
 using Auth.Domain.Repositories;
+using Auth.Domain.ValueObjects;
 using Auth.Infrastructure.Persistence.Data;
 using Core.Infrastructure.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ namespace Auth.Infrastructure.Repositories
 {
     public class UserRepository(ApplicationDbContext dbContext) : IUserRepository
     {
-        public async Task<User?> GetById(int id, CancellationToken cancellationToken = default) =>
+        public async Task<User?> GetById(UserId id, CancellationToken cancellationToken = default) =>
             await dbContext.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         public async Task<IEnumerable<User?>> GetAll(CancellationToken cancellationToken = default) =>

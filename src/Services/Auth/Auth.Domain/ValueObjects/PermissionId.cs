@@ -8,7 +8,7 @@ namespace Auth.Domain.ValueObjects
         public int Value { get; }
         public PermissionId(int value)
         {
-            if (value <= 0)
+            if (value == 0)
                 throw new DomainException(PermissionErrors.InvalidId);
             Value = value;
         }

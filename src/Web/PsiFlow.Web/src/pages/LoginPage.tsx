@@ -1,4 +1,4 @@
-import { KeyRound, LockKeyhole, Mail, ShieldCheck, UserPlus } from 'lucide-react';
+import { CalendarCheck, FileLock2, KeyRound, LockKeyhole, Mail, ShieldCheck, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../components/Button';
 import { api, isLocalFallbackStatus, login } from '../services/api';
@@ -120,42 +120,33 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
   return (
     <main className="auth-page">
-      <aside className="auth-panel" aria-label="Resumo de seguranca do PsiFlow">
-        <div className="auth-panel__mark" aria-hidden="true"><ShieldCheck size={24} /></div>
-        <div>
-          <span className="auth-panel__eyebrow">Workspace clinico protegido</span>
-          <h2>Entre com calma. O contexto do consultorio fica preservado.</h2>
-          <p>Agenda, sessoes, prontuarios e notificacoes em um ambiente pensado para dados sensiveis e retomada rapida do atendimento.</p>
-        </div>
-        <dl className="auth-panel__facts">
-          <div><dt>Acesso</dt><dd>Credenciais e codigo de verificacao quando solicitado</dd></div>
-          <div><dt>Uso diario</dt><dd>Paciente, horario e pendencias clinicas no mesmo fluxo</dd></div>
-          <div><dt>Privacidade</dt><dd>Copias e mensagens evitam expor dados clinicos fora do contexto</dd></div>
-        </dl>
-      </aside>
-      <section className="auth-card" aria-labelledby="login-title">
-        <div className="brand brand--auth">
-          <div className="brand__mark" aria-hidden="true">P</div>
-          <div>
-            <strong>PsiFlow</strong>
-            <span>Workspace clinico</span>
+      <section className="auth-surface" aria-labelledby="login-title">
+        <div className="auth-card">
+          <div className="auth-card__header">
+            <div className="brand brand--auth">
+              <div className="brand__mark" aria-hidden="true">P</div>
+              <div>
+                <strong>PsiFlow</strong>
+                <span>Workspace clinico</span>
+              </div>
+            </div>
+            <span className="auth-security"><ShieldCheck size={16} aria-hidden="true" /> Acesso protegido</span>
           </div>
-        </div>
-        <div>
-          <h1 id="login-title">Entrar no workspace</h1>
-          <p>Acesse pacientes, agenda, sessoes e prontuarios em um ambiente protegido.</p>
-        </div>
+          <div>
+            <h1 id="login-title">Entrar no workspace</h1>
+            <p>Acesse pacientes, agenda, sessoes e prontuarios em um ambiente preparado para dados sensiveis.</p>
+          </div>
 
-        <div className="auth-tabs" role="tablist" aria-label="Fluxos de autenticacao">
-          <button id="auth-tab-login" type="button" role="tab" aria-selected={mode === 'login'} aria-controls="auth-panel-login" tabIndex={mode === 'login' ? 0 : -1} onClick={() => changeMode('login')}>Entrar</button>
-          <button id="auth-tab-register" type="button" role="tab" aria-selected={mode === 'register'} aria-controls="auth-panel-register" tabIndex={mode === 'register' ? 0 : -1} onClick={() => changeMode('register')}>Criar conta</button>
-          <button id="auth-tab-recover" type="button" role="tab" aria-selected={mode === 'recover'} aria-controls="auth-panel-recover" tabIndex={mode === 'recover' ? 0 : -1} onClick={() => changeMode('recover')}>Recuperar senha</button>
-        </div>
+          <div className="auth-tabs" role="tablist" aria-label="Fluxos de autenticacao">
+            <button id="auth-tab-login" type="button" role="tab" aria-selected={mode === 'login'} aria-controls="auth-panel-login" tabIndex={mode === 'login' ? 0 : -1} onClick={() => changeMode('login')}>Entrar</button>
+            <button id="auth-tab-register" type="button" role="tab" aria-selected={mode === 'register'} aria-controls="auth-panel-register" tabIndex={mode === 'register' ? 0 : -1} onClick={() => changeMode('register')}>Criar conta</button>
+            <button id="auth-tab-recover" type="button" role="tab" aria-selected={mode === 'recover'} aria-controls="auth-panel-recover" tabIndex={mode === 'recover' ? 0 : -1} onClick={() => changeMode('recover')}>Recuperar senha</button>
+          </div>
 
-        {error ? <p className="inline-error" role="alert">{error}</p> : null}
-        {message ? <p className="inline-success" role="status">{message}</p> : null}
+          {error ? <p className="inline-error" role="alert">{error}</p> : null}
+          {message ? <p className="inline-success" role="status">{message}</p> : null}
 
-        {mode === 'login' ? (
+          {mode === 'login' ? (
           <form id="auth-panel-login" role="tabpanel" aria-labelledby="auth-tab-login" className="resource-form auth-form" onSubmit={submit}>
             <label className="form-field">
               <span>Email</span>
@@ -168,9 +159,9 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Entrando...' : 'Entrar no workspace'}</Button>
             <button className="auth-link" type="button" onClick={() => changeMode('mfa')}>Tenho codigo de verificacao</button>
           </form>
-        ) : null}
+          ) : null}
 
-        {mode === 'register' ? (
+          {mode === 'register' ? (
           <form id="auth-panel-register" role="tabpanel" aria-labelledby="auth-tab-register" className="resource-form auth-form" onSubmit={register}>
             <div className="auth-choice" aria-label="Tipo de conta">
               <button type="button" aria-pressed={registerRole === 'psychologist'} onClick={() => setRegisterRole('psychologist')}>Psicologa</button>
@@ -207,9 +198,9 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Criando conta...' : 'Criar conta'}</Button>
             <p className="auth-card__hint">Ao criar a conta, voce aceita os termos e a politica de privacidade vigentes.</p>
           </form>
-        ) : null}
+          ) : null}
 
-        {mode === 'recover' ? (
+          {mode === 'recover' ? (
           <form id="auth-panel-recover" role="tabpanel" aria-labelledby="auth-tab-recover" className="resource-form auth-form" onSubmit={forgotPassword}>
             <label className="form-field">
               <span>Email da conta</span>
@@ -217,9 +208,9 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             </label>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Enviando...' : 'Enviar recuperacao de senha'}</Button>
           </form>
-        ) : null}
+          ) : null}
 
-        {mode === 'mfa' ? (
+          {mode === 'mfa' ? (
           <form className="resource-form auth-form" onSubmit={verifyMfa}>
             <p className="auth-card__hint">Use esta etapa apenas quando o login solicitar um codigo do aplicativo autenticador. A ativacao da verificacao em duas etapas acontece dentro da conta.</p>
             <label className="form-field">
@@ -229,7 +220,22 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             <Button type="submit">Verificar codigo</Button>
             <button className="auth-link" type="button" onClick={() => changeMode('login')}>Voltar para login</button>
           </form>
-        ) : null}
+          ) : null}
+        </div>
+        <aside className="auth-panel" aria-label="Como o acesso protege o atendimento">
+          <div className="auth-panel__intro">
+            <div className="auth-panel__mark" aria-hidden="true"><ShieldCheck size={22} /></div>
+            <div>
+              <h2>Contexto clinico preservado desde o acesso.</h2>
+              <p>O login abre um workspace de trabalho, nao uma tela promocional. A prioridade e retomar agenda, sessoes e registros com seguranca.</p>
+            </div>
+          </div>
+          <dl className="auth-panel__facts">
+            <div><dt><KeyRound size={17} aria-hidden="true" /> Verificacao</dt><dd>Senha e codigo adicional quando a clinica exigir.</dd></div>
+            <div><dt><CalendarCheck size={17} aria-hidden="true" /> Retomada</dt><dd>Paciente, horario e pendencias voltam para o fluxo diario.</dd></div>
+            <div><dt><FileLock2 size={17} aria-hidden="true" /> Privacidade</dt><dd>Copias e mensagens evitam expor dados clinicos fora de contexto.</dd></div>
+          </dl>
+        </aside>
       </section>
     </main>
   );

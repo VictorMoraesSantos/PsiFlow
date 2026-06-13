@@ -48,7 +48,7 @@ namespace Auth.Domain.Entities
             EmailConfirmed = true;
             Role = role;
             Crp = crp;
-            TenantId = tenantId;
+            TenantId = tenantId ?? new TenantId(0);
             ConsentTermsVersion = termsVersion;
             ConsentPrivacyVersion = privacyVersion;
             ConsentAcceptedAt = DateTime.UtcNow;

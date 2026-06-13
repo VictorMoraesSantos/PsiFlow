@@ -11,7 +11,6 @@ namespace Auth.Infrastructure.Persistence.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        public DbSet<User> Users { get; set; }
         public DbSet<Consent> Consents { get; set; }
         public DbSet<MfaChallenge> MfaChallenges { get; set; }
         public DbSet<OutboxMessage> OutboxMessages { get; set; }
@@ -21,12 +20,55 @@ namespace Auth.Infrastructure.Persistence.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Ignore<UserId>();
+            builder.Ignore<TenantId>();
+            builder.Ignore<PermissionId>();
+            builder.Ignore<PermissionGroupId>();
             builder.ApplyConfiguration(new ConsentConfiguration());
             builder.ApplyConfiguration(new MfaChallengeConfiguration());
             builder.ApplyConfiguration(new OutboxMessageConfiguration());
             builder.ApplyConfiguration(new PermissionConfiguration());
             builder.ApplyConfiguration(new PermissionGroupConfiguration());
             builder.ApplyConfiguration(new UserConfiguration());
+
+            builder.Entity<IdentityRole<UserId>>(entity =>
+            {
+                entity.Property(x => x.Id)
+                    .HasConversion(id => id.Value, value => new UserId(value))
+                    .ValueGeneratedOnAdd();
+            });
+
+            builder.Entity<IdentityUserClaim<UserId>>(entity =>
+            {
+                entity.Property(x => x.UserId)
+                    .HasConversion(id => id.Value, value => new UserId(value));
+            });
+
+            builder.Entity<IdentityUserLogin<UserId>>(entity =>
+            {
+                entity.Property(x => x.UserId)
+                    .HasConversion(id => id.Value, value => new UserId(value));
+            });
+
+            builder.Entity<IdentityUserRole<UserId>>(entity =>
+            {
+                entity.Property(x => x.UserId)
+                    .HasConversion(id => id.Value, value => new UserId(value));
+                entity.Property(x => x.RoleId)
+                    .HasConversion(id => id.Value, value => new UserId(value));
+            });
+
+            builder.Entity<IdentityUserToken<UserId>>(entity =>
+            {
+                entity.Property(x => x.UserId)
+                    .HasConversion(id => id.Value, value => new UserId(value));
+            });
+
+            builder.Entity<IdentityRoleClaim<UserId>>(entity =>
+            {
+                entity.Property(x => x.RoleId)
+                    .HasConversion(id => id.Value, value => new UserId(value));
+            });
         }
     }
 }
