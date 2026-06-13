@@ -8,7 +8,7 @@ using Notifications.Domain.Filters;
 using Notifications.Domain.Repositories;
 using System.Linq.Expressions;
 
-namespace Notifications.Infrastructure.Services
+namespace Notifications.Application.Services
 {
     public sealed class NotificationTemplateService : INotificationTemplateService
     {

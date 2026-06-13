@@ -1,10 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Notifications.Application.Contracts;
 using Notifications.Domain.Repositories;
 using Notifications.Infrastructure.Persistence.Repositories;
-using Notifications.Infrastructure.Services;
 using PsiFlow.Notifications.Infrastructure.Persistence.Data;
 
 namespace Notifications.Infrastructure
@@ -15,8 +13,9 @@ namespace Notifications.Infrastructure
         {
             services.AddDbContext<global::PsiFlow.Notifications.Infrastructure.Persistence.Data.NotificationsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
-            services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
-            services.AddScoped<INotificationWorkflowService, NotificationWorkflowService>();
+            services.AddScoped<INotificationTemplateVersionRepository, NotificationTemplateVersionRepository>();
+            services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
+            services.AddScoped<IScheduledNotificationRepository, ScheduledNotificationRepository>();
             services.AddHostedService<NotificationsDatabaseInitializer>();
             return services;
         }

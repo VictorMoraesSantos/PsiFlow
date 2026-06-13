@@ -9,6 +9,7 @@ using Notifications.Application.Features.NotificationTemplates.Commands.Update;
 using Notifications.Application.Features.NotificationTemplates.Queries.GetAll;
 using Notifications.Application.Features.NotificationTemplates.Queries.GetById;
 using Notifications.Application.Features.Workflow;
+using Notifications.Application.Services;
 
 namespace Notifications.Application
 {
@@ -16,6 +17,9 @@ namespace Notifications.Application
     {
         public static IServiceCollection AddNotificationsApplication(this IServiceCollection services)
         {
+            services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
+            services.AddScoped<INotificationWorkflowService, NotificationWorkflowService>();
+
             services.AddMediatorService()
                 .AddHandler<CreateNotificationTemplateCommand, Result<CreateNotificationTemplateResult>, CreateNotificationTemplateCommandHandler>()
                 .AddHandler<UpdateNotificationTemplateCommand, Result<bool>, UpdateNotificationTemplateCommandHandler>()

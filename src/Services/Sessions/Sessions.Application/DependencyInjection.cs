@@ -10,6 +10,7 @@ using Sessions.Application.Features.Sessions.Commands.Update;
 using Sessions.Application.Features.Sessions.Queries.GetAll;
 using Sessions.Application.Features.Sessions.Queries.GetById;
 using Sessions.Application.Features.Workflow;
+using Sessions.Application.Services;
 
 namespace Sessions.Application
 {
@@ -32,6 +33,9 @@ namespace Sessions.Application
             services.AddScoped<IValidator<CreateSessionCommand>, CreateSessionCommandValidator>();
             services.AddScoped<IValidator<UpdateSessionCommand>, UpdateSessionCommandValidator>();
             services.AddScoped<IValidator<ChangeSessionStatusCommand>, ChangeSessionStatusCommandValidator>();
+
+            services.AddScoped<ISessionService, SessionService>();
+            services.AddScoped<ISessionWorkflowService, SessionWorkflowService>();
             return services;
         }
     }

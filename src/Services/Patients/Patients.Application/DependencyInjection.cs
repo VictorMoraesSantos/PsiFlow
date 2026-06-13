@@ -2,6 +2,7 @@ using BuildingBlocks.CQRS.Extensions;
 using BuildingBlocks.Results;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Patients.Application.Contracts;
 using Patients.Application.DTOs.Patient;
 using Patients.Application.Features.Patients.Commands.Create;
 using Patients.Application.Features.Patients.Commands.Delete;
@@ -9,6 +10,7 @@ using Patients.Application.Features.Patients.Commands.Update;
 using Patients.Application.Features.Patients.Queries.GetAll;
 using Patients.Application.Features.Patients.Queries.GetById;
 using Patients.Application.Features.Workflow;
+using Patients.Application.Services;
 
 namespace Patients.Application
 {
@@ -16,6 +18,9 @@ namespace Patients.Application
     {
         public static IServiceCollection AddPatientsApplication(this IServiceCollection services)
         {
+            services.AddScoped<IPatientService, PatientService>();
+            services.AddScoped<IPatientInviteService, PatientInviteService>();
+
             services.AddMediatorService()
                 .AddHandler<CreatePatientCommand, Result<CreatePatientResult>, CreatePatientCommandHandler>()
                 .AddHandler<UpdatePatientCommand, Result<bool>, UpdatePatientCommandHandler>()

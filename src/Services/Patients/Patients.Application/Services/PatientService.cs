@@ -8,7 +8,7 @@ using Patients.Domain.Filters;
 using Patients.Domain.Repositories;
 using System.Linq.Expressions;
 
-namespace Patients.Infrastructure.Services
+namespace Patients.Application.Services
 {
     public sealed class PatientService : IPatientService
     {

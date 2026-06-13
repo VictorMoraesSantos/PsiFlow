@@ -1,5 +1,6 @@
 using Core.Domain.Filters;
 using Core.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Patients.Domain.Entities;
 using Patients.Domain.Filters;
 using Patients.Domain.Filters.Specifications;
@@ -11,4 +12,7 @@ namespace Patients.Infrastructure.Persistence.Repositories;
 public sealed class PatientRepository(PatientsDbContext dbContext) : Repository<Patient, int, PatientQueryFilter>(dbContext), IPatientRepository
 {
     protected override Specification<Patient, int> CreateSpecification(PatientQueryFilter filter) => new PatientSpecification(filter);
+
+    public async Task<Patient?> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken = default) =>
+        await dbContext.Patients.FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId, cancellationToken);
 }

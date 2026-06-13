@@ -1,7 +1,5 @@
-using Agenda.Application.Contracts;
 using Agenda.Domain.Repositories;
 using Agenda.Infrastructure.Persistence.Repositories;
-using Agenda.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,8 +13,8 @@ namespace Agenda.Infrastructure
         {
             services.AddDbContext<AgendaDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
-            services.AddScoped<IAppointmentService, AppointmentService>();
-            services.AddScoped<IAgendaService, AgendaService>();
+            services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+            services.AddScoped<IScheduleBlockRepository, ScheduleBlockRepository>();
             services.AddHostedService<AgendaDatabaseInitializer>();
             return services;
         }

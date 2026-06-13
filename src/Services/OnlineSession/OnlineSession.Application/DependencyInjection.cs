@@ -2,6 +2,7 @@ using BuildingBlocks.CQRS.Extensions;
 using BuildingBlocks.Results;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using OnlineSession.Application.Contracts;
 using OnlineSession.Application.DTOs.VideoRoom;
 using OnlineSession.Application.Features.VideoRooms.Commands.Create;
 using OnlineSession.Application.Features.VideoRooms.Commands.Delete;
@@ -9,6 +10,7 @@ using OnlineSession.Application.Features.VideoRooms.Commands.Update;
 using OnlineSession.Application.Features.VideoRooms.Queries.GetAll;
 using OnlineSession.Application.Features.VideoRooms.Queries.GetById;
 using OnlineSession.Application.Features.Workflow;
+using OnlineSession.Application.Services;
 
 namespace OnlineSession.Application
 {
@@ -16,6 +18,9 @@ namespace OnlineSession.Application
     {
         public static IServiceCollection AddOnlineSessionApplication(this IServiceCollection services)
         {
+            services.AddScoped<IVideoRoomService, VideoRoomService>();
+            services.AddScoped<IOnlineSessionService, OnlineSessionService>();
+
             services.AddMediatorService()
                 .AddHandler<CreateVideoRoomCommand, Result<CreateVideoRoomResult>, CreateVideoRoomCommandHandler>()
                 .AddHandler<UpdateVideoRoomCommand, Result<bool>, UpdateVideoRoomCommandHandler>()

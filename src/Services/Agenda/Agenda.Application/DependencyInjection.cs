@@ -6,6 +6,7 @@ using Agenda.Application.Features.Appointments.Commands.Update;
 using Agenda.Application.Features.Appointments.Queries.GetAll;
 using Agenda.Application.Features.Appointments.Queries.GetById;
 using Agenda.Application.Features.Workflow;
+using Agenda.Application.Services;
 using BuildingBlocks.CQRS.Extensions;
 using BuildingBlocks.Results;
 using FluentValidation;
@@ -17,6 +18,9 @@ namespace Agenda.Application
     {
         public static IServiceCollection AddAgendaApplication(this IServiceCollection services)
         {
+            services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<IAgendaService, AgendaService>();
+
             services.AddMediatorService()
                 .AddHandler<CreateAppointmentCommand, Result<CreateAppointmentResult>, CreateAppointmentCommandHandler>()
                 .AddHandler<UpdateAppointmentCommand, Result<bool>, UpdateAppointmentCommandHandler>()

@@ -1,5 +1,6 @@
 using BuildingBlocks.CQRS.Extensions;
 using BuildingBlocks.Results;
+using ClinicalRecords.Application.Contracts;
 using ClinicalRecords.Application.DTOs.MedicalRecord;
 using ClinicalRecords.Application.Features.MedicalRecords.Commands.Create;
 using ClinicalRecords.Application.Features.MedicalRecords.Commands.Delete;
@@ -7,6 +8,7 @@ using ClinicalRecords.Application.Features.MedicalRecords.Commands.Update;
 using ClinicalRecords.Application.Features.MedicalRecords.Queries.GetAll;
 using ClinicalRecords.Application.Features.MedicalRecords.Queries.GetById;
 using ClinicalRecords.Application.Features.Workflow;
+using ClinicalRecords.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +18,9 @@ namespace ClinicalRecords.Application
     {
         public static IServiceCollection AddClinicalRecordsApplication(this IServiceCollection services)
         {
+            services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+            services.AddScoped<IClinicalRecordWorkflowService, ClinicalRecordWorkflowService>();
+
             services.AddMediatorService()
                 .AddHandler<CreateMedicalRecordCommand, Result<CreateMedicalRecordResult>, CreateMedicalRecordCommandHandler>()
                 .AddHandler<UpdateMedicalRecordCommand, Result<bool>, UpdateMedicalRecordCommandHandler>()

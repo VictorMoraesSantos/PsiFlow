@@ -4,5 +4,8 @@ using Patients.Domain.Filters;
 
 namespace Patients.Domain.Repositories
 {
-    public interface IPatientRepository : IRepository<Patient, int, PatientQueryFilter> { }
+    public interface IPatientRepository : IRepository<Patient, int, PatientQueryFilter>
+    {
+        Task<Patient?> GetByIdAndTenantAsync(int id, int tenantId, CancellationToken cancellationToken = default);
+    }
 }

@@ -1,10 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Patients.Application.Contracts;
 using Patients.Domain.Repositories;
 using Patients.Infrastructure.Persistence.Repositories;
-using Patients.Infrastructure.Services;
 using PsiFlow.Patients.Infrastructure.Persistence.Data;
 
 namespace Patients.Infrastructure
@@ -15,8 +13,8 @@ namespace Patients.Infrastructure
         {
             services.AddDbContext<global::PsiFlow.Patients.Infrastructure.Persistence.Data.PatientsDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
             services.AddScoped<IPatientRepository, PatientRepository>();
-            services.AddScoped<IPatientService, PatientService>();
-            services.AddScoped<IPatientInviteService, PatientInviteService>();
+            services.AddScoped<IPatientStatusHistoryRepository, PatientStatusHistoryRepository>();
+            services.AddScoped<IPatientInviteRepository, PatientInviteRepository>();
             services.AddHostedService<PatientsDatabaseInitializer>();
             return services;
         }
