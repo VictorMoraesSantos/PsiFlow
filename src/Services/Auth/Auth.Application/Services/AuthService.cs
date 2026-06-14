@@ -1,6 +1,7 @@
 using Auth.Application.Authorization;
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
+using Auth.Application.Settings;
 using Auth.Domain.Entities;
 using Auth.Domain.Errors;
 using Auth.Domain.Repositories;
@@ -9,6 +10,7 @@ using BuildingBlocks.Results;
 using Core.Domain.Events;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Json;
 using DomainEncryptedField = Auth.Domain.ValueObjects.EncryptedField;
@@ -31,6 +33,7 @@ namespace Auth.Application.Services
         private readonly EncryptionService _encryption;
         private readonly ILogger<AuthService> _logger;
         private readonly MfaLoginStore _mfaLoginStore;
+        private readonly AuthOptions _authOptions;
 
         public AuthService(
             IUserRepository userRepository,
@@ -43,7 +46,8 @@ namespace Auth.Application.Services
             ITokenService tokenService,
             EncryptionService encryption,
             ILogger<AuthService> logger,
-            MfaLoginStore mfaLoginStore)
+            MfaLoginStore mfaLoginStore,
+            IOptions<AuthOptions> authOptions)
         {
             _userRepository = userRepository;
             _consentRepository = consentRepository;
@@ -56,6 +60,7 @@ namespace Auth.Application.Services
             _encryption = encryption;
             _logger = logger;
             _mfaLoginStore = mfaLoginStore;
+            _authOptions = authOptions.Value;
         }
 
         public async Task<Result<RegisterResult>> RegisterAsync(RegisterDTO dto, CancellationToken cancellationToken = default)
@@ -111,6 +116,14 @@ namespace Auth.Application.Services
             await _userManager.AddToRoleAsync(user, user.Role);
             await AssignDefaultPermissionClaimsAsync(user);
 
+            if (_authOptions.AutoConfirmEmails)
+            {
+                user.ConfirmEmail();
+                var emailUpdate = await _userManager.UpdateAsync(user);
+                if (!emailUpdate.Succeeded)
+                    _logger.LogWarning("Falha ao auto-confirmar e-mail do usuario {UserId}: {Errors}", user.Id, string.Join("; ", emailUpdate.Errors.Select(e => e.Description)));
+            }
+
             var correlationId = Guid.NewGuid();
             user.RecordConsent(termsVersion, privacyVersion);
             user.RegisterUser(correlationId);
@@ -127,13 +140,33 @@ namespace Auth.Application.Services
 
             var email = dto.Email.Trim().ToLowerInvariant();
             var user = await _userRepository.FindByEmail(email, cancellationToken);
-            if (user is null) return Result.Failure<object>(UserErrors.InvalidCredentials);
-            if (!user.IsActive) return Result.Failure<object>(UserErrors.AlreadyInactive);
-            if (!user.EmailConfirmed) return Result.Failure<object>(UserErrors.EmailNotConfirmed);
+            if (user is null)
+            {
+                _logger.LogInformation("Login falhou: usuario nao encontrado para {Email}", email);
+                return Result.Failure<object>(UserErrors.InvalidCredentials);
+            }
+            if (!user.IsActive)
+            {
+                _logger.LogInformation("Login falhou: usuario inativo {UserId}", user.Id);
+                return Result.Failure<object>(UserErrors.AlreadyInactive);
+            }
+            if (!user.EmailConfirmed)
+            {
+                _logger.LogInformation("Login falhou: e-mail nao confirmado {UserId}", user.Id);
+                return Result.Failure<object>(UserErrors.EmailNotConfirmed);
+            }
 
             var signIn = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
-            if (signIn.IsLockedOut) return Result.Failure<object>(UserErrors.UserLockedOut);
-            if (!signIn.Succeeded) return Result.Failure<object>(UserErrors.InvalidCredentials);
+            if (signIn.IsLockedOut)
+            {
+                _logger.LogInformation("Login falhou: conta bloqueada {UserId} ate {LockoutEnd}", user.Id, user.LockoutEnd);
+                return Result.Failure<object>(UserErrors.UserLockedOut);
+            }
+            if (!signIn.Succeeded)
+            {
+                _logger.LogInformation("Login falhou: senha invalida para {UserId}", user.Id);
+                return Result.Failure<object>(UserErrors.InvalidCredentials);
+            }
 
             if (user.IsMfaEnabled)
             {

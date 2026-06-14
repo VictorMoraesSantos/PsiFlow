@@ -55,8 +55,7 @@ namespace Auth.Domain.Entities
             string? userAgent,
             DateTime acceptedAt)
         {
-            var hash = ComputeHash(
-                $"{userId}:{(string.IsNullOrWhiteSpace(documentType) ? "terms_privacy" : documentType)}:{termsVersion.Value}:{privacyVersion.Value}");
+            var hash = ComputeHash($"{userId}:{(string.IsNullOrWhiteSpace(documentType) ? "terms_privacy" : documentType)}:{termsVersion.Value}:{privacyVersion.Value}");
 
             return new Consent(
                 userId,
@@ -71,8 +70,10 @@ namespace Auth.Domain.Entities
                 acceptedAt);
         }
 
-        public bool MatchesVersions(DocumentVersion termsVersion, DocumentVersion privacyVersion) =>
-            TermsVersion == termsVersion.Value && PrivacyVersion == privacyVersion.Value;
+        public bool MatchesVersions(DocumentVersion termsVersion, DocumentVersion privacyVersion)
+        {
+            return TermsVersion == termsVersion.Value && PrivacyVersion == privacyVersion.Value;
+        }
 
         private static string ComputeHash(string input)
         {

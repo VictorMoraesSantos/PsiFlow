@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using AuthOptions = Auth.Application.Settings.AuthOptions;
 
 namespace Auth.Infrastructure
 {
@@ -27,6 +28,12 @@ namespace Auth.Infrastructure
             services.AddAuthApplication();
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
             services.PostConfigure<JwtSettings>(settings => ApplyDevelopmentFallbacks(settings, configuration));
+            services.Configure<AuthOptions>(configuration.GetSection("Auth"));
+            services.PostConfigure<AuthOptions>(options =>
+            {
+                if (!options.AutoConfirmEmails && IsDevelopmentEnvironment(configuration))
+                    options.AutoConfirmEmails = true;
+            });
             services.Configure<Auth.Infrastructure.Persistence.Seeds.AuthSeedOptions>(configuration.GetSection("AuthSeed"));
             services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<JwtSettings>>().Value);
             return services;
