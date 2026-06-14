@@ -84,7 +84,7 @@ const unwrap = (payload: unknown): unknown => {
   if (payload && typeof payload === 'object') {
     const record = payload as Record<string, unknown>;
     if (Array.isArray(record.items)) return record.items;
-    if (Array.isArray(record.value)) return record.value;
+    if (record.value && (Array.isArray(record.value) || typeof record.value === 'object')) return record.value;
     if (record.data && typeof record.data === 'object') return record.data;
   }
   return payload;

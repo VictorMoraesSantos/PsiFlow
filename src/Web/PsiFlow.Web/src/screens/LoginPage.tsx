@@ -5,12 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '../components/Button';
 import { isLocalFallbackStatus } from '../services/http';
-import {
-  forgotPassword,
-  login as loginRequest,
-  register,
-  verifyMfa,
-} from '../services/auth';
+import { forgotPassword, register, verifyMfa } from '../services/auth';
 import { useApp } from '../state/AppContext';
 
 type AuthMode = 'login' | 'register' | 'recover' | 'mfa';
@@ -45,7 +40,7 @@ export function LoginPage() {
     setMessage(null);
   }
 
-  const { login } = useApp();
+  const { login, enterDemoMode } = useApp();
   const router = useRouter();
 
   async function submit(event: React.FormEvent) {
@@ -54,11 +49,39 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(email, password);
-      router.replace('/dashboard');
+      navigateToDashboard();
     } catch (err) {
+      if (isLocalFallbackStatus(err)) {
+        enterDemoMode();
+        setMessage('Backend indisponivel. Entrando em modo local. Suas alteracoes ficam apenas neste navegador.');
+        navigateToDashboard();
+        return;
+      }
       setError(toSafeAuthError(err, 'Nao foi possivel entrar. Confira email, senha e tente novamente.'));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  function enterLocalWorkspace() {
+    enterDemoMode();
+    setMessage('Modo local ativo. Suas alteracoes ficam apenas neste navegador.');
+    navigateToDashboard();
+  }
+
+  function navigateToDashboard() {
+    try {
+      router.push('/dashboard');
+      router.refresh();
+    } catch (navigationError) {
+      console.warn('[auth] router.push falhou, usando window.location', navigationError);
+    }
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        if (window.location.pathname !== '/dashboard') {
+          window.location.assign('/dashboard');
+        }
+      }, 400);
     }
   }
 
@@ -251,6 +274,9 @@ export function LoginPage() {
               </label>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Entrando...' : 'Entrar no workspace'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={enterLocalWorkspace} disabled={isSubmitting}>
+                Entrar em modo local
               </Button>
               <button className="auth-link" type="button" onClick={() => changeMode('mfa')}>
                 Tenho codigo de verificacao
@@ -467,9 +493,14 @@ export function LoginPage() {
 function toSafeAuthError(error: unknown, fallback: string) {
   if (!(error instanceof Error)) return fallback;
   const message = error.message.toLowerCase();
-  if (message.includes('401') || message.includes('unauthorized') || message.includes('invalid')) return fallback;
-  if (message.includes('network') || message.includes('fetch')) {
+  if (message.includes('network') || message.includes('fetch') || message.includes('failed to fetch')) {
     return 'Nao conseguimos conectar ao servidor. Verifique sua conexao e tente novamente.';
+  }
+  if (message.includes('401') || message.includes('unauthorized') || message.includes('credencial') || message.includes('invalid')) {
+    return 'Email ou senha incorretos. Confira os dados e tente novamente.';
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
   }
   return fallback;
 }
