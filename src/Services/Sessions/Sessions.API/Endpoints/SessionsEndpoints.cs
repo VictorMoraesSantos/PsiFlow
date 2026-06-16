@@ -22,7 +22,7 @@ namespace Sessions.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.Problem(result.Error!.Description, statusCode: StatusCodes.Status500InternalServerError);
-            }).RequireAuthorization(Permissions.Sessions.View);
+            }).RequireAuthorization(Permissions.Sessions.Read);
 
             group.MapGet("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -30,9 +30,9 @@ namespace Sessions.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Sessions.View);
+            }).RequireAuthorization(Permissions.Sessions.Read);
 
-            group.MapPost("/", () => Results.Forbid()).RequireAuthorization(Permissions.Sessions.Create);
+            group.MapPost("/", () => Results.Forbid()).RequireAuthorization(Permissions.Sessions.Start);
 
             group.MapPost("/from-appointment", async (CreateSessionDTO dto, Sessions.Application.Contracts.ISessionService service, CancellationToken ct) =>
             {
@@ -40,13 +40,13 @@ namespace Sessions.API.Endpoints
                 return result.IsSuccess
                     ? Results.Created($"/v1/sessions/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Sessions.Create);
+            }).RequireAuthorization(Permissions.Sessions.Start);
 
             group.MapPost("/by-appointment/{appointmentId:int}/cancel", async (int appointmentId, CancelSessionByAppointmentRequest request, Sessions.Application.Contracts.ISessionService service, CancellationToken ct) =>
             {
                 var result = await service.CancelByAppointmentAsync(appointmentId, request.TenantId, request.Reason, ct);
                 return result.IsSuccess ? Results.NoContent() : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Sessions.Delete);
+            }).RequireAuthorization(Permissions.Sessions.Cancel);
 
             group.MapPut("/{id:int}", async (int id, UpdateSessionDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -54,7 +54,7 @@ namespace Sessions.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Sessions.Edit);
+            }).RequireAuthorization(Permissions.Sessions.Start);
 
             group.MapDelete("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -62,7 +62,7 @@ namespace Sessions.API.Endpoints
                 return result.IsSuccess
                     ? Results.NoContent()
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Sessions.Delete);
+            }).RequireAuthorization(Permissions.Sessions.Cancel);
 
             return app;
         }

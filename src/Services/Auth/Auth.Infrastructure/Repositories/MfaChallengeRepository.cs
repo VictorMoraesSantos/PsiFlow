@@ -24,19 +24,22 @@ namespace Auth.Infrastructure.Repositories
         public async Task CreateRange(IEnumerable<MfaChallenge> entities, CancellationToken cancellationToken = default) =>
             await dbContext.MfaChallenges.AddRangeAsync(entities, cancellationToken);
 
-        public async Task Update(MfaChallenge entity, CancellationToken cancellationToken = default) =>
+        public async Task Update(MfaChallenge entity, CancellationToken cancellationToken = default)
+        {
             dbContext.MfaChallenges.Update(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        public async Task Delete(MfaChallenge entity, CancellationToken cancellationToken = default) =>
+        public async Task Delete(MfaChallenge entity, CancellationToken cancellationToken = default)
+        {
             dbContext.MfaChallenges.Remove(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         public async Task<MfaChallenge?> GetActiveByUser(int userId, CancellationToken cancellationToken = default) =>
             await dbContext.MfaChallenges
                 .Where(x => x.UserId == userId && !x.IsConfirmed && x.ExpiresAt > DateTime.UtcNow)
                 .OrderByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
-
-        public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

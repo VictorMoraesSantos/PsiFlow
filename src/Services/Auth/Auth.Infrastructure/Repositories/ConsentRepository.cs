@@ -24,16 +24,19 @@ namespace Auth.Infrastructure.Repositories
         public async Task CreateRange(IEnumerable<Consent> entities, CancellationToken cancellationToken = default) =>
             await dbContext.Consents.AddRangeAsync(entities, cancellationToken);
 
-        public async Task Update(Consent entity, CancellationToken cancellationToken = default) =>
+        public async Task Update(Consent entity, CancellationToken cancellationToken = default)
+        {
             dbContext.Consents.Update(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        public async Task Delete(Consent entity, CancellationToken cancellationToken = default) =>
+        public async Task Delete(Consent entity, CancellationToken cancellationToken = default)
+        {
             dbContext.Consents.Remove(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         public async Task<Consent?> FindByUserAndVersion(int userId, string termsVersion, string privacyVersion, CancellationToken cancellationToken = default) =>
             await dbContext.Consents.FirstOrDefaultAsync(x => x.UserId == userId && x.TermsVersion == termsVersion && x.PrivacyVersion == privacyVersion, cancellationToken);
-
-        public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

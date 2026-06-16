@@ -18,6 +18,7 @@ namespace Patients.Infrastructure
             services.AddScoped<IPatientAdministrativeNoteRepository, PatientAdministrativeNoteRepository>();
             services.AddScoped<IPatientStatusHistoryRepository, PatientStatusHistoryRepository>();
             services.AddScoped<IPatientInviteRepository, PatientInviteRepository>();
+            services.AddScoped<IResponsibleLegalRepository, ResponsibleLegalRepository>();
             services.AddHttpClient<IPatientSessionsProvider, HttpPatientSessionsProvider>();
             services.AddHostedService<PatientsDatabaseInitializer>();
             return services;

@@ -22,7 +22,7 @@ namespace Notifications.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.Problem(result.Error!.Description, statusCode: StatusCodes.Status500InternalServerError);
-            }).RequireAuthorization(Permissions.Notifications.View);
+            }).RequireAuthorization(Permissions.Notifications.TemplateRead);
 
             group.MapGet("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -30,7 +30,7 @@ namespace Notifications.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Notifications.View);
+            }).RequireAuthorization(Permissions.Notifications.TemplateRead);
 
             group.MapPost("/", async (CreateNotificationTemplateDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -38,7 +38,7 @@ namespace Notifications.API.Endpoints
                 return result.IsSuccess
                     ? Results.Created($"/v1/notification-templates/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Notifications.Create);
+            }).RequireAuthorization(Permissions.Notifications.TemplateCreate);
 
             group.MapPut("/{id:int}", async (int id, UpdateNotificationTemplateDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -46,7 +46,7 @@ namespace Notifications.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Notifications.Edit);
+            }).RequireAuthorization(Permissions.Notifications.TemplateUpdate);
 
             group.MapDelete("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -54,7 +54,7 @@ namespace Notifications.API.Endpoints
                 return result.IsSuccess
                     ? Results.NoContent()
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Notifications.Delete);
+            }).RequireAuthorization(Permissions.Notifications.TemplateDelete);
 
             return app;
         }

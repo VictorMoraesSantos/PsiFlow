@@ -8,6 +8,7 @@ x-api-env: &api-env
   JwtSettings__Issuer: PsiFlowAPI
   JwtSettings__Audience: PsiFlowApp
   JwtSettings__ExpiryMinutes: 60
+  JwtSettings__JwksUri: http://auth.api:8080/.well-known/jwks.json
   RabbitMQSettings__Host: rabbitmq
   RabbitMQSettings__Port: 5672
   RabbitMQSettings__User: psiflow

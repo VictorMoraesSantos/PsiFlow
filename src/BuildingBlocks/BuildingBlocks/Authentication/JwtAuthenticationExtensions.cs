@@ -8,8 +8,9 @@ namespace BuildingBlocks.Authentication
 {
     public static class JwtAuthenticationExtensions
     {
-        private static readonly ConcurrentDictionary<string, JsonWebKeySet> JwksCache = new();
         private static readonly HttpClient HttpClient = new();
+        private static readonly ConcurrentDictionary<string, JwksCacheEntry> JwksCache = new();
+        private static readonly TimeSpan JwksRefreshInterval = TimeSpan.FromMinutes(5);
 
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
@@ -40,7 +41,9 @@ namespace BuildingBlocks.Authentication
                         ValidIssuer = issuer,
                         ValidAudience = audience,
                         IssuerSigningKeyResolver = (_, _, kid, _) => ResolveSigningKeys(jwksUri, kid),
-                        ClockSkew = TimeSpan.Zero
+                        NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier,
+                        RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+                        ClockSkew = TimeSpan.FromSeconds(30)
                     };
                 });
 
@@ -51,10 +54,39 @@ namespace BuildingBlocks.Authentication
 
         private static IEnumerable<SecurityKey> ResolveSigningKeys(string jwksUri, string? kid)
         {
-            var jwks = JwksCache.GetOrAdd(jwksUri, uri => new JsonWebKeySet(HttpClient.GetStringAsync(uri).GetAwaiter().GetResult()));
+            var entry = JwksCache.GetOrAdd(jwksUri, uri => FetchJwks(uri));
+
+            if (DateTimeOffset.UtcNow - entry.FetchedAt > JwksRefreshInterval || !KeyMatches(entry, kid))
+            {
+                try
+                {
+                    var refreshed = FetchJwks(jwksUri);
+                    JwksCache[jwksUri] = refreshed;
+                    entry = refreshed;
+                }
+                catch
+                {
+                    // mantem cache anterior em caso de falha temporaria
+                }
+            }
+
             return string.IsNullOrWhiteSpace(kid)
-                ? jwks.Keys
-                : jwks.Keys.Where(key => key.Kid == kid);
+                ? entry.Keys.Keys
+                : entry.Keys.Keys.Where(key => key.Kid == kid);
         }
+
+        private static bool KeyMatches(JwksCacheEntry entry, string? kid)
+        {
+            if (string.IsNullOrWhiteSpace(kid)) return entry.Keys.Keys.Count > 0;
+            return entry.Keys.Keys.Any(key => key.Kid == kid);
+        }
+
+        private static JwksCacheEntry FetchJwks(string uri)
+        {
+            var payload = HttpClient.GetStringAsync(uri).GetAwaiter().GetResult();
+            return new JwksCacheEntry(new JsonWebKeySet(payload), DateTimeOffset.UtcNow);
+        }
+
+        private sealed record JwksCacheEntry(JsonWebKeySet Keys, DateTimeOffset FetchedAt);
     }
 }

@@ -4,26 +4,29 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../layouts/AppShell';
 import { ToastProvider } from '../../components/Toast';
-import { getAccessToken } from '../../services/http';
+import { getAccessToken, isDemoMode } from '../../services/http';
 import { useApp } from '../../state/AppContext';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isHydrating } = useApp();
+  const { isAuthenticated, isHydrating, isLocalMode } = useApp();
   const router = useRouter();
   const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [hasDemoFlag, setHasDemoFlag] = useState<boolean | null>(null);
 
   useEffect(() => {
     setHasToken(Boolean(getAccessToken()));
+    setHasDemoFlag(isDemoMode());
   }, []);
 
   useEffect(() => {
     if (isHydrating) return;
-    if (hasToken === false && !isAuthenticated) {
+    if (hasToken === null || hasDemoFlag === null) return;
+    if (!hasToken && !hasDemoFlag && !isAuthenticated && !isLocalMode) {
       router.replace('/login');
     }
-  }, [isAuthenticated, isHydrating, hasToken, router]);
+  }, [isAuthenticated, isHydrating, hasToken, hasDemoFlag, isLocalMode, router]);
 
-  if (isHydrating || hasToken === null) {
+  if (isHydrating || hasToken === null || hasDemoFlag === null) {
     return (
       <main className="auth-page" aria-busy="true">
         <p className="auth-card__hint">Carregando workspace...</p>
@@ -31,7 +34,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     );
   }
 
-  if (!isAuthenticated && !hasToken) {
+  if (!isAuthenticated && !hasToken && !hasDemoFlag && !isLocalMode) {
     return (
       <main className="auth-page" aria-busy="true">
         <p className="auth-card__hint">Carregando workspace...</p>

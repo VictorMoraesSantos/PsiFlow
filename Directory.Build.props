@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
     <RollForward>LatestMajor</RollForward>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
 </Project>

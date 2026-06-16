@@ -18,22 +18,31 @@ namespace Auth.Infrastructure.Repositories
         public async Task<IEnumerable<PermissionGroup?>> Find(Expression<Func<PermissionGroup, bool>> predicate, CancellationToken cancellationToken = default) =>
             await dbContext.PermissionGroups.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
 
-        public async Task Create(PermissionGroup entity, CancellationToken cancellationToken = default) =>
+        public async Task Create(PermissionGroup entity, CancellationToken cancellationToken = default)
+        {
             await dbContext.PermissionGroups.AddAsync(entity, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        public async Task CreateRange(IEnumerable<PermissionGroup> entities, CancellationToken cancellationToken = default) =>
+        public async Task CreateRange(IEnumerable<PermissionGroup> entities, CancellationToken cancellationToken = default)
+        {
             await dbContext.PermissionGroups.AddRangeAsync(entities, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        public async Task Update(PermissionGroup entity, CancellationToken cancellationToken = default) =>
+        public async Task Update(PermissionGroup entity, CancellationToken cancellationToken = default)
+        {
             dbContext.PermissionGroups.Update(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        public async Task Delete(PermissionGroup entity, CancellationToken cancellationToken = default) =>
+        public async Task Delete(PermissionGroup entity, CancellationToken cancellationToken = default)
+        {
             dbContext.PermissionGroups.Remove(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         public async Task<PermissionGroup?> FindByKey(string groupKey, CancellationToken cancellationToken = default) =>
             await dbContext.PermissionGroups.FirstOrDefaultAsync(x => x.GroupKey == groupKey, cancellationToken);
-
-        public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

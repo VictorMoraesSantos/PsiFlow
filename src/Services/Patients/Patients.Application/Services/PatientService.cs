@@ -18,18 +18,21 @@ namespace Patients.Application.Services
         private readonly IPatientAdministrativeNoteRepository? _administrativeNoteRepository;
         private readonly IPatientStatusHistoryRepository? _statusHistoryRepository;
         private readonly IPatientSessionsProvider? _sessionsProvider;
+        private readonly IResponsibleLegalRepository? _responsibleLegalRepository;
         private readonly ILogger<PatientService> _logger;
         public PatientService(
             IPatientRepository repository,
             ILogger<PatientService> logger,
             IPatientAdministrativeNoteRepository? administrativeNoteRepository = null,
             IPatientStatusHistoryRepository? statusHistoryRepository = null,
-            IPatientSessionsProvider? sessionsProvider = null)
+            IPatientSessionsProvider? sessionsProvider = null,
+            IResponsibleLegalRepository? responsibleLegalRepository = null)
         {
             _repository = repository;
             _administrativeNoteRepository = administrativeNoteRepository;
             _statusHistoryRepository = statusHistoryRepository;
             _sessionsProvider = sessionsProvider;
+            _responsibleLegalRepository = responsibleLegalRepository;
             _logger = logger;
         }
 
@@ -262,6 +265,86 @@ namespace Patients.Application.Services
         public Task<Result<bool>> DeleteAsync(int id, int tenantId, CancellationToken cancellationToken = default) =>
             DeleteInternalAsync(id, tenantId, cancellationToken);
 
+        public async Task<Result<PatientDTO>> UpsertEmergencyContactAsync(int patientId, int tenantId, UpsertEmergencyContactDTO dto, CancellationToken cancellationToken = default)
+        {
+            var entity = await _repository.GetById(patientId, cancellationToken);
+            if (entity is null) return Result.Failure<PatientDTO>(PatientErrors.NotFound(patientId));
+            if (entity.TenantId != tenantId) return Result.Failure<PatientDTO>(Error.Forbidden("Patient belongs to another tenant."));
+
+            var name = NormalizeNullableText(dto.Name);
+            var phone = NormalizeNullablePhone(dto.Phone);
+            var email = NormalizeNullableEmail(dto.Email);
+
+            if (!string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(phone))
+                return Result.Failure<PatientDTO>(PatientErrors.EmergencyContactPhoneRequired);
+            if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
+                return Result.Failure<PatientDTO>(PatientErrors.EmailInvalid);
+
+            entity.EmergencyContactName = name;
+            entity.EmergencyContactPhone = phone;
+            entity.MarkAsUpdated();
+            await _repository.Update(entity, cancellationToken);
+            return Result.Success(entity.ToDTO());
+        }
+
+        public async Task<Result<ResponsibleLegalDTO>> UpsertResponsibleLegalAsync(int patientId, int tenantId, UpsertResponsibleLegalDTO dto, CancellationToken cancellationToken = default)
+        {
+            if (_responsibleLegalRepository is null)
+                return Result.Failure<ResponsibleLegalDTO>(Error.Failure("Responsible legal repository is not configured."));
+
+            var patient = await _repository.GetById(patientId, cancellationToken);
+            if (patient is null) return Result.Failure<ResponsibleLegalDTO>(PatientErrors.NotFound(patientId));
+            if (patient.TenantId != tenantId) return Result.Failure<ResponsibleLegalDTO>(Error.Forbidden("Patient belongs to another tenant."));
+
+            var name = NormalizeNullableText(dto.Name);
+            var phone = NormalizeNullablePhone(dto.Phone);
+            var email = NormalizeNullableEmail(dto.Email);
+            var relationship = NormalizeNullableText(dto.Relationship);
+
+            if (string.IsNullOrWhiteSpace(name)) return Result.Failure<ResponsibleLegalDTO>(Error.Failure("Responsible legal name is required."));
+            if (string.IsNullOrWhiteSpace(phone)) return Result.Failure<ResponsibleLegalDTO>(Error.Failure("Responsible legal phone is required."));
+            if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email)) return Result.Failure<ResponsibleLegalDTO>(PatientErrors.EmailInvalid);
+
+            var existing = await _responsibleLegalRepository.GetByPatientAsync(patientId, tenantId, cancellationToken);
+            if (existing is null)
+            {
+                var entity = new Patients.Domain.Entities.ResponsibleLegal
+                {
+                    TenantId = tenantId,
+                    PatientId = patientId,
+                    FullName = name,
+                    Phone = phone,
+                    Email = email,
+                    Relationship = relationship ?? string.Empty,
+                    DocumentEncrypted = NormalizeNullableText(dto.Document)
+                };
+                await _responsibleLegalRepository.CreateAsync(entity, cancellationToken);
+                return Result.Success(new ResponsibleLegalDTO(entity.Id, entity.PatientId, entity.FullName, entity.Email, entity.Phone, entity.Relationship));
+            }
+
+            existing.FullName = name;
+            existing.Phone = phone;
+            existing.Email = email;
+            existing.Relationship = relationship ?? string.Empty;
+            existing.DocumentEncrypted = NormalizeNullableText(dto.Document) ?? existing.DocumentEncrypted;
+            existing.MarkAsUpdated();
+            await _responsibleLegalRepository.UpdateAsync(existing, cancellationToken);
+            return Result.Success(new ResponsibleLegalDTO(existing.Id, existing.PatientId, existing.FullName, existing.Email, existing.Phone, existing.Relationship));
+        }
+
+        public async Task<Result<ResponsibleLegalDTO?>> GetResponsibleLegalAsync(int patientId, int tenantId, CancellationToken cancellationToken = default)
+        {
+            if (_responsibleLegalRepository is null) return Result.Success<ResponsibleLegalDTO?>(null);
+            var patient = await _repository.GetById(patientId, cancellationToken);
+            if (patient is null) return Result.Failure<ResponsibleLegalDTO?>(PatientErrors.NotFound(patientId));
+            if (patient.TenantId != tenantId) return Result.Failure<ResponsibleLegalDTO?>(Error.Forbidden("Patient belongs to another tenant."));
+
+            var entity = await _responsibleLegalRepository.GetByPatientAsync(patientId, tenantId, cancellationToken);
+            return entity is null
+                ? Result.Success<ResponsibleLegalDTO?>(null)
+                : Result.Success<ResponsibleLegalDTO?>(new ResponsibleLegalDTO(entity.Id, entity.PatientId, entity.FullName, entity.Email, entity.Phone, entity.Relationship));
+        }
+
         private async Task<Result<bool>> DeleteInternalAsync(int id, int tenantId, CancellationToken cancellationToken)
         {
             try
@@ -341,6 +424,7 @@ namespace Patients.Application.Services
         private static string NormalizePhone(string value) => new(value.Where(char.IsDigit).ToArray());
         private static string? NormalizeNullableText(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         private static string? NormalizeNullablePhone(string? value) => string.IsNullOrWhiteSpace(value) ? null : new string(value.Where(char.IsDigit).ToArray());
+        private static string? NormalizeNullableEmail(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
         private static bool IsValidEmail(string value) => MailAddress.TryCreate(value, out _);
         private static bool IsMinor(DateOnly? birthDate)
         {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '../components/Button';
 import { isLocalFallbackStatus } from '../services/http';
-import { forgotPassword, register, verifyMfa } from '../services/auth';
+import { completeMfa, forgotPassword, register } from '../services/auth';
 import { useApp } from '../state/AppContext';
 
 type AuthMode = 'login' | 'register' | 'recover' | 'mfa';
@@ -24,6 +24,7 @@ export function LoginPage() {
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerRole, setRegisterRole] = useState<'psychologist' | 'patient'>('psychologist');
   const [mfaCode, setMfaCode] = useState('');
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
 
   const passwordRequirements = [
     { label: '10 caracteres ou mais', isMet: registerPassword.length >= 10 },
@@ -48,7 +49,13 @@ export function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(email, password);
+      const result = await login(email, password);
+      if (result.kind === 'mfa-required') {
+        setMfaToken(result.mfaToken ?? null);
+        setMessage('Digite o codigo do autenticador para finalizar o login.');
+        setMode('mfa');
+        return;
+      }
       navigateToDashboard();
     } catch (err) {
       if (isLocalFallbackStatus(err)) {
@@ -158,9 +165,16 @@ export function LoginPage() {
     event.preventDefault();
     setError(null);
     setMessage(null);
+    if (!mfaToken) {
+      setError('Sessao de MFA expirada. Faca login novamente.');
+      setMode('login');
+      return;
+    }
     try {
-      await verifyMfa({ code: mfaCode });
-      setMessage('Codigo verificado. Continue o acesso conforme orientacao da sua clinica.');
+      await completeMfa(mfaToken, mfaCode);
+      setMfaToken(null);
+      setMfaCode('');
+      navigateToDashboard();
     } catch (err) {
       if (isLocalFallbackStatus(err)) {
         setMessage('Verificacao em duas etapas registrada localmente.');

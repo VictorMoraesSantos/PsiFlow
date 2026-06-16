@@ -23,7 +23,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.Problem(result.Error!.Description, statusCode: StatusCodes.Status500InternalServerError);
-            }).RequireAuthorization(Permissions.Agenda.View);
+            }).RequireAuthorization(Permissions.Agenda.AppointmentsRead);
 
             group.MapGet("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -31,7 +31,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Agenda.View);
+            }).RequireAuthorization(Permissions.Agenda.AppointmentsRead);
 
             group.MapPost("/", async (CreateAppointmentDTO dto, ISender sender, HttpContext http, CancellationToken ct) =>
             {
@@ -40,7 +40,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Created($"/v1/appointments/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Agenda.Create);
+            }).RequireAuthorization(Permissions.Agenda.AppointmentsCreate);
 
             group.MapPut("/{id:int}", async (int id, UpdateAppointmentDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -48,7 +48,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Agenda.Edit);
+            }).RequireAuthorization(Permissions.Agenda.AppointmentsCreate);
 
             group.MapDelete("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -56,7 +56,7 @@ namespace Agenda.API.Endpoints
                 return result.IsSuccess
                     ? Results.NoContent()
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.Agenda.Delete);
+            }).RequireAuthorization(Permissions.Agenda.AppointmentsCancel);
 
             return app;
         }

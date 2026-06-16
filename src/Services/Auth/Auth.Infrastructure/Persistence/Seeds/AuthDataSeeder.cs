@@ -141,9 +141,14 @@ namespace Auth.Infrastructure.Persistence.Seeds
                     await userManager.SetLockoutEndDateAsync(existing, null);
                     await userManager.ResetAccessFailedCountAsync(existing);
                 }
+                if (existing.TenantId == 0)
+                {
+                    existing.AttachTenant(new TenantId(existing.Id));
+                    await userManager.UpdateAsync(existing);
+                }
                 if (!await userManager.IsInRoleAsync(existing, PermissionGroupSeed.PsychologistRole))
                     await userManager.AddToRoleAsync(existing, PermissionGroupSeed.PsychologistRole);
-                await AssignGroupPermissionClaimsAsync(userManager, existing, "patients", "sessions", "agenda", "clinical_records", "online_session");
+                await AssignRolePermissionClaimsAsync(userManager, existing, PermissionGroupSeed.PsychologistRole);
                 return;
             }
 
@@ -168,9 +173,10 @@ namespace Auth.Infrastructure.Persistence.Seeds
             }
 
             user.ConfirmEmail();
+            user.AttachTenant(new TenantId(user.Id));
             await userManager.UpdateAsync(user);
             await userManager.AddToRoleAsync(user, PermissionGroupSeed.PsychologistRole);
-            await AssignGroupPermissionClaimsAsync(userManager, user, "patients", "sessions", "agenda", "clinical_records", "online_session");
+            await AssignRolePermissionClaimsAsync(userManager, user, PermissionGroupSeed.PsychologistRole);
             _logger.LogInformation("Psychologist user criado: {Email}", PermissionGroupSeed.PsychologistEmail);
         }
 
@@ -188,7 +194,7 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 }
                 if (!await userManager.IsInRoleAsync(existing, PermissionGroupSeed.PatientRole))
                     await userManager.AddToRoleAsync(existing, PermissionGroupSeed.PatientRole);
-                await AssignGroupPermissionClaimsAsync(userManager, existing, "patients", "sessions", "agenda", "online_session");
+                await AssignRolePermissionClaimsAsync(userManager, existing, PermissionGroupSeed.PatientRole);
                 return;
             }
 
@@ -215,7 +221,7 @@ namespace Auth.Infrastructure.Persistence.Seeds
             user.ConfirmEmail();
             await userManager.UpdateAsync(user);
             await userManager.AddToRoleAsync(user, PermissionGroupSeed.PatientRole);
-            await AssignGroupPermissionClaimsAsync(userManager, user, "patients", "sessions", "agenda", "online_session");
+            await AssignRolePermissionClaimsAsync(userManager, user, PermissionGroupSeed.PatientRole);
             _logger.LogInformation("Patient user criado: {Email}", PermissionGroupSeed.PatientEmail);
         }
 
@@ -235,7 +241,7 @@ namespace Auth.Infrastructure.Persistence.Seeds
             }
         }
 
-        private async Task AssignGroupPermissionClaimsAsync(UserManager<User> userManager, User user, params string[] groups)
+        private async Task AssignRolePermissionClaimsAsync(UserManager<User> userManager, User user, string role)
         {
             var existingClaims = await userManager.GetClaimsAsync(user);
             foreach (var claim in existingClaims.Where(c => c.Type == "permission").ToList())
@@ -243,9 +249,13 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 await userManager.RemoveClaimAsync(user, claim);
             }
 
-            var permissions = groups.Contains(PermissionGroupSeed.PatientRole)
-                ? PermissionCatalog.PatientPermissions()
-                : PermissionCatalog.PsychologistPermissions();
+            var permissions = role switch
+            {
+                PermissionGroupSeed.AdminRole => PermissionCatalog.SaasAdminPermissions(),
+                PermissionGroupSeed.PsychologistRole => PermissionCatalog.PsychologistPermissions(),
+                PermissionGroupSeed.PatientRole => PermissionCatalog.PatientPermissions(),
+                _ => Array.Empty<string>()
+            };
 
             foreach (var permission in permissions)
             {

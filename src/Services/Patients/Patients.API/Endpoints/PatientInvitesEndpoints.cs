@@ -14,35 +14,37 @@ public static class PatientInvitesEndpoints
         {
             var result = await sender.Send(new DeactivatePatientCommand(patientId, request.Reason, http.GetTenantId(), http.GetUserId(), http.TraceIdentifier), ct);
             return ToHttp(result, StatusCodes.Status204NoContent);
-        }).RequireAuthorization(Permissions.Patients.Edit);
+        }).RequireAuthorization(Permissions.Patients.Deactivate);
 
         app.MapPost("/v1/patients/{patientId:int}/status", async (int patientId, ChangeTreatmentStatusRequest request, ISender sender, HttpContext http, CancellationToken ct) =>
         {
             var result = await sender.Send(new ChangeTreatmentStatusCommand(patientId, request.TreatmentStatus, request.Reason, http.GetTenantId(), http.GetUserId(), http.TraceIdentifier), ct);
             return ToHttp(result);
-        }).RequireAuthorization(Permissions.Patients.Edit);
+        }).RequireAuthorization(Permissions.Patients.TreatmentStatusUpdate);
 
-        app.MapGet("/v1/patients/{patientId:int}/sessions-summary", async (int patientId, ISender sender, HttpContext http, CancellationToken ct) => ToHttp(await sender.Send(new GetPatientSessionsSummaryQuery(patientId, http.GetTenantId()), ct))).RequireAuthorization(Permissions.Patients.View);
+        app.MapGet("/v1/patients/{patientId:int}/sessions-summary", async (int patientId, ISender sender, HttpContext http, CancellationToken ct) =>
+            ToHttp(await sender.Send(new GetPatientSessionsSummaryQuery(patientId, http.GetTenantId()), ct))).RequireAuthorization(Permissions.Patients.SessionsSummaryRead);
 
         app.MapPost("/v1/patient-invites", async (InvitePatientRequest request, ISender sender, HttpContext http, CancellationToken ct) =>
         {
             var result = await sender.Send(new CreatePatientInviteCommand(request.Email, request.Phone, request.PatientId, http.GetTenantId(), http.GetUserId()), ct);
             return result.IsSuccess ? Results.Created("/v1/patient-invites", result.Value) : ToHttp(result);
-        }).RequireAuthorization(Permissions.Patients.Create);
+        }).RequireAuthorization(Permissions.Patients.InviteCreate);
 
-        app.MapGet("/v1/patient-invites/{token}/preview", async (string token, ISender sender, CancellationToken ct) => ToHttp(await sender.Send(new PreviewPatientInviteQuery(token), ct))).AllowAnonymous();
+        app.MapGet("/v1/patient-invites/{token}/preview", async (string token, ISender sender, CancellationToken ct) =>
+            ToHttp(await sender.Send(new PreviewPatientInviteQuery(token), ct))).AllowAnonymous();
 
         app.MapPost("/v1/patient-invites/{token}/accept", async (string token, ISender sender, HttpContext http, CancellationToken ct) =>
         {
             var result = await sender.Send(new AcceptPatientInviteCommand(token, http.GetUserId(), http.GetEmail(), http.Connection.RemoteIpAddress?.ToString(), http.Request.Headers.UserAgent.ToString()), ct);
             return ToHttp(result);
-        }).RequireAuthorization();
+        }).RequireAuthorization(Permissions.Patients.InviteAccept);
 
         app.MapPost("/v1/patient-invites/{inviteId:int}/revoke", async (int inviteId, ISender sender, HttpContext http, CancellationToken ct) =>
         {
             var result = await sender.Send(new RevokePatientInviteCommand(inviteId, http.GetTenantId()), ct);
             return ToHttp(result, StatusCodes.Status204NoContent);
-        }).RequireAuthorization(Permissions.Patients.Delete);
+        }).RequireAuthorization(Permissions.Patients.InviteRevoke);
 
         return app;
     }

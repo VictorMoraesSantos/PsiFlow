@@ -16,5 +16,8 @@ namespace Patients.Application.Contracts
         Task<Result<PatientAdministrativeProfileDTO>> GetAdministrativeProfileAsync(int id, int tenantId, CancellationToken cancellationToken = default);
         Task<Result<PatientDTO>> PatchAdministrativeProfileAsync(int id, int tenantId, PatchPatientAdministrativeDTO dto, CancellationToken cancellationToken = default);
         Task<Result<PatientAdministrativeNoteDTO>> AddAdministrativeNoteAsync(int id, int tenantId, int userId, CreatePatientAdministrativeNoteDTO dto, CancellationToken cancellationToken = default);
+        Task<Result<PatientDTO>> UpsertEmergencyContactAsync(int patientId, int tenantId, UpsertEmergencyContactDTO dto, CancellationToken cancellationToken = default);
+        Task<Result<ResponsibleLegalDTO>> UpsertResponsibleLegalAsync(int patientId, int tenantId, UpsertResponsibleLegalDTO dto, CancellationToken cancellationToken = default);
+        Task<Result<ResponsibleLegalDTO?>> GetResponsibleLegalAsync(int patientId, int tenantId, CancellationToken cancellationToken = default);
     }
 }

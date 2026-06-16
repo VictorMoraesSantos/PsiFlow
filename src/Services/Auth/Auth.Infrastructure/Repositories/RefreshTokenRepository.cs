@@ -32,17 +32,13 @@ namespace Auth.Infrastructure.Repositories
 
         public async Task Update(RefreshToken entity, CancellationToken cancellationToken = default)
         {
-            var entry = dbContext.Entry(entity);
-            if (entry.State == EntityState.Detached) dbContext.RefreshTokens.Attach(entity);
-            entry.State = EntityState.Modified;
+            dbContext.RefreshTokens.Update(entity);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task Delete(RefreshToken entity, CancellationToken cancellationToken = default)
         {
-            var entry = dbContext.Entry(entity);
-            if (entry.State == EntityState.Detached) dbContext.RefreshTokens.Attach(entity);
-            entry.State = EntityState.Deleted;
+            dbContext.RefreshTokens.Remove(entity);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -59,12 +55,8 @@ namespace Auth.Infrastructure.Repositories
 
         public async Task UpdateRange(IEnumerable<RefreshToken> tokens, CancellationToken cancellationToken = default)
         {
-            foreach (var token in tokens)
-            {
-                var entry = dbContext.Entry(token);
-                if (entry.State == EntityState.Detached) dbContext.RefreshTokens.Attach(token);
-                entry.State = EntityState.Modified;
-            }
+
+            dbContext.RefreshTokens.UpdateRange(tokens);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
     }

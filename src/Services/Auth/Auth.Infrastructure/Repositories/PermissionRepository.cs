@@ -18,22 +18,31 @@ namespace Auth.Infrastructure.Repositories
         public async Task<IEnumerable<Permission?>> Find(Expression<Func<Permission, bool>> predicate, CancellationToken cancellationToken = default) =>
             await dbContext.Permissions.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
 
-        public async Task Create(Permission entity, CancellationToken cancellationToken = default) =>
+        public async Task Create(Permission entity, CancellationToken cancellationToken = default)
+        {
             await dbContext.Permissions.AddAsync(entity, cancellationToken);
+            await dbContext.SaveChangesAsync();
+        }
 
-        public async Task CreateRange(IEnumerable<Permission> entities, CancellationToken cancellationToken = default) =>
+        public async Task CreateRange(IEnumerable<Permission> entities, CancellationToken cancellationToken = default)
+        {
             await dbContext.Permissions.AddRangeAsync(entities, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        public async Task Update(Permission entity, CancellationToken cancellationToken = default) =>
+        public async Task Update(Permission entity, CancellationToken cancellationToken = default)
+        {
             dbContext.Permissions.Update(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        public async Task Delete(Permission entity, CancellationToken cancellationToken = default) =>
+        public async Task Delete(Permission entity, CancellationToken cancellationToken = default)
+        {
             dbContext.Permissions.Remove(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         public async Task<Permission?> FindByClaimValue(string claimValue, CancellationToken cancellationToken = default) =>
             await dbContext.Permissions.FirstOrDefaultAsync(x => x.ClaimValue == claimValue, cancellationToken);
-
-        public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

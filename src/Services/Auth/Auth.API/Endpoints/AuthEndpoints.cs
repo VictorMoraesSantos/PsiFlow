@@ -33,7 +33,7 @@ namespace Auth.API.Endpoints
                 return result.IsSuccess
                     ? Results.Created($"/v1/auth/users/{result.Value!.UserId}", result.Value)
                     : ToProblem(result.Error!);
-            }).AllowAnonymous();
+            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/login", async (LoginDTO request, ISender sender, CancellationToken ct) =>
             {
@@ -58,14 +58,14 @@ namespace Auth.API.Endpoints
                 if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
                 var result = await sender.Send(new LogoutCommand(userId), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
-            }).RequireAuthorization(Roles.RequireAuthenticated);
+            }).RequireAuthorization(Permissions.Auth.SessionLogout);
 
             group.MapGet("/me", async (HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
                 var result = await sender.Send(new MeQuery(userId), ct);
                 return result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
-            }).RequireAuthorization(Roles.RequireAuthenticated);
+            }).RequireAuthorization(Permissions.Auth.MeRead);
 
             group.MapPost("/consent", async (ConsentDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
             {
@@ -73,14 +73,14 @@ namespace Auth.API.Endpoints
                 var payload = request with { IpAddress = http.Connection.RemoteIpAddress?.ToString(), UserAgent = http.Request.Headers.UserAgent.ToString() };
                 var result = await sender.Send(new RecordConsentCommand(userId, payload), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
-            }).RequireAuthorization(Roles.RequireAuthenticated);
+            }).RequireAuthorization(Permissions.Auth.ConsentAccept);
 
             group.MapPost("/change-password", async (ChangePasswordDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
                 var result = await sender.Send(new ChangePasswordCommand(userId, request), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
-            }).RequireAuthorization(Roles.RequireAuthenticated);
+            }).RequireAuthorization(Permissions.Auth.PasswordChange).RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/forgot-password", async (ForgotPasswordDTO request, ISender sender, CancellationToken ct) =>
             {
@@ -99,14 +99,14 @@ namespace Auth.API.Endpoints
                 if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
                 var result = await sender.Send(new SetupMfaCommand(userId), ct);
                 return result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
-            }).RequireAuthorization(Roles.RequirePsychologist);
+            }).RequireAuthorization(Permissions.Auth.MfaSetup);
 
             group.MapPost("/mfa/verify", async (MfaVerifyDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId)) return Results.Unauthorized();
                 var result = await sender.Send(new VerifyMfaCommand(userId, request), ct);
                 return result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
-            }).RequireAuthorization(Roles.RequirePsychologist).RequireRateLimiting("auth-sensitive");
+            }).RequireAuthorization(Permissions.Auth.MfaVerify).RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/request-email-verification", async (EmailVerificationRequest request, IAuthService authService, CancellationToken ct) =>
             {
@@ -142,7 +142,7 @@ namespace Auth.API.Endpoints
                     .ToArray();
 
                 return Results.Ok(new { userId, roles, permissions });
-            }).RequireAuthorization(Roles.RequireSaasAdmin);
+            }).RequireAuthorization(Permissions.Auth.UsersRead);
 
             return app;
         }
@@ -161,6 +161,7 @@ namespace Auth.API.Endpoints
                 ErrorType.Validation => StatusCodes.Status400BadRequest,
                 ErrorType.NotFound => StatusCodes.Status404NotFound,
                 ErrorType.Conflict => StatusCodes.Status409Conflict,
+                ErrorType.Forbidden => StatusCodes.Status403Forbidden,
                 ErrorType.Failure => StatusCodes.Status400BadRequest,
                 _ => StatusCodes.Status500InternalServerError
             };

@@ -20,7 +20,8 @@ namespace Auth.Application.Services
                 if (!environment.IsDevelopment())
                     throw new InvalidOperationException("JwtSettings:PrivateKeyPem or JwtSettings:PrivateKeyBase64 must be configured outside Development.");
 
-                _rsa.KeySize = 2048;
+                privateKeyPem = LoadOrCreateDevelopmentKey(environment);
+                _rsa.ImportFromPem(privateKeyPem);
             }
             else
             {
@@ -56,9 +57,19 @@ namespace Auth.Application.Services
 
         private static JsonWebKey BuildJwk(RsaSecurityKey key)
         {
-            var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(key);
-            jwk.Use = "sig";
-            jwk.Alg = SecurityAlgorithms.RsaSha256;
+            var parameters = key.Rsa is not null
+                ? key.Rsa.ExportParameters(false)
+                : new RSAParameters { Modulus = key.Parameters.Modulus, Exponent = key.Parameters.Exponent };
+
+            var jwk = new JsonWebKey
+            {
+                Kty = "RSA",
+                Kid = key.KeyId,
+                Use = "sig",
+                Alg = SecurityAlgorithms.RsaSha256,
+                N = Base64UrlEncoder.Encode(parameters.Modulus),
+                E = Base64UrlEncoder.Encode(parameters.Exponent)
+            };
             return jwk;
         }
 
@@ -70,6 +81,32 @@ namespace Auth.Application.Services
             if (string.IsNullOrWhiteSpace(settings.PrivateKeyBase64)) return string.Empty;
 
             return Encoding.UTF8.GetString(Convert.FromBase64String(settings.PrivateKeyBase64));
+        }
+
+        private static string LoadOrCreateDevelopmentKey(IHostEnvironment environment)
+        {
+            var directory = Path.Combine(environment.ContentRootPath, "Keys");
+            Directory.CreateDirectory(directory);
+            var keyPath = Path.Combine(directory, "auth-rsa-dev.pem");
+
+            if (File.Exists(keyPath))
+            {
+                try
+                {
+                    var existing = File.ReadAllText(keyPath);
+                    if (!string.IsNullOrWhiteSpace(existing) && existing.Contains("BEGIN", StringComparison.Ordinal))
+                        return existing;
+                }
+                catch
+                {
+                    // arquivo corrompido, regerar
+                }
+            }
+
+            using var rsa = RSA.Create(2048);
+            var pem = rsa.ExportRSAPrivateKeyPem();
+            File.WriteAllText(keyPath, pem);
+            return pem;
         }
     }
 }

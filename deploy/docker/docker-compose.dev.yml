@@ -8,6 +8,9 @@ x-api-env: &api-env
   Jwt__Authority: http://auth-api:8080
   Jwt__Issuer: psiflow-auth
   Jwt__Audience: psiflow-api
+  JwtSettings__Issuer: psiflow-auth
+  JwtSettings__Audience: psiflow-api
+  JwtSettings__JwksUri: http://auth-api:8080/.well-known/jwks.json
   Security__RequireHttps: "false"
   Security__RateLimitingEnabled: "true"
 

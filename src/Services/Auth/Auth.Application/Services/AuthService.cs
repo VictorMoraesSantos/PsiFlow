@@ -1,6 +1,7 @@
 using Auth.Application.Authorization;
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
+using Auth.Application.DTOs.Token;
 using Auth.Application.Settings;
 using Auth.Domain.Entities;
 using Auth.Domain.Errors;
@@ -73,29 +74,15 @@ namespace Auth.Application.Services
                 return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
 
             var nameResult = TryBuildName(dto);
-            if (!nameResult.IsSuccess) return Result.Failure<RegisterResult>(nameResult.Error!);
+            if (!nameResult.IsSuccess)
+                return Result.Failure<RegisterResult>(nameResult.Error!);
 
-            Contact contact;
-            try
-            {
-                contact = new Contact(dto.Email, dto.Phone);
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<RegisterResult>(ContactErrors.InvalidFormat);
-            }
+            var contact = new Contact(dto.Email, dto.Phone);
 
-            DocumentVersion termsVersion;
-            DocumentVersion privacyVersion;
-            try
-            {
-                termsVersion = DocumentVersion.Create(dto.AcceptedTermsVersion, nameof(dto.AcceptedTermsVersion));
-                privacyVersion = DocumentVersion.Create(dto.AcceptedPrivacyVersion, nameof(dto.AcceptedPrivacyVersion));
-            }
-            catch (Exception ex)
-            {
+            var termsVersion = DocumentVersion.Create(dto.AcceptedTermsVersion, nameof(dto.AcceptedTermsVersion));
+            var privacyVersion = DocumentVersion.Create(dto.AcceptedPrivacyVersion, nameof(dto.AcceptedPrivacyVersion));
+            if (termsVersion is null || privacyVersion is null)
                 return Result.Failure<RegisterResult>(UserErrors.TermsNotAccepted);
-            }
 
             var user = User.Register(
                 nameResult.Value!,
@@ -111,6 +98,14 @@ namespace Auth.Application.Services
             {
                 _logger.LogWarning("Falha ao registrar usuario {Email}: {Errors}", email, string.Join("; ", identity.Errors.Select(e => e.Description)));
                 return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
+            }
+
+            if (dto.Role == UserRole.Psychologist && user.TenantId == 0)
+            {
+                user.AttachTenant(new TenantId(user.Id));
+                var tenantUpdate = await _userManager.UpdateAsync(user);
+                if (!tenantUpdate.Succeeded)
+                    _logger.LogWarning("Falha ao atribuir tenant do psychologist {UserId}: {Errors}", user.Id, string.Join("; ", tenantUpdate.Errors.Select(e => e.Description)));
             }
 
             await _userManager.AddToRoleAsync(user, user.Role);
@@ -176,8 +171,13 @@ namespace Auth.Application.Services
             }
 
             user.BeginLogin();
+            if (user.Role == UserRole.Psychologist && user.TenantId == 0)
+                user.AttachTenant(new TenantId(user.Id));
+
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success<object>(await IssueTokensAsync(user, previous: null, cancellationToken));
+            var token = await IssueTokensAsync(user, previous: null, cancellationToken);
+
+            return Result.Success<object>(token);
         }
 
         public async Task<Result<TokenResponse>> CompleteMfaLoginAsync(string mfaToken, string code, CancellationToken cancellationToken = default)
@@ -254,7 +254,25 @@ namespace Auth.Application.Services
             var user = await _userRepository.GetById(id, cancellationToken);
             if (user is null) return Result.Failure<MeResponse>(UserErrors.NotFound(userId));
 
-            return Result.Success(new MeResponse(user.Id, user.TenantId, user.Email!, user.Role, user.Name.FullName, user.IsActive));
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
+            var permissions = claims
+                .Where(c => c.Type == "permission")
+                .Select(c => c.Value)
+                .OrderBy(v => v, StringComparer.Ordinal)
+                .ToArray();
+
+            return Result.Success(new MeResponse(
+                user.Id,
+                user.TenantId,
+                user.Email!,
+                user.Role,
+                user.Name.FullName,
+                user.IsActive,
+                user.EmailConfirmed,
+                user.IsMfaEnabled,
+                permissions,
+                roles.ToArray()));
         }
 
         public async Task<Result> RecordConsentAsync(int userId, ConsentDTO dto, CancellationToken cancellationToken = default)
@@ -479,7 +497,8 @@ namespace Auth.Application.Services
             var roles = await _userManager.GetRolesAsync(user);
             var permissions = await _userManager.GetClaimsAsync(user);
             var permissionValues = permissions.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
-            var tokenResult = _tokenService.GenerateToken(user.Id, user.Email ?? string.Empty, user.EmailConfirmed, user.TenantId, user.Role, roles, permissionValues);
+            var tokenDTO = new GenerateTokenDTO(user.Id, user.Email ?? string.Empty, user.EmailConfirmed, user.TenantId, user.Role, roles, permissionValues);
+            var tokenResult = _tokenService.GenerateToken(tokenDTO);
             if (!tokenResult.IsSuccess) return Result.Failure<TokenResponse>(tokenResult.Error!);
 
             var now = DateTime.UtcNow;

@@ -22,7 +22,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.Problem(result.Error!.Description, statusCode: StatusCodes.Status500InternalServerError);
-            }).RequireAuthorization(Permissions.OnlineSession.View);
+            }).RequireAuthorization(Permissions.OnlineSession.VideoRoomRead);
 
             group.MapGet("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -30,7 +30,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.OnlineSession.View);
+            }).RequireAuthorization(Permissions.OnlineSession.VideoRoomRead);
 
             group.MapPost("/", async (CreateVideoRoomDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -38,7 +38,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Created($"/v1/video-rooms/{result.Value!.Id}", result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.OnlineSession.Create);
+            }).RequireAuthorization(Permissions.OnlineSession.VideoRoomUpsert);
 
             group.MapPut("/{id:int}", async (int id, UpdateVideoRoomDTO dto, ISender sender, CancellationToken ct) =>
             {
@@ -46,7 +46,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.Ok(result.Value)
                     : Results.BadRequest(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.OnlineSession.Edit);
+            }).RequireAuthorization(Permissions.OnlineSession.VideoRoomUpsert);
 
             group.MapDelete("/{id:int}", async (int id, ISender sender, CancellationToken ct) =>
             {
@@ -54,7 +54,7 @@ namespace OnlineSession.API.Endpoints
                 return result.IsSuccess
                     ? Results.NoContent()
                     : Results.NotFound(new { error = result.Error!.Description });
-            }).RequireAuthorization(Permissions.OnlineSession.Delete);
+            }).RequireAuthorization(Permissions.OnlineSession.VideoRoomClicksRead);
 
             return app;
         }

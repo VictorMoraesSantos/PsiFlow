@@ -1,3 +1,4 @@
+using Auth.Application.DTOs.Token;
 using BuildingBlocks.Results;
 using System.Security.Claims;
 
@@ -5,7 +6,7 @@ namespace Auth.Application.Contracts
 {
     public interface ITokenService
     {
-        Result<string> GenerateToken(int userId, string email, bool emailVerified, int tenantId, string role, IEnumerable<string> roles, IEnumerable<string> permissions);
+        Result<string> GenerateToken(GenerateTokenDTO dto);
         string GenerateRefreshToken();
         string HashToken(string token);
         Result<ClaimsPrincipal> GetPrincipalFromExpiredToken(string token);

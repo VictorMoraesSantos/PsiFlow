@@ -24,11 +24,17 @@ namespace Auth.Infrastructure.Repositories
         public async Task CreateRange(IEnumerable<OutboxMessage> entities, CancellationToken cancellationToken = default) =>
             await dbContext.OutboxMessages.AddRangeAsync(entities, cancellationToken);
 
-        public async Task Update(OutboxMessage entity, CancellationToken cancellationToken = default) =>
+        public async Task Update(OutboxMessage entity, CancellationToken cancellationToken = default)
+        {
             dbContext.OutboxMessages.Update(entity);
+            await dbContext.SaveChangesAsync();
+        }
 
-        public async Task Delete(OutboxMessage entity, CancellationToken cancellationToken = default) =>
+        public async Task Delete(OutboxMessage entity, CancellationToken cancellationToken = default)
+        {
             dbContext.OutboxMessages.Remove(entity);
+            await dbContext.SaveChangesAsync();
+        }
 
         public async Task<IEnumerable<OutboxMessage>> GetUnprocessed(int maxRetries, int batchSize, CancellationToken cancellationToken = default) =>
             await dbContext.OutboxMessages
@@ -36,8 +42,5 @@ namespace Auth.Infrastructure.Repositories
                 .OrderBy(x => x.OccurredAt)
                 .Take(batchSize)
                 .ToListAsync(cancellationToken);
-
-        public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 using static BuildingBlocks.Authorization.Policies;
 
 namespace BuildingBlocks.Authorization
@@ -15,40 +16,13 @@ namespace BuildingBlocks.Authorization
             services.AddAuthorization(o =>
             {
                 o.AddPolicy(Roles.RequireAuthenticated, p => p.RequireAuthenticatedUser());
-                o.AddPolicy(Roles.RequirePsychologist, p => p.RequireAuthenticatedUser().RequireRole("psychologist"));
+                o.AddPolicy(Roles.RequirePsychologist, p => p.RequireAuthenticatedUser().RequireRole("psychologist", "saas_admin"));
                 o.AddPolicy(Roles.RequirePatient, p => p.RequireAuthenticatedUser().RequireRole("patient"));
                 o.AddPolicy(Roles.RequireSaasAdmin, p => p.RequireSaasAdmin());
-                o.AddPolicy(Roles.RequirePsychologistOrPatient, p => p.RequireAuthenticatedUser().RequireRole("psychologist", "patient"));
+                o.AddPolicy(Roles.RequirePsychologistOrPatient, p => p.RequireAuthenticatedUser().RequireRole("psychologist", "patient", "saas_admin"));
 
-                AddPermissionPolicy(o, Permissions.Patients.View);
-                AddPermissionPolicy(o, Permissions.Patients.Create);
-                AddPermissionPolicy(o, Permissions.Patients.Edit);
-                AddPermissionPolicy(o, Permissions.Patients.Delete);
-
-                AddPermissionPolicy(o, Permissions.Agenda.View);
-                AddPermissionPolicy(o, Permissions.Agenda.Create);
-                AddPermissionPolicy(o, Permissions.Agenda.Edit);
-                AddPermissionPolicy(o, Permissions.Agenda.Delete);
-
-                AddPermissionPolicy(o, Permissions.Sessions.View);
-                AddPermissionPolicy(o, Permissions.Sessions.Create);
-                AddPermissionPolicy(o, Permissions.Sessions.Edit);
-                AddPermissionPolicy(o, Permissions.Sessions.Delete);
-
-                AddPermissionPolicy(o, Permissions.ClinicalRecords.View);
-                AddPermissionPolicy(o, Permissions.ClinicalRecords.Create);
-                AddPermissionPolicy(o, Permissions.ClinicalRecords.Edit);
-                AddPermissionPolicy(o, Permissions.ClinicalRecords.Delete);
-
-                AddPermissionPolicy(o, Permissions.Notifications.View);
-                AddPermissionPolicy(o, Permissions.Notifications.Create);
-                AddPermissionPolicy(o, Permissions.Notifications.Edit);
-                AddPermissionPolicy(o, Permissions.Notifications.Delete);
-
-                AddPermissionPolicy(o, Permissions.OnlineSession.View);
-                AddPermissionPolicy(o, Permissions.OnlineSession.Create);
-                AddPermissionPolicy(o, Permissions.OnlineSession.Edit);
-                AddPermissionPolicy(o, Permissions.OnlineSession.Delete);
+                foreach (var permission in DiscoverAllPermissions())
+                    AddPermissionPolicy(o, permission);
             });
             return services;
         }
@@ -66,6 +40,26 @@ namespace BuildingBlocks.Authorization
                 : policyName;
 
             options.AddPolicy(policyName, p => p.RequireAuthenticatedUser().Requirements.Add(new PermissionRequirement(key)));
+        }
+
+        private static IEnumerable<string> DiscoverAllPermissions()
+        {
+            var groups = typeof(Permissions).GetNestedTypes(BindingFlags.Public | BindingFlags.Static);
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var group in groups)
+            {
+                var fields = group.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+                foreach (var field in fields)
+                {
+                    if (!field.IsLiteral || field.IsInitOnly) continue;
+                    if (field.FieldType != typeof(string)) continue;
+                    var value = field.GetRawConstantValue() as string;
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+                    if (!value.StartsWith(Permissions.Prefix, StringComparison.Ordinal)) continue;
+                    if (seen.Add(value))
+                        yield return value;
+                }
+            }
         }
     }
 

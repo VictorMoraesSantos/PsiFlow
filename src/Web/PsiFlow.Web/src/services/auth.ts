@@ -36,26 +36,65 @@ const extractRefreshToken = (payload: unknown): string | undefined => {
   );
 };
 
-export async function login(payload: AuthLoginPayload): Promise<void> {
-  const tokens = await api.post<Record<string, unknown>>('/api/auth/v1/auth/login', payload);
-  const accessToken = extractAccessToken(tokens);
+const isMfaChallenge = (payload: unknown): payload is { mfaToken?: string; challengeId?: string } => {
+  if (!payload || typeof payload !== 'object') return false;
+  const record = payload as Record<string, unknown>;
+  return record.mfaRequired === true || typeof record.challengeId === 'string';
+};
+
+export type LoginResult =
+  | { kind: 'authenticated' }
+  | { kind: 'mfa-required'; mfaToken?: string; challengeId?: string };
+
+export async function login(payload: AuthLoginPayload): Promise<LoginResult> {
+  const response = await api.post<Record<string, unknown>>('/api/auth/v1/auth/login', payload, { skipAuth: true });
+
+  if (isMfaChallenge(response)) {
+    return {
+      kind: 'mfa-required',
+      mfaToken: response.mfaToken as string | undefined,
+      challengeId: response.challengeId as string | undefined,
+    };
+  }
+
+  const accessToken = extractAccessToken(response);
   if (!accessToken) {
-    console.warn('[auth] resposta de login sem accessToken reconhecivel', tokens);
+    console.warn('[auth] resposta de login sem accessToken reconhecivel', response);
     throw new ApiError('Login realizado, mas o token nao foi retornado pelo servidor.', 500);
   }
-  setSessionTokens(accessToken, extractRefreshToken(tokens));
+  setSessionTokens(accessToken, extractRefreshToken(response));
+  return { kind: 'authenticated' };
+}
+
+export async function completeMfa(mfaToken: string, code: string): Promise<void> {
+  const response = await api.post<Record<string, unknown>>(
+    '/api/auth/v1/auth/mfa/complete',
+    { mfaToken, code },
+    { skipAuth: true },
+  );
+  const accessToken = extractAccessToken(response);
+  if (!accessToken) throw new ApiError('MFA aceito, mas o token nao foi retornado pelo servidor.', 500);
+  setSessionTokens(accessToken, extractRefreshToken(response));
 }
 
 export function register(payload: AuthRegisterPayload) {
-  return api.post<unknown>('/api/auth/v1/auth/register', payload);
+  return api.post<unknown>('/api/auth/v1/auth/register', payload, { skipAuth: true });
 }
 
 export function forgotPassword(payload: AuthForgotPasswordPayload) {
-  return api.post<unknown>('/api/auth/v1/auth/forgot-password', payload);
+  return api.post<unknown>('/api/auth/v1/auth/forgot-password', payload, { skipAuth: true });
 }
 
 export function verifyMfa(payload: AuthMfaVerifyPayload) {
   return api.post<unknown>('/api/auth/v1/auth/mfa/verify', payload);
+}
+
+export function logoutServer() {
+  return api.post<unknown>('/api/auth/v1/auth/logout');
+}
+
+export function me() {
+  return api.get<unknown>('/api/auth/v1/auth/me');
 }
 
 export function updateProfile(payload: UserProfile) {

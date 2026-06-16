@@ -132,8 +132,7 @@ namespace Auth.Domain.Entities
             ConsentPrivacyVersion = privacyVersion.Value;
             ConsentAcceptedAt = DateTime.UtcNow;
             MarkAsUpdated();
-            AddDomainEvent(new ConsentAcceptedDomainEvent(
-                Id, TenantId, termsVersion.Value, privacyVersion.Value, ConsentAcceptedAt.Value));
+            AddDomainEvent(new ConsentAcceptedDomainEvent(Id, TenantId, termsVersion.Value, privacyVersion.Value, ConsentAcceptedAt.Value));
         }
 
         public void Deactivate()

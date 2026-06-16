@@ -2,8 +2,15 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { fallbackData } from '../data/fallbackData';
-import { login as authLogin } from '../services/auth';
-import { clearSessionTokens, getAccessToken, localFallbackEvent, setSessionTokens } from '../services/http';
+import { login as authLogin, logoutServer, type LoginResult } from '../services/auth';
+import {
+  clearSessionTokens,
+  getAccessToken,
+  isDemoMode as readDemoMode,
+  localFallbackEvent,
+  sessionExpiredEvent,
+  setDemoMode as persistDemoMode,
+} from '../services/http';
 import { loadDashboardData } from '../services/api';
 import type { DashboardData } from '../types';
 
@@ -15,7 +22,7 @@ type AppContextValue = {
   isLocalMode: boolean;
   setData: Dispatch<SetStateAction<DashboardData>>;
   dismissLocalMode: () => void;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   enterDemoMode: () => void;
   logout: () => void;
 };
@@ -38,18 +45,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLocalMode, setIsLocalMode] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(Boolean(readToken()));
+    const demo = readDemoMode();
+    setIsLocalMode(demo);
+    setIsAuthenticated(demo || Boolean(readToken()));
     setIsHydrating(false);
   }, []);
 
   useEffect(() => {
     const onLocalFallback = () => setIsLocalMode(true);
+    const onSessionExpired = () => {
+      clearSessionTokens();
+      persistDemoMode(false);
+      setIsAuthenticated(false);
+      setIsLocalMode(false);
+      setData(fallbackData);
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+    };
     window.addEventListener(localFallbackEvent, onLocalFallback);
-    return () => window.removeEventListener(localFallbackEvent, onLocalFallback);
+    window.addEventListener(sessionExpiredEvent, onSessionExpired);
+    return () => {
+      window.removeEventListener(localFallbackEvent, onLocalFallback);
+      window.removeEventListener(sessionExpiredEvent, onSessionExpired);
+    };
   }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
+      setData(fallbackData);
+      setIsLoading(false);
+      return;
+    }
+    if (isLocalMode && !readToken()) {
       setData(fallbackData);
       setIsLoading(false);
       return;
@@ -69,25 +97,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isCurrent = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLocalMode]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    await authLogin({ email, password });
-    setIsAuthenticated(Boolean(readToken()));
+  const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
+    const result = await authLogin({ email, password });
+    if (result.kind === 'authenticated') {
+      persistDemoMode(false);
+      setIsLocalMode(false);
+      setIsAuthenticated(Boolean(readToken()));
+    }
+    return result;
   }, []);
 
   const enterDemoMode = useCallback(() => {
-    const demoToken = `demo.${Math.random().toString(36).slice(2, 10)}.${Date.now()}`;
-    setSessionTokens(demoToken);
+    clearSessionTokens();
+    persistDemoMode(true);
     setIsAuthenticated(true);
     setIsLocalMode(true);
+    setData(fallbackData);
   }, []);
 
   const logout = useCallback(() => {
+    if (readToken()) {
+      logoutServer().catch(() => {
+        // ignora falha de logout: tokens serao limpos localmente
+      });
+    }
     clearSessionTokens();
+    persistDemoMode(false);
     setIsAuthenticated(false);
-    setData(fallbackData);
     setIsLocalMode(false);
+    setData(fallbackData);
   }, []);
 
   const dismissLocalMode = useCallback(() => setIsLocalMode(false), []);

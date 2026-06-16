@@ -76,4 +76,10 @@ namespace Patients.Application.DTOs.Patient
     public sealed record PatientAdministrativeNoteDTO(int Id, int PatientId, string Text, int CreatedBy, DateTime CreatedAt);
 
     public sealed record PatientStatusTimelineItemDTO(int Id, int PatientId, string FromStatus, string ToStatus, string? Reason, int ChangedBy, DateTime CreatedAt);
+
+    public sealed record UpsertEmergencyContactDTO(string? Name, string? Phone, string? Relationship, string? Email);
+
+    public sealed record UpsertResponsibleLegalDTO(string? Name, string? Document, string? Relationship, string? Phone, string? Email);
+
+    public sealed record ResponsibleLegalDTO(int Id, int PatientId, string FullName, string? Email, string Phone, string Relationship);
 }

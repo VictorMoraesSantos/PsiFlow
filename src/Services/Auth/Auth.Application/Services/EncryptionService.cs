@@ -1,3 +1,4 @@
+using Auth.Application.Settings;
 using System.Security.Cryptography;
 using System.Text;
 using DomainEncryptedField = Auth.Domain.ValueObjects.EncryptedField;
@@ -8,7 +9,7 @@ namespace Auth.Application.Services
     {
         private readonly byte[] _key;
 
-        public EncryptionService(Auth.Application.Settings.JwtSettings settings)
+        public EncryptionService(JwtSettings settings)
         {
             if (string.IsNullOrWhiteSpace(settings.EncryptionKey))
                 throw new InvalidOperationException("JwtSettings:EncryptionKey is required for AES-256-GCM.");
@@ -31,9 +32,9 @@ namespace Auth.Application.Services
 
         public string Decrypt(DomainEncryptedField field)
         {
-            var cipher = Convert.FromBase64String(field.Ciphertext);
             var nonce = Convert.FromBase64String(field.Nonce);
             var tag = Convert.FromBase64String(field.Tag);
+            var cipher = Convert.FromBase64String(field.Ciphertext);
             var plain = new byte[cipher.Length];
             using var aes = new AesGcm(_key, tag.Length);
             aes.Decrypt(nonce, cipher, tag, plain);
