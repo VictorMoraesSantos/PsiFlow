@@ -1,8 +1,8 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using BuildingBlocks.Results;
 using Microsoft.Extensions.Configuration;
 using Sessions.Application.Contracts;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Sessions.Infrastructure.Notifications;
 

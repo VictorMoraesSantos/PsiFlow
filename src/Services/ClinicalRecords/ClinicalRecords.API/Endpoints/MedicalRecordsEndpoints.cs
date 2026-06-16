@@ -1,11 +1,3 @@
-using BuildingBlocks.CQRS.Sender;
-using ClinicalRecords.Application.DTOs.MedicalRecord;
-using ClinicalRecords.Application.Features.MedicalRecords.Commands.Create;
-using ClinicalRecords.Application.Features.MedicalRecords.Commands.Delete;
-using ClinicalRecords.Application.Features.MedicalRecords.Commands.Update;
-using ClinicalRecords.Application.Features.MedicalRecords.Queries.GetAll;
-using ClinicalRecords.Application.Features.MedicalRecords.Queries.GetById;
-using System.Security.Claims;
 using static BuildingBlocks.Authorization.Policies;
 
 namespace ClinicalRecords.API.Endpoints

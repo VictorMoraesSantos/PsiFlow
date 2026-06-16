@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Patients.Domain.Repositories;
 using Patients.Application.Contracts;
+using Patients.Domain.Repositories;
 using Patients.Infrastructure.Persistence.Repositories;
 using Patients.Infrastructure.Sessions;
 using PsiFlow.Patients.Infrastructure.Persistence.Data;

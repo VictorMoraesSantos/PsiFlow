@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Agenda.Application.Contracts;
 using Agenda.Application.DTOs.Appointment;
 using Agenda.Application.Services;
@@ -6,6 +5,7 @@ using Agenda.Domain.Entities;
 using Agenda.Domain.Filters;
 using Agenda.Domain.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Linq.Expressions;
 using Xunit;
 
 namespace PsiFlow.Agenda.Tests.Unit;

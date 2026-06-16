@@ -1,6 +1,5 @@
 using BuildingBlocks.CQRS.Sender;
 using Sessions.Application.DTOs.Session;
-using Sessions.Application.Features.Sessions.Commands.Create;
 using Sessions.Application.Features.Sessions.Commands.Delete;
 using Sessions.Application.Features.Sessions.Commands.Update;
 using Sessions.Application.Features.Sessions.Queries.GetAll;

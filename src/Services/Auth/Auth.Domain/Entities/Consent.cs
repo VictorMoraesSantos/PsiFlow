@@ -1,6 +1,5 @@
 using Auth.Domain.ValueObjects;
 using Core.Domain.Aggregates;
-using Core.Domain.Exceptions;
 using System.Security.Cryptography;
 using System.Text;
 

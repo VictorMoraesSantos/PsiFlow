@@ -1,7 +1,7 @@
-using System.Net.Http.Json;
 using BuildingBlocks.Results;
 using Microsoft.Extensions.Configuration;
 using Patients.Application.Contracts;
+using System.Net.Http.Json;
 
 namespace Patients.Infrastructure.Sessions;
 

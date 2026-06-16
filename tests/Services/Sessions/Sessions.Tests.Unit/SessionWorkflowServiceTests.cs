@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Sessions.Application.Contracts;
 using Sessions.Application.DTOs.Session;
@@ -6,6 +5,7 @@ using Sessions.Application.Services;
 using Sessions.Domain.Entities;
 using Sessions.Domain.Filters;
 using Sessions.Domain.Repositories;
+using System.Linq.Expressions;
 using Xunit;
 
 namespace PsiFlow.Sessions.Tests.Unit;

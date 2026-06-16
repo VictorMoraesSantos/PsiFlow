@@ -1,7 +1,7 @@
-using System.Net.Http.Json;
 using Agenda.Application.Contracts;
 using BuildingBlocks.Results;
 using Microsoft.Extensions.Configuration;
+using System.Net.Http.Json;
 
 namespace Agenda.Infrastructure.Sessions;
 

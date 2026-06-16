@@ -8,12 +8,10 @@ using Auth.Domain.Errors;
 using Auth.Domain.Repositories;
 using Auth.Domain.ValueObjects;
 using BuildingBlocks.Results;
-using Core.Domain.Events;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
-using System.Text.Json;
 using DomainEncryptedField = Auth.Domain.ValueObjects.EncryptedField;
 
 namespace Auth.Application.Services

@@ -1,5 +1,5 @@
-using Agenda.Domain.Repositories;
 using Agenda.Application.Contracts;
+using Agenda.Domain.Repositories;
 using Agenda.Infrastructure.Notifications;
 using Agenda.Infrastructure.Persistence.Repositories;
 using Agenda.Infrastructure.Sessions;

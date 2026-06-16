@@ -1,8 +1,8 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using Agenda.Application.Contracts;
 using BuildingBlocks.Results;
 using Microsoft.Extensions.Configuration;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Agenda.Infrastructure.Notifications;
 

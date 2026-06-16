@@ -12,7 +12,7 @@ namespace Auth.Domain.Entities
         public PermissionGroup? PermissionGroup { get; private set; }
         public PermissionAction Action { get; private set; }
         public string ClaimValue { get; private set; } = string.Empty;
-        public string Description { get; private set; } = string.Empty; 
+        public string Description { get; private set; } = string.Empty;
         public bool IsActive { get; private set; } = true;
 
         protected Permission() { }
