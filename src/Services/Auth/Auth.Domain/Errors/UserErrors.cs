@@ -30,6 +30,7 @@ namespace Auth.Domain.Errors
         public static Error CreateError => Error.Failure("Falha ao criar usuario.");
         public static Error RegistrationUnavailable => Error.Failure("Nao foi possivel concluir o cadastro.");
         public static Error PasswordResetInvalid => Error.Failure("Nao foi possivel concluir o reset de senha.");
+        public static Error PasswordChangeInvalid => Error.Failure("Nao foi possivel concluir a alteração de senha.");
         public static Error UpdateError => Error.Failure("Falha ao atualizar usuario.");
         public static Error DeleteError => Error.Failure("Falha ao excluir usuario.");
         public static Error ActivateError => Error.Failure("Falha ao ativar usuario.");

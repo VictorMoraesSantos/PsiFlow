@@ -42,10 +42,7 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
 
         var auth = await _credentials.AuthenticateAsync(command.Credentials.Email, command.Credentials.Password, cancellationToken);
         if (!auth.IsSuccess)
-        {
-            var failureResult = Result.Failure<object>(auth.Error!);
-            return failureResult;
-        }
+            return Result.Failure<object>(auth.Error!);
 
         var user = auth.Value!.User;
 
@@ -53,14 +50,12 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
         {
             var challenge = await _mfa.StartLoginChallengeAsync(user, cancellationToken);
             if (!challenge.IsSuccess)
-            {
-                var failureResult = Result.Failure<object>(challenge.Error!);
-                return failureResult;
-            }
+                return Result.Failure<object>(challenge.Error!);
 
             var challengeValue = challenge.Value!;
             var mfaResponse = new MfaRequiredResponse(challengeValue.MfaToken, challengeValue.ChallengeId.ToString());
             var successResult = Result.Success<object>(mfaResponse);
+
             return successResult;
         }
 
@@ -72,14 +67,8 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
 
         var tokens = await _tokens.IssueAsync(user, cancellationToken);
         if (tokens.IsSuccess)
-        {
-            var successResult = Result.Success<object>(tokens.Value!);
-            return successResult;
-        }
-        else
-        {
-            var failureResult = Result.Failure<object>(tokens.Error!);
-            return failureResult;
-        }
+            return Result.Success<object>(tokens.Value!);
+
+        return Result.Failure<object>(tokens.Error!);
     }
 }

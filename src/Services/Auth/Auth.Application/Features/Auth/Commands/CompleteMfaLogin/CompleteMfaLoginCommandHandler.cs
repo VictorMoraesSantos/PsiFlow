@@ -25,15 +25,12 @@ public sealed class CompleteMfaLoginCommandHandler : ICommandHandler<CompleteMfa
     {
         var mfaResult = await _mfa.CompleteLoginChallengeAsync(command.MfaToken, command.Code, cancellationToken);
         if (!mfaResult.IsSuccess)
-        {
-            var result = Result.Failure<TokenResponse>(mfaResult.Error!);
-            return result;
-        }
+            return Result.Failure<TokenResponse>(mfaResult.Error!);
 
         var user = mfaResult.Value!.User;
         var beginLoginResult = await _userLifecycle.BeginLoginAsync(user, cancellationToken);
-
         var tokens = await _tokens.IssueAsync(user, cancellationToken);
+
         return tokens;
     }
 }
