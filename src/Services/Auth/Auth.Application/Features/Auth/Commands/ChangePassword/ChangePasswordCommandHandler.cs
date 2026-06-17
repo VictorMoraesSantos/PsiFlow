@@ -6,13 +6,13 @@ namespace Auth.Application.Features.Auth.Commands.ChangePassword;
 
 public sealed class ChangePasswordCommandHandler : ICommandHandler<ChangePasswordCommand>
 {
-    private readonly IAuthService _service;
+    private readonly IPasswordService _passwords;
 
-    public ChangePasswordCommandHandler(IAuthService service)
+    public ChangePasswordCommandHandler(IPasswordService passwords)
     {
-        _service = service;
+        _passwords = passwords;
     }
 
     public Task<Result> Handle(ChangePasswordCommand command, CancellationToken cancellationToken) =>
-        _service.ChangePasswordAsync(command.UserId, command.Password, cancellationToken);
+        _passwords.ChangeAsync(command.UserId, command.Password, cancellationToken);
 }

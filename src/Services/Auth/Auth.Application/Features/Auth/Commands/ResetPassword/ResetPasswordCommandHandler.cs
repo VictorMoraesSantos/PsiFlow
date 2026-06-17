@@ -7,12 +7,12 @@ namespace Auth.Application.Features.Auth.Commands.ResetPassword;
 
 public sealed class ResetPasswordCommandHandler : ICommandHandler<ResetPasswordCommand>
 {
-    private readonly IAuthService _service;
+    private readonly IPasswordService _passwords;
     private readonly IValidator<ResetPasswordCommand> _validator;
 
-    public ResetPasswordCommandHandler(IAuthService service, IValidator<ResetPasswordCommand> validator)
+    public ResetPasswordCommandHandler(IPasswordService passwords, IValidator<ResetPasswordCommand> validator)
     {
-        _service = service;
+        _passwords = passwords;
         _validator = validator;
     }
 
@@ -22,6 +22,6 @@ public sealed class ResetPasswordCommandHandler : ICommandHandler<ResetPasswordC
         if (!validation.IsValid)
             return Result.Failure(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
 
-        return await _service.ResetPasswordAsync(command.Data, cancellationToken);
+        return await _passwords.ResetAsync(command.Data, cancellationToken);
     }
 }

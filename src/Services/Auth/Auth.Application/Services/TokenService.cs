@@ -1,4 +1,5 @@
 using Auth.Application.Contracts;
+using Auth.Application.DTOs.Token;
 using Auth.Application.Settings;
 using BuildingBlocks.Results;
 using Microsoft.IdentityModel.Tokens;
@@ -20,26 +21,26 @@ namespace Auth.Application.Services
             _keyProvider = keyProvider;
         }
 
-        public Result<string> GenerateToken(int userId, string email, bool emailVerified, int tenantId, string role, IEnumerable<string> roles, IEnumerable<string> permissions)
+        public Result<string> GenerateToken(GenerateTokenDTO dto)
         {
             try
             {
                 var claims = new List<Claim>
                 {
-                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Email, email),
-                    new Claim("email_verified", emailVerified ? "true" : "false", ClaimValueTypes.Boolean),
+                    new Claim(JwtRegisteredClaimNames.Sub, dto.UserId.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Email, dto.Email),
+                    new Claim("email_verified", dto.EmailVerified ? "true" : "false", ClaimValueTypes.Boolean),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(ClaimTypes.Role, role),
-                    new Claim("roles", string.Join(",", roles))
+                    new Claim(ClaimTypes.Role, dto.Role),
+                    new Claim("roles", string.Join(",", dto.Roles))
                 };
 
-                if (tenantId > 0)
+                if (dto.TenantId > 0)
                 {
-                    claims.Add(new Claim("tenant_id", tenantId.ToString()));
+                    claims.Add(new Claim("tenant_id", dto.TenantId.ToString()));
                 }
 
-                foreach (var permission in permissions ?? Array.Empty<string>())
+                foreach (var permission in dto.Permissions ?? Array.Empty<string>())
                 {
                     if (string.IsNullOrWhiteSpace(permission)) continue;
                     claims.Add(new Claim("permission", permission));

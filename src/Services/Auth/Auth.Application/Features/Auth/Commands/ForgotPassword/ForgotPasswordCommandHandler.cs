@@ -7,12 +7,12 @@ namespace Auth.Application.Features.Auth.Commands.ForgotPassword;
 
 public sealed class ForgotPasswordCommandHandler : ICommandHandler<ForgotPasswordCommand>
 {
-    private readonly IAuthService _service;
+    private readonly IPasswordService _passwords;
     private readonly IValidator<ForgotPasswordCommand> _validator;
 
-    public ForgotPasswordCommandHandler(IAuthService service, IValidator<ForgotPasswordCommand> validator)
+    public ForgotPasswordCommandHandler(IPasswordService passwords, IValidator<ForgotPasswordCommand> validator)
     {
-        _service = service;
+        _passwords = passwords;
         _validator = validator;
     }
 
@@ -22,6 +22,6 @@ public sealed class ForgotPasswordCommandHandler : ICommandHandler<ForgotPasswor
         if (!validation.IsValid)
             return Result.Failure(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
 
-        return await _service.ForgotPasswordAsync(command.Data, cancellationToken);
+        return await _passwords.ForgotAsync(command.Data, cancellationToken);
     }
 }

@@ -6,13 +6,13 @@ namespace Auth.Application.Features.Auth.Commands.Logout;
 
 public sealed class LogoutCommandHandler : ICommandHandler<LogoutCommand>
 {
-    private readonly IAuthService _service;
+    private readonly ITokenRevocationService _revocation;
 
-    public LogoutCommandHandler(IAuthService service)
+    public LogoutCommandHandler(ITokenRevocationService revocation)
     {
-        _service = service;
+        _revocation = revocation;
     }
 
     public Task<Result> Handle(LogoutCommand command, CancellationToken cancellationToken) =>
-        _service.LogoutAsync(command.UserId, cancellationToken);
+        _revocation.RevokeAllForUserAsync(command.UserId, cancellationToken);
 }

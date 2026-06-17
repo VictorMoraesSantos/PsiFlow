@@ -7,13 +7,13 @@ namespace Auth.Application.Features.Auth.Commands.SetupMfa;
 
 public sealed class SetupMfaCommandHandler : ICommandHandler<SetupMfaCommand, MfaSetupResult>
 {
-    private readonly IAuthService _service;
+    private readonly IMfaService _mfa;
 
-    public SetupMfaCommandHandler(IAuthService service)
+    public SetupMfaCommandHandler(IMfaService mfa)
     {
-        _service = service;
+        _mfa = mfa;
     }
 
     public Task<Result<MfaSetupResult>> Handle(SetupMfaCommand command, CancellationToken cancellationToken) =>
-        _service.SetupMfaAsync(command.UserId, cancellationToken);
+        _mfa.SetupAsync(command.UserId, cancellationToken);
 }

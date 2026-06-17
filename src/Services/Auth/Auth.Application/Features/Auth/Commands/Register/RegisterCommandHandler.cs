@@ -8,12 +8,12 @@ namespace Auth.Application.Features.Auth.Commands.Register;
 
 public sealed class RegisterCommandHandler : ICommandHandler<RegisterCommand, RegisterResult>
 {
-    private readonly IAuthService _service;
+    private readonly IRegistrationService _registration;
     private readonly IValidator<RegisterCommand> _validator;
 
-    public RegisterCommandHandler(IAuthService service, IValidator<RegisterCommand> validator)
+    public RegisterCommandHandler(IRegistrationService registration, IValidator<RegisterCommand> validator)
     {
-        _service = service;
+        _registration = registration;
         _validator = validator;
     }
 
@@ -23,6 +23,6 @@ public sealed class RegisterCommandHandler : ICommandHandler<RegisterCommand, Re
         if (!validation.IsValid)
             return Result.Failure<RegisterResult>(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
 
-        return await _service.RegisterAsync(command.Data, cancellationToken);
+        return await _registration.RegisterAsync(command.Data, cancellationToken);
     }
 }

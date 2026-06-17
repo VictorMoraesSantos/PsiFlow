@@ -7,12 +7,12 @@ namespace Auth.Application.Features.Auth.Commands.VerifyMfa;
 
 public sealed class VerifyMfaCommandHandler : ICommandHandler<VerifyMfaCommand>
 {
-    private readonly IAuthService _service;
+    private readonly IMfaService _mfa;
     private readonly IValidator<VerifyMfaCommand> _validator;
 
-    public VerifyMfaCommandHandler(IAuthService service, IValidator<VerifyMfaCommand> validator)
+    public VerifyMfaCommandHandler(IMfaService mfa, IValidator<VerifyMfaCommand> validator)
     {
-        _service = service;
+        _mfa = mfa;
         _validator = validator;
     }
 
@@ -22,6 +22,6 @@ public sealed class VerifyMfaCommandHandler : ICommandHandler<VerifyMfaCommand>
         if (!validation.IsValid)
             return Result.Failure(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
 
-        return await _service.VerifyMfaAsync(command.UserId, command.Code, cancellationToken);
+        return await _mfa.VerifyAsync(command.UserId, command.Code.Code, cancellationToken);
     }
 }

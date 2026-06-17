@@ -7,12 +7,12 @@ namespace Auth.Application.Features.Auth.Commands.RecordConsent;
 
 public sealed class RecordConsentCommandHandler : ICommandHandler<RecordConsentCommand>
 {
-    private readonly IAuthService _service;
+    private readonly IConsentService _consent;
     private readonly IValidator<RecordConsentCommand> _validator;
 
-    public RecordConsentCommandHandler(IAuthService service, IValidator<RecordConsentCommand> validator)
+    public RecordConsentCommandHandler(IConsentService consent, IValidator<RecordConsentCommand> validator)
     {
-        _service = service;
+        _consent = consent;
         _validator = validator;
     }
 
@@ -22,6 +22,6 @@ public sealed class RecordConsentCommandHandler : ICommandHandler<RecordConsentC
         if (!validation.IsValid)
             return Result.Failure(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
 
-        return await _service.RecordConsentAsync(command.UserId, command.Consent, cancellationToken);
+        return await _consent.RecordAsync(command.UserId, command.Consent, cancellationToken);
     }
 }

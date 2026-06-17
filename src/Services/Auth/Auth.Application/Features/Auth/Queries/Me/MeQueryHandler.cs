@@ -7,13 +7,13 @@ namespace Auth.Application.Features.Auth.Queries.Me;
 
 public sealed class MeQueryHandler : IQueryHandler<MeQuery, MeResponse>
 {
-    private readonly IAuthService _service;
+    private readonly IUserProfileService _profile;
 
-    public MeQueryHandler(IAuthService service)
+    public MeQueryHandler(IUserProfileService profile)
     {
-        _service = service;
+        _profile = profile;
     }
 
     public Task<Result<MeResponse>> Handle(MeQuery query, CancellationToken cancellationToken) =>
-        _service.MeAsync(query.UserId, cancellationToken);
+        _profile.GetMeAsync(query.UserId, cancellationToken);
 }

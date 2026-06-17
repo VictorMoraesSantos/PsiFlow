@@ -7,13 +7,13 @@ namespace Auth.Application.Features.Auth.Commands.Refresh;
 
 public sealed class RefreshCommandHandler : ICommandHandler<RefreshCommand, TokenResponse>
 {
-    private readonly IAuthService _service;
+    private readonly ITokenIssuanceService _tokens;
 
-    public RefreshCommandHandler(IAuthService service)
+    public RefreshCommandHandler(ITokenIssuanceService tokens)
     {
-        _service = service;
+        _tokens = tokens;
     }
 
     public Task<Result<TokenResponse>> Handle(RefreshCommand command, CancellationToken cancellationToken) =>
-        _service.RefreshAsync(command.RefreshToken, cancellationToken);
+        _tokens.RefreshAsync(command.RefreshToken, cancellationToken);
 }
