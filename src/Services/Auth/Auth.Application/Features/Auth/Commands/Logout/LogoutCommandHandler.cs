@@ -13,6 +13,9 @@ public sealed class LogoutCommandHandler : ICommandHandler<LogoutCommand>
         _revocation = revocation;
     }
 
-    public Task<Result> Handle(LogoutCommand command, CancellationToken cancellationToken) =>
-        _revocation.RevokeAllForUserAsync(command.UserId, cancellationToken);
+    public async Task<Result> Handle(LogoutCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _revocation.RevokeAllForUserAsync(command.UserId, cancellationToken);
+        return result;
+    }
 }

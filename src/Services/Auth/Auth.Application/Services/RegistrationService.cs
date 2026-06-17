@@ -40,22 +40,35 @@ namespace Auth.Application.Services
         public async Task<Result<RegisterResult>> RegisterAsync(RegisterDTO dto, CancellationToken cancellationToken = default)
         {
             if (dto is null)
-                return Result.Failure<RegisterResult>(UserErrors.CreateError);
+            {
+                var result = Result.Failure<RegisterResult>(UserErrors.CreateError);
+                return result;
+            }
 
             var email = dto.Email.Trim().ToLowerInvariant();
-            if (await _userRepository.FindByEmail(email, cancellationToken) is not null)
-                return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
+            var existing = await _userRepository.FindByEmail(email, cancellationToken);
+            if (existing is not null)
+            {
+                var result = Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
+                return result;
+            }
 
             var nameResult = TryBuildName(dto);
             if (!nameResult.IsSuccess)
-                return Result.Failure<RegisterResult>(nameResult.Error!);
+            {
+                var result = Result.Failure<RegisterResult>(nameResult.Error!);
+                return result;
+            }
 
             var contact = new Contact(dto.Email, dto.Phone);
 
             var termsVersion = DocumentVersion.Create(dto.AcceptedTermsVersion, nameof(dto.AcceptedTermsVersion));
             var privacyVersion = DocumentVersion.Create(dto.AcceptedPrivacyVersion, nameof(dto.AcceptedPrivacyVersion));
             if (termsVersion is null || privacyVersion is null)
-                return Result.Failure<RegisterResult>(UserErrors.TermsNotAccepted);
+            {
+                var result = Result.Failure<RegisterResult>(UserErrors.TermsNotAccepted);
+                return result;
+            }
 
             var user = User.Register(
                 nameResult.Value!,
@@ -70,7 +83,8 @@ namespace Auth.Application.Services
             if (!identity.Succeeded)
             {
                 _logger.LogWarning("Falha ao registrar usuario {Email}: {Errors}", email, string.Join("; ", identity.Errors.Select(e => e.Description)));
-                return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
+                var result = Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
+                return result;
             }
 
             if (dto.Role == UserRole.Psychologist && user.TenantId.Value == 0)
@@ -81,8 +95,8 @@ namespace Auth.Application.Services
                     _logger.LogWarning("Falha ao atribuir tenant do psychologist {UserId}: {Errors}", user.Id, string.Join("; ", tenantUpdate.Errors.Select(e => e.Description)));
             }
 
-            await _userManager.AddToRoleAsync(user, user.Role);
-            await _permissionAssignmentService.AssignDefaultAsync(user, cancellationToken);
+            var addRoleResult = await _userManager.AddToRoleAsync(user, user.Role);
+            var permissionResult = await _permissionAssignmentService.AssignDefaultAsync(user, cancellationToken);
 
             if (_authOptions.AutoConfirmEmails)
             {
@@ -96,9 +110,11 @@ namespace Auth.Application.Services
             user.RecordConsent(termsVersion, privacyVersion);
             user.RegisterUser(correlationId);
 
-            await _userOutboxService.PersistEventsAsync(user, correlationId, cancellationToken);
+            var outboxResult = await _userOutboxService.PersistEventsAsync(user, correlationId, cancellationToken);
 
-            return Result.Success(new RegisterResult(user.Id.Value, user.TenantId.Value, user.Email ?? string.Empty, user.Role));
+            var registered = new RegisterResult(user.Id.Value, user.TenantId.Value, user.Email ?? string.Empty, user.Role);
+            var success = Result.Success(registered);
+            return success;
         }
 
         private static Result<Name> TryBuildName(RegisterDTO dto)
@@ -106,16 +122,30 @@ namespace Auth.Application.Services
             try
             {
                 if (!string.IsNullOrWhiteSpace(dto.FirstName) && !string.IsNullOrWhiteSpace(dto.LastName))
-                    return Result.Success(new Name(dto.FirstName, dto.LastName));
+                {
+                    var name = new Name(dto.FirstName, dto.LastName);
+                    var success = Result.Success(name);
+                    return success;
+                }
                 if (!string.IsNullOrWhiteSpace(dto.FirstName))
-                    return Result.Success(new Name(dto.FirstName));
+                {
+                    var name = new Name(dto.FirstName);
+                    var success = Result.Success(name);
+                    return success;
+                }
                 if (!string.IsNullOrWhiteSpace(dto.FullName))
-                    return Result.Success(new Name(dto.FullName));
-                return Result.Failure<Name>(NameErrors.NullName);
+                {
+                    var name = new Name(dto.FullName);
+                    var success = Result.Success(name);
+                    return success;
+                }
+                var failure = Result.Failure<Name>(NameErrors.NullName);
+                return failure;
             }
             catch (Exception)
             {
-                return Result.Failure<Name>(NameErrors.NullName);
+                var failure = Result.Failure<Name>(NameErrors.NullName);
+                return failure;
             }
         }
     }

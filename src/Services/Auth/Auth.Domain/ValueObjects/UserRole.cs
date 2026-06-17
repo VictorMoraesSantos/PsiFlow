@@ -16,9 +16,23 @@ namespace Auth.Domain.ValueObjects
             Value = value;
         }
 
-        public static UserRole PatientRole() => new(Patient);
-        public static UserRole PsychologistRole() => new(Psychologist);
-        public static UserRole SaasAdminRole() => new(SaasAdmin);
+        public static UserRole PatientRole()
+        {
+            var role = new UserRole(Patient);
+            return role;
+        }
+
+        public static UserRole PsychologistRole()
+        {
+            var role = new UserRole(Psychologist);
+            return role;
+        }
+
+        public static UserRole SaasAdminRole()
+        {
+            var role = new UserRole(SaasAdmin);
+            return role;
+        }
 
         public static UserRole Create(string value)
         {
@@ -26,13 +40,14 @@ namespace Auth.Domain.ValueObjects
                 throw new DomainException(UserErrors.RoleInvalid);
 
             var normalized = value.Trim().ToLowerInvariant();
-            return normalized switch
+            var result = normalized switch
             {
                 Patient => new UserRole(Patient),
                 Psychologist => new UserRole(Psychologist),
                 SaasAdmin => new UserRole(SaasAdmin),
                 _ => throw new DomainException(UserErrors.RoleInvalid)
             };
+            return result;
         }
 
         public bool IsPsychologist() => Value == Psychologist;

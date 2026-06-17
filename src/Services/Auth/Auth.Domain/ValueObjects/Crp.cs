@@ -20,14 +20,16 @@ namespace Auth.Domain.ValueObjects
             if (string.IsNullOrWhiteSpace(value))
             {
                 if (required) throw new DomainException(UserErrors.CrpRequired);
-                return new Crp(string.Empty);
+                var empty = new Crp(string.Empty);
+                return empty;
             }
 
             var normalized = value.Trim();
             if (!CrpRegex.IsMatch(normalized))
                 throw new DomainException(UserErrors.CrpInvalid);
 
-            return new Crp(normalized);
+            var crp = new Crp(normalized);
+            return crp;
         }
 
         public bool IsEmpty => string.IsNullOrEmpty(Value);

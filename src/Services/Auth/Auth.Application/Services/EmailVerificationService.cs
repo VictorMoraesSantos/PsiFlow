@@ -27,32 +27,52 @@ namespace Auth.Application.Services
 
         public async Task<Result<string>> RequestAsync(string email, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(email)) return Result.Failure<string>(ContactErrors.EmailRequired);
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                var failure = Result.Failure<string>(ContactErrors.EmailRequired);
+                return failure;
+            }
             var user = await _userRepository.FindByEmail(email.Trim().ToLowerInvariant(), cancellationToken);
-            if (user is null) return Result.Success<string>(string.Empty);
+            if (user is null)
+            {
+                var success = Result.Success<string>(string.Empty);
+                return success;
+            }
 
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             user.RequestEmailVerification(token);
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success(token);
+
+            var successResult = Result.Success(token);
+            return successResult;
         }
 
         public async Task<Result> VerifyAsync(string email, string token, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
-                return Result.Failure(UserErrors.InvalidCredentials);
-            var user = await _userRepository.FindByEmail(email.Trim().ToLowerInvariant(), cancellationToken);
-            if (user is null) return Result.Failure(UserErrors.NotFound(0));
-
-            var result = await _userManager.ConfirmEmailAsync(user, token);
-            if (!result.Succeeded)
             {
-                _logger.LogWarning("Falha ao verificar e-mail: {Errors}", string.Join("; ", result.Errors.Select(e => e.Description)));
-                return Result.Failure(UserErrors.InvalidCredentials);
+                var failure = Result.Failure(UserErrors.InvalidCredentials);
+                return failure;
+            }
+            var user = await _userRepository.FindByEmail(email.Trim().ToLowerInvariant(), cancellationToken);
+            if (user is null)
+            {
+                var failure = Result.Failure(UserErrors.NotFound(0));
+                return failure;
+            }
+
+            var confirmResult = await _userManager.ConfirmEmailAsync(user, token);
+            if (!confirmResult.Succeeded)
+            {
+                _logger.LogWarning("Falha ao verificar e-mail: {Errors}", string.Join("; ", confirmResult.Errors.Select(e => e.Description)));
+                var failure = Result.Failure(UserErrors.InvalidCredentials);
+                return failure;
             }
             user.ConfirmEmail();
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
     }
 }

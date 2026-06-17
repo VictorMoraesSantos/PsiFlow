@@ -30,14 +30,23 @@ namespace Auth.Application.Services
             }
             catch (Exception)
             {
-                return Result.Failure(UserErrors.TermsNotAccepted);
+                var failure = Result.Failure(UserErrors.TermsNotAccepted);
+                return failure;
             }
 
             var user = await _userRepository.GetById(new UserId(userId), cancellationToken);
-            if (user is null) return Result.Failure(UserErrors.NotFound(userId));
+            if (user is null)
+            {
+                var failure = Result.Failure(UserErrors.NotFound(userId));
+                return failure;
+            }
 
             var existing = await _consentRepository.FindByUserAndVersion(userId, termsVersion.Value, privacyVersion.Value, cancellationToken);
-            if (existing is not null) return Result.Failure(UserErrors.TermsNotAccepted);
+            if (existing is not null)
+            {
+                var failure = Result.Failure(UserErrors.TermsNotAccepted);
+                return failure;
+            }
 
             var consent = Consent.Accept(
                 new UserId(userId),
@@ -52,7 +61,9 @@ namespace Auth.Application.Services
 
             user.RecordConsent(termsVersion, privacyVersion);
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
     }
 }

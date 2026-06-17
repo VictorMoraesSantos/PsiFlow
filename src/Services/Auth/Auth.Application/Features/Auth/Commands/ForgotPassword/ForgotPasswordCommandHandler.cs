@@ -20,8 +20,13 @@ public sealed class ForgotPasswordCommandHandler : ICommandHandler<ForgotPasswor
     {
         var validation = await _validator.ValidateAsync(command, cancellationToken);
         if (!validation.IsValid)
-            return Result.Failure(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
+        {
+            var failure = Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage)));
+            var failureResult = Result.Failure(failure);
+            return failureResult;
+        }
 
-        return await _passwords.ForgotAsync(command.Data, cancellationToken);
+        var successResult = await _passwords.ForgotAsync(command.Data, cancellationToken);
+        return successResult;
     }
 }

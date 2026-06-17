@@ -42,7 +42,8 @@ namespace Auth.Application.Services
                     using var rsa = RSA.Create();
                     rsa.ImportFromPem(previous.PublicKeyPem);
                     var previousKey = new RsaSecurityKey(rsa) { KeyId = previous.KeyId };
-                    publicKeys.Add(BuildJwk(previousKey));
+                    var built = BuildJwk(previousKey);
+                    publicKeys.Add(built);
                 }
                 catch
                 {
@@ -77,10 +78,19 @@ namespace Auth.Application.Services
 
         private static string ResolvePrivateKeyPem(JwtSettings settings)
         {
-            if (!string.IsNullOrWhiteSpace(settings.PrivateKeyPem)) return settings.PrivateKeyPem;
-            if (string.IsNullOrWhiteSpace(settings.PrivateKeyBase64)) return string.Empty;
+            if (!string.IsNullOrWhiteSpace(settings.PrivateKeyPem))
+            {
+                var pem = settings.PrivateKeyPem;
+                return pem;
+            }
+            if (string.IsNullOrWhiteSpace(settings.PrivateKeyBase64))
+            {
+                var empty = string.Empty;
+                return empty;
+            }
 
-            return Encoding.UTF8.GetString(Convert.FromBase64String(settings.PrivateKeyBase64));
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(settings.PrivateKeyBase64));
+            return decoded;
         }
 
         private static string LoadOrCreateDevelopmentKey(IHostEnvironment environment)
@@ -95,7 +105,10 @@ namespace Auth.Application.Services
                 {
                     var existing = File.ReadAllText(keyPath);
                     if (!string.IsNullOrWhiteSpace(existing) && existing.Contains("BEGIN", StringComparison.Ordinal))
-                        return existing;
+                    {
+                        var valid = existing;
+                        return valid;
+                    }
                 }
                 catch
                 {

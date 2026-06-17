@@ -14,6 +14,9 @@ public sealed class MeQueryHandler : IQueryHandler<MeQuery, MeResponse>
         _profile = profile;
     }
 
-    public Task<Result<MeResponse>> Handle(MeQuery query, CancellationToken cancellationToken) =>
-        _profile.GetMeAsync(query.UserId, cancellationToken);
+    public async Task<Result<MeResponse>> Handle(MeQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _profile.GetMeAsync(query.UserId, cancellationToken);
+        return result;
+    }
 }

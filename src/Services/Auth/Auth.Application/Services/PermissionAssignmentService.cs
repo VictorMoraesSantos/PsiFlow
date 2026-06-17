@@ -27,23 +27,40 @@ namespace Auth.Application.Services
                 _ => Array.Empty<string>()
             };
 
-            if (permissions.Length == 0) return Result.Success();
+            if (permissions.Length == 0)
+            {
+                var result = Result.Success();
+                return result;
+            }
             if (permissions.Length == 1 && permissions[0] == "*")
             {
                 var addResult = await _userManager.AddClaimAsync(user, new Claim("permission", "*"));
-                return addResult.Succeeded
-                    ? Result.Success()
-                    : Result.Failure(BuildingBlocks.Results.Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description))));
+                if (addResult.Succeeded)
+                {
+                    var result = Result.Success();
+                    return result;
+                }
+                else
+                {
+                    var error = BuildingBlocks.Results.Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description)));
+                    var result = Result.Failure(error);
+                    return result;
+                }
             }
 
             foreach (var permission in permissions)
             {
                 var addResult = await _userManager.AddClaimAsync(user, new Claim("permission", permission));
                 if (!addResult.Succeeded)
-                    return Result.Failure(BuildingBlocks.Results.Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description))));
+                {
+                    var error = BuildingBlocks.Results.Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description)));
+                    var result = Result.Failure(error);
+                    return result;
+                }
             }
 
-            return Result.Success();
+            var success = Result.Success();
+            return success;
         }
     }
 }

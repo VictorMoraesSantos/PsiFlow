@@ -13,6 +13,9 @@ public sealed class RequestEmailVerificationCommandHandler : ICommandHandler<Req
         _emailVerification = emailVerification;
     }
 
-    public Task<Result<string>> Handle(RequestEmailVerificationCommand command, CancellationToken cancellationToken) =>
-        _emailVerification.RequestAsync(command.Email, cancellationToken);
+    public async Task<Result<string>> Handle(RequestEmailVerificationCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _emailVerification.RequestAsync(command.Email, cancellationToken);
+        return result;
+    }
 }

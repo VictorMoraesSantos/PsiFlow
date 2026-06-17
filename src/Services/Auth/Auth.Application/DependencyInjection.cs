@@ -69,7 +69,8 @@ namespace Auth.Application
             services.AddScoped<IValidator<ResetPasswordCommand>, ResetPasswordCommandValidator>();
             services.AddScoped<IValidator<VerifyMfaCommand>, VerifyMfaCommandValidator>();
 
-            return services;
+            var result = services;
+            return result;
         }
     }
 }

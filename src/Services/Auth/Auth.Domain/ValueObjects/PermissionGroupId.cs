@@ -16,7 +16,8 @@ namespace Auth.Domain.ValueObjects
         {
             if (value <= 0)
                 throw new DomainException(PermissionErrors.InvalidId);
-            return new PermissionGroupId(value);
+            var id = new PermissionGroupId(value);
+            return id;
         }
 
         public override string ToString() => Value.ToString();

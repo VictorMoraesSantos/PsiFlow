@@ -16,7 +16,8 @@ namespace Auth.Domain.ValueObjects
         {
             if (value <= 0)
                 throw new DomainException(UserErrors.InvalidId);
-            return new UserId(value);
+            var id = new UserId(value);
+            return id;
         }
 
         public override string ToString() => Value.ToString();

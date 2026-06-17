@@ -23,7 +23,11 @@ namespace Auth.Application.Services
         public async Task<Result<MeResponse>> GetMeAsync(int userId, CancellationToken cancellationToken = default)
         {
             var user = await _userRepository.GetById(new UserId(userId), cancellationToken);
-            if (user is null) return Result.Failure<MeResponse>(UserErrors.NotFound(userId));
+            if (user is null)
+            {
+                var result = Result.Failure<MeResponse>(UserErrors.NotFound(userId));
+                return result;
+            }
 
             var roles = await _userManager.GetRolesAsync(user);
             var claims = await _userManager.GetClaimsAsync(user);
@@ -33,7 +37,7 @@ namespace Auth.Application.Services
                 .OrderBy(v => v, StringComparer.Ordinal)
                 .ToArray();
 
-            return Result.Success(new MeResponse(
+            var response = new MeResponse(
                 user.Id.Value,
                 user.TenantId.Value,
                 user.Email ?? string.Empty,
@@ -43,7 +47,9 @@ namespace Auth.Application.Services
                 user.EmailConfirmed,
                 user.IsMfaEnabled,
                 permissions,
-                roles.ToArray()));
+                roles.ToArray());
+            var success = Result.Success(response);
+            return success;
         }
     }
 }

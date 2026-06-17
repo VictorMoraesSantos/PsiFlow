@@ -57,11 +57,15 @@ namespace Auth.Application.Services
                     expires: expires,
                     signingCredentials: creds);
 
-                return Result.Success(new JwtSecurityTokenHandler().WriteToken(token));
+                var written = new JwtSecurityTokenHandler().WriteToken(token);
+                var result = Result.Success(written);
+                return result;
             }
             catch (Exception ex)
             {
-                return Result.Failure<string>(Error.Failure($"Falha ao gerar token: {ex.Message}"));
+                var error = Error.Failure($"Falha ao gerar token: {ex.Message}");
+                var result = Result.Failure<string>(error);
+                return result;
             }
         }
 
@@ -70,17 +74,19 @@ namespace Auth.Application.Services
             var randomNumber = new byte[64];
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomNumber);
-            return Convert.ToBase64String(randomNumber)
+            var token = Convert.ToBase64String(randomNumber)
                 .Replace("+", "-")
                 .Replace("/", "_")
                 .TrimEnd('=');
+            return token;
         }
 
         public string HashToken(string token)
         {
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
-            return Convert.ToHexString(bytes);
+            var hash = Convert.ToHexString(bytes);
+            return hash;
         }
 
         public Result<ClaimsPrincipal> GetPrincipalFromExpiredToken(string token)
@@ -99,12 +105,17 @@ namespace Auth.Application.Services
                 };
                 var principal = new JwtSecurityTokenHandler().ValidateToken(token, validation, out var securityToken);
                 if (securityToken is not JwtSecurityToken jwt || !jwt.Header.Alg.Equals(SecurityAlgorithms.RsaSha256, StringComparison.OrdinalIgnoreCase))
-                    return Result.Failure<ClaimsPrincipal>(Error.Failure("Algoritmo invalido"));
-                return Result.Success(principal);
+                {
+                    var result = Result.Failure<ClaimsPrincipal>(Error.Failure("Algoritmo invalido"));
+                    return result;
+                }
+                var success = Result.Success(principal);
+                return success;
             }
             catch (Exception ex)
             {
-                return Result.Failure<ClaimsPrincipal>(Error.Failure($"Falha ao validar token: {ex.Message}"));
+                var result = Result.Failure<ClaimsPrincipal>(Error.Failure($"Falha ao validar token: {ex.Message}"));
+                return result;
             }
         }
     }

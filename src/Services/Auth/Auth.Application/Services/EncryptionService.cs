@@ -24,10 +24,11 @@ namespace Auth.Application.Services
             var cipher = new byte[plaintext.Length];
             using var aes = new AesGcm(_key, tag.Length);
             aes.Encrypt(nonce, Encoding.UTF8.GetBytes(plaintext), cipher, tag);
-            return new DomainEncryptedField(
+            var field = new DomainEncryptedField(
                 Convert.ToBase64String(cipher),
                 Convert.ToBase64String(nonce),
                 Convert.ToBase64String(tag));
+            return field;
         }
 
         public string Decrypt(DomainEncryptedField field)
@@ -38,7 +39,8 @@ namespace Auth.Application.Services
             var plain = new byte[cipher.Length];
             using var aes = new AesGcm(_key, tag.Length);
             aes.Decrypt(nonce, cipher, tag, plain);
-            return Encoding.UTF8.GetString(plain);
+            var text = Encoding.UTF8.GetString(plain);
+            return text;
         }
     }
 }

@@ -14,6 +14,9 @@ public sealed class SetupMfaCommandHandler : ICommandHandler<SetupMfaCommand, Mf
         _mfa = mfa;
     }
 
-    public Task<Result<MfaSetupResult>> Handle(SetupMfaCommand command, CancellationToken cancellationToken) =>
-        _mfa.SetupAsync(command.UserId, cancellationToken);
+    public async Task<Result<MfaSetupResult>> Handle(SetupMfaCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mfa.SetupAsync(command.UserId, cancellationToken);
+        return result;
+    }
 }

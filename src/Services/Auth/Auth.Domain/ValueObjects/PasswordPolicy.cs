@@ -26,7 +26,8 @@ namespace Auth.Domain.ValueObjects
                 throw new DomainException(UserErrors.PasswordTooWeak);
             if (!StrongPasswordRegex.IsMatch(value))
                 throw new DomainException(UserErrors.PasswordTooWeak);
-            return new PasswordPolicy(value);
+            var policy = new PasswordPolicy(value);
+            return policy;
         }
 
         public static void EnsureMatch(PasswordPolicy current, PasswordPolicy confirmation)

@@ -14,6 +14,9 @@ public sealed class RefreshCommandHandler : ICommandHandler<RefreshCommand, Toke
         _tokens = tokens;
     }
 
-    public Task<Result<TokenResponse>> Handle(RefreshCommand command, CancellationToken cancellationToken) =>
-        _tokens.RefreshAsync(command.RefreshToken, cancellationToken);
+    public async Task<Result<TokenResponse>> Handle(RefreshCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _tokens.RefreshAsync(command.RefreshToken, cancellationToken);
+        return result;
+    }
 }

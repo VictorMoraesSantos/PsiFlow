@@ -13,6 +13,9 @@ public sealed class ChangePasswordCommandHandler : ICommandHandler<ChangePasswor
         _passwords = passwords;
     }
 
-    public Task<Result> Handle(ChangePasswordCommand command, CancellationToken cancellationToken) =>
-        _passwords.ChangeAsync(command.UserId, command.Password, cancellationToken);
+    public async Task<Result> Handle(ChangePasswordCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _passwords.ChangeAsync(command.UserId, command.Password, cancellationToken);
+        return result;
+    }
 }

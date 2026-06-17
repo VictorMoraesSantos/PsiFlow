@@ -21,13 +21,19 @@ namespace Auth.Application.Services
         public async Task<Result> RevokeAllForUserAsync(int userId, CancellationToken cancellationToken = default)
         {
             var user = await _userRepository.GetById(new UserId(userId), cancellationToken);
-            if (user is null) return Result.Failure(UserErrors.NotFound(userId));
+            if (user is null)
+            {
+                var failure = Result.Failure(UserErrors.NotFound(userId));
+                return failure;
+            }
 
             var active = await _refreshTokenRepository.ListActiveByUserAsync(userId, cancellationToken);
             var now = DateTime.UtcNow;
             foreach (var token in active) token.Revoke(now, revokedByIp: null, replacedByTokenId: null);
             await _refreshTokenRepository.UpdateRange(active, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
 
         public async Task<Result> RevokeFamilyAsync(RefreshToken reusedToken, CancellationToken cancellationToken = default)
@@ -36,7 +42,9 @@ namespace Auth.Application.Services
             var userTokens = await _refreshTokenRepository.ListActiveByUserAsync(reusedToken.UserId.Value, cancellationToken);
             foreach (var token in userTokens) token.Revoke(now, revokedByIp: null, replacedByTokenId: null);
             await _refreshTokenRepository.UpdateRange(userTokens, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
     }
 }

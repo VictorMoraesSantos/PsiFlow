@@ -48,13 +48,15 @@ namespace Auth.Application.Services
         public string DecryptSecret(MfaChallenge challenge)
         {
             var encrypted = new EncryptedField(challenge.SecretCiphertext, challenge.SecretNonce, challenge.SecretTag);
-            return _encryption.Decrypt(encrypted);
+            var plain = _encryption.Decrypt(encrypted);
+            return plain;
         }
 
         private EncryptedField Encrypt(string plain)
         {
             var encrypted = _encryption.Encrypt(plain);
-            return new EncryptedField(encrypted.Ciphertext, encrypted.Nonce, encrypted.Tag);
+            var field = new EncryptedField(encrypted.Ciphertext, encrypted.Nonce, encrypted.Tag);
+            return field;
         }
     }
 }

@@ -16,13 +16,18 @@ namespace Auth.Domain.ValueObjects
         {
             if (string.IsNullOrWhiteSpace(value))
                 throw new DomainException(UserErrors.TermsNotAccepted);
-            return new DocumentVersion(value.Trim());
+
+            var version = new DocumentVersion(value.Trim());
+            return version;
         }
 
         public static DocumentVersion? CreateOptional(string? value)
         {
-            if (string.IsNullOrWhiteSpace(value)) return null;
-            return new DocumentVersion(value.Trim());
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var version = new DocumentVersion(value.Trim());
+            return version;
         }
 
         public override string ToString() => Value;

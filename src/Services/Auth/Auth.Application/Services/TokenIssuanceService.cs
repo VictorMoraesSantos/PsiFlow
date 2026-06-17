@@ -50,7 +50,11 @@ namespace Auth.Application.Services
                 roles,
                 permissionValues);
             var tokenResult = _tokenService.GenerateToken(tokenDTO);
-            if (!tokenResult.IsSuccess) return Result.Failure<TokenResponse>(tokenResult.Error!);
+            if (!tokenResult.IsSuccess)
+            {
+                var failure = Result.Failure<TokenResponse>(tokenResult.Error!);
+                return failure;
+            }
 
             var now = DateTime.UtcNow;
             var rawRefresh = _tokenService.GenerateRefreshToken();
@@ -60,41 +64,61 @@ namespace Auth.Application.Services
             var issued = RefreshToken.Issue(user.Id, user.TenantId, refreshHash, now, lifetime, createdByIp: null, userAgent: null);
             await _refreshTokenRepository.Create(issued, cancellationToken);
 
-            return Result.Success(new TokenResponse(
+            var summary = new UserSummaryDTO(user.Id.Value, user.Name.FullName, user.Email ?? string.Empty, user.Role);
+            var response = new TokenResponse(
                 tokenResult.Value!,
                 rawRefresh,
                 issued.ExpiresAt,
-                new UserSummaryDTO(user.Id.Value, user.Name.FullName, user.Email ?? string.Empty, user.Role)));
+                summary);
+            var success = Result.Success(response);
+            return success;
         }
 
         public async Task<Result<TokenResponse>> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
-                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
+            {
+                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
+                return failure;
+            }
 
             var hash = _tokenService.HashToken(refreshToken);
             var existing = await _refreshTokenRepository.GetByHashAsync(hash, cancellationToken);
-            if (existing is null) return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
+            if (existing is null)
+            {
+                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
+                return failure;
+            }
             if (!existing.BelongsTo(existing.UserId.Value))
-                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
+            {
+                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
+                return failure;
+            }
 
             if (existing.IsRevoked())
             {
                 await RevokeFamilyAsync(existing, cancellationToken);
-                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenReused);
+                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenReused);
+                return failure;
             }
 
             if (existing.IsExpired(DateTime.UtcNow))
             {
                 existing.Revoke(DateTime.UtcNow, revokedByIp: null, replacedByTokenId: null);
                 await _refreshTokenRepository.Update(existing, cancellationToken);
-                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenExpired);
+                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenExpired);
+                return failure;
             }
 
             var user = await _userRepository.GetById(new UserId(existing.UserId.Value), cancellationToken);
-            if (user is null) return Result.Failure<TokenResponse>(UserErrors.NotFound(existing.UserId.Value));
+            if (user is null)
+            {
+                var failure = Result.Failure<TokenResponse>(UserErrors.NotFound(existing.UserId.Value));
+                return failure;
+            }
 
-            return await RotateAsync(user, existing, cancellationToken);
+            var rotationResult = await RotateAsync(user, existing, cancellationToken);
+            return rotationResult;
         }
 
         private async Task<Result<TokenResponse>> RotateAsync(User user, RefreshToken previous, CancellationToken cancellationToken)
@@ -115,7 +139,11 @@ namespace Auth.Application.Services
                 roles,
                 permissionValues);
             var tokenResult = _tokenService.GenerateToken(tokenDTO);
-            if (!tokenResult.IsSuccess) return Result.Failure<TokenResponse>(tokenResult.Error!);
+            if (!tokenResult.IsSuccess)
+            {
+                var failure = Result.Failure<TokenResponse>(tokenResult.Error!);
+                return failure;
+            }
 
             var now = DateTime.UtcNow;
             var rawRefresh = _tokenService.GenerateRefreshToken();
@@ -126,11 +154,14 @@ namespace Auth.Application.Services
             await _refreshTokenRepository.Update(previous, cancellationToken);
             await _refreshTokenRepository.Create(replacement, cancellationToken);
 
-            return Result.Success(new TokenResponse(
+            var summary = new UserSummaryDTO(user.Id.Value, user.Name.FullName, user.Email ?? string.Empty, user.Role);
+            var response = new TokenResponse(
                 tokenResult.Value!,
                 rawRefresh,
                 replacement.ExpiresAt,
-                new UserSummaryDTO(user.Id.Value, user.Name.FullName, user.Email ?? string.Empty, user.Role)));
+                summary);
+            var success = Result.Success(response);
+            return success;
         }
 
         private async Task RevokeFamilyAsync(RefreshToken reused, CancellationToken cancellationToken)

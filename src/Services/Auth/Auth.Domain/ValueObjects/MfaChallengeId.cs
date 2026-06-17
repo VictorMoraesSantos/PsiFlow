@@ -16,7 +16,8 @@ namespace Auth.Domain.ValueObjects
         {
             if (value <= 0)
                 throw new DomainException(MfaChallengeErrors.InvalidId);
-            return new MfaChallengeId(value);
+            var id = new MfaChallengeId(value);
+            return id;
         }
 
         public override string ToString() => Value.ToString();

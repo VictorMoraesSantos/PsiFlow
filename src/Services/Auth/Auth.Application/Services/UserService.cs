@@ -30,12 +30,14 @@ namespace Auth.Application.Services
                 var entities = await _repository.GetAll(cancellationToken);
                 var dtos = entities.Where(x => x is not null).Select(x => x!.ToDTO()).AsQueryable();
                 var count = predicate is null ? dtos.Count() : dtos.Count(predicate);
-                return Result.Success(count);
+                var success = Result.Success(count);
+                return success;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao contar usuarios");
-                return Result.Failure<int>(Error.Failure(ex.Message));
+                var failure = Result.Failure<int>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -44,16 +46,22 @@ namespace Auth.Application.Services
             try
             {
                 var entity = await _repository.GetById(new UserId(id), cancellationToken);
-                if (entity is null) return Result.Failure<bool>(UserErrors.NotFound(id));
+                if (entity is null)
+                {
+                    var failure = Result.Failure<bool>(UserErrors.NotFound(id));
+                    return failure;
+                }
 
                 entity.MarkAsDeleted();
                 await _repository.Update(entity, cancellationToken);
-                return Result.Success(true);
+                var success = Result.Success(true);
+                return success;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir usuario {Id}", id);
-                return Result.Failure<bool>(Error.Failure(ex.Message));
+                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -63,20 +71,27 @@ namespace Auth.Application.Services
             {
                 var id = new UserId(userId);
                 var user = await _repository.GetById(id, cancellationToken);
-                if (user is null) return Result.Failure(UserErrors.NotFound(userId));
+                if (user is null)
+                {
+                    var failure = Result.Failure(UserErrors.NotFound(userId));
+                    return failure;
+                }
 
                 user.Deactivate("self_delete");
                 await _repository.Update(user, cancellationToken);
-                return Result.Success();
+                var success = Result.Success();
+                return success;
             }
             catch (DomainException ex)
             {
-                return Result.Failure(Error.Failure(ex.Message));
+                var failure = Result.Failure(Error.Failure(ex.Message));
+                return failure;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir usuario corrente {UserId}", userId);
-                return Result.Failure(Error.Failure(ex.Message));
+                var failure = Result.Failure(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -91,12 +106,14 @@ namespace Auth.Application.Services
                     entity.MarkAsDeleted();
                     await _repository.Update(entity, cancellationToken);
                 }
-                return Result.Success(true);
+                var success = Result.Success(true);
+                return success;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir usuarios em lote");
-                return Result.Failure<bool>(Error.Failure(ex.Message));
+                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -107,12 +124,14 @@ namespace Auth.Application.Services
                 var entities = await _repository.GetAll(cancellationToken);
                 var dtos = entities.Where(x => x is not null).Select(x => x!.ToDTO()).AsQueryable();
                 var filtered = dtos.Where(predicate).ToList();
-                return Result.Success<IEnumerable<UserDTO?>>(filtered.Cast<UserDTO?>());
+                var success = Result.Success<IEnumerable<UserDTO?>>(filtered.Cast<UserDTO?>());
+                return success;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar usuarios por predicado");
-                return Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
+                var failure = Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -121,17 +140,27 @@ namespace Auth.Application.Services
             try
             {
                 if (string.IsNullOrWhiteSpace(email))
-                    return Result.Failure<UserDTO>(ContactErrors.EmailRequired);
+                {
+                    var failure = Result.Failure<UserDTO>(ContactErrors.EmailRequired);
+                    return failure;
+                }
 
                 var user = await _repository.FindByEmail(email, cancellationToken);
-                if (user is null) return Result.Failure<UserDTO>(UserErrors.NotFound(0));
+                if (user is null)
+                {
+                    var failure = Result.Failure<UserDTO>(UserErrors.NotFound(0));
+                    return failure;
+                }
 
-                return Result.Success(user.ToDTO());
+                var dto = user.ToDTO();
+                var success = Result.Success(dto);
+                return success;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar usuario por e-mail {Email}", email);
-                return Result.Failure<UserDTO>(Error.Failure(ex.Message));
+                var failure = Result.Failure<UserDTO>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -140,12 +169,15 @@ namespace Auth.Application.Services
             try
             {
                 var entities = await _repository.GetAll(cancellationToken);
-                return Result.Success<IEnumerable<UserDTO?>>(entities.Select(x => x is null ? null : (UserDTO?)x.ToDTO()));
+                var list = entities.Select(x => x is null ? null : (UserDTO?)x.ToDTO());
+                var success = Result.Success<IEnumerable<UserDTO?>>(list);
+                return success;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar usuarios");
-                return Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
+                var failure = Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -158,12 +190,15 @@ namespace Auth.Application.Services
                 var pageSize = filter.PageSize ?? 50;
                 var totalPages = pageSize > 0 ? (int)Math.Ceiling(total / (double)pageSize) : 0;
                 var pagination = new PaginationData(filter.Page, pageSize, total, totalPages);
-                return Result.Success(((IEnumerable<UserDTO>)dtos, pagination));
+                var payload = ((IEnumerable<UserDTO>)dtos, pagination);
+                var success = Result.Success(payload);
+                return success;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar usuarios por filtro");
-                return Result.Failure<(IEnumerable<UserDTO> Items, PaginationData Pagination)>(Error.Failure(ex.Message));
+                var failure = Result.Failure<(IEnumerable<UserDTO> Items, PaginationData Pagination)>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -172,14 +207,23 @@ namespace Auth.Application.Services
             try
             {
                 var entity = await _repository.GetById(new UserId(id), cancellationToken);
-                return entity is null
-                    ? Result.Failure<UserDTO?>(UserErrors.NotFound(id))
-                    : Result.Success<UserDTO?>(entity.ToDTO());
+                if (entity is null)
+                {
+                    var failure = Result.Failure<UserDTO?>(UserErrors.NotFound(id));
+                    return failure;
+                }
+                else
+                {
+                    var dto = entity.ToDTO();
+                    var success = Result.Success<UserDTO?>(dto);
+                    return success;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter usuario {Id}", id);
-                return Result.Failure<UserDTO?>(Error.Failure(ex.Message));
+                var failure = Result.Failure<UserDTO?>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -188,22 +232,29 @@ namespace Auth.Application.Services
             try
             {
                 var user = await _repository.GetById(new UserId(dto.Id), cancellationToken);
-                if (user is null) return Result.Failure<bool>(UserErrors.NotFound(dto.Id));
+                if (user is null)
+                {
+                    var failure = Result.Failure<bool>(UserErrors.NotFound(dto.Id));
+                    return failure;
+                }
 
                 var name = new Name(dto.FullName);
                 var contact = new Contact(dto.Email, dto.Phone);
                 user.UpdateProfile(name, contact);
                 await _repository.Update(user, cancellationToken);
-                return Result.Success(true);
+                var success = Result.Success(true);
+                return success;
             }
             catch (DomainException ex)
             {
-                return Result.Failure<bool>(Error.Failure(ex.Message));
+                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
+                return failure;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar usuario {Id}", dto.Id);
-                return Result.Failure<bool>(Error.Failure(ex.Message));
+                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
+                return failure;
             }
         }
 
@@ -213,22 +264,29 @@ namespace Auth.Application.Services
             {
                 var id = new UserId(userId);
                 var user = await _repository.GetById(id, cancellationToken);
-                if (user is null) return Result.Failure(UserErrors.NotFound(userId));
+                if (user is null)
+                {
+                    var failure = Result.Failure(UserErrors.NotFound(userId));
+                    return failure;
+                }
 
                 var name = new Name(dto.FullName);
                 var contact = new Contact(dto.Email, dto.Phone);
                 user.UpdateProfile(name, contact);
                 await _repository.Update(user, cancellationToken);
-                return Result.Success();
+                var success = Result.Success();
+                return success;
             }
             catch (DomainException ex)
             {
-                return Result.Failure(Error.Failure(ex.Message));
+                var failure = Result.Failure(Error.Failure(ex.Message));
+                return failure;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar perfil do usuario corrente {UserId}", userId);
-                return Result.Failure(Error.Failure(ex.Message));
+                var failure = Result.Failure(Error.Failure(ex.Message));
+                return failure;
             }
         }
     }

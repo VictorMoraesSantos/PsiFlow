@@ -26,7 +26,9 @@ namespace Auth.Application.Services
             }
             user.ClearDomainEvents();
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
     }
 }

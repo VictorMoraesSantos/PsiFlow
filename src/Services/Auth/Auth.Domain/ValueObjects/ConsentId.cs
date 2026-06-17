@@ -16,7 +16,8 @@ namespace Auth.Domain.ValueObjects
         {
             if (value <= 0)
                 throw new DomainException(ConsentErrors.InvalidId);
-            return new ConsentId(value);
+            var id = new ConsentId(value);
+            return id;
         }
 
         public override string ToString() => Value.ToString();

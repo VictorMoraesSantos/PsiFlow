@@ -16,7 +16,8 @@ namespace Auth.Domain.ValueObjects
         {
             if (value <= 0)
                 throw new DomainException(RefreshTokenErrors.InvalidId);
-            return new RefreshTokenId(value);
+            var id = new RefreshTokenId(value);
+            return id;
         }
 
         public static implicit operator int(RefreshTokenId id) => id.Value;

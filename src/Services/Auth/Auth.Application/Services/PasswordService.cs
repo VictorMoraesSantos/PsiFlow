@@ -33,58 +33,84 @@ namespace Auth.Application.Services
         public async Task<Result> ChangeAsync(int userId, ChangePasswordDTO dto, CancellationToken cancellationToken = default)
         {
             if (!TryBuildPasswordPair(dto.NewPassword, dto.ConfirmNewPassword, out var newPassword, out var buildError) || buildError is not null)
-                return Result.Failure(buildError!);
+            {
+                var result = Result.Failure(buildError!);
+                return result;
+            }
 
             var user = await _userRepository.GetById(new UserId(userId), cancellationToken);
-            if (user is null) return Result.Failure(UserErrors.NotFound(userId));
-
-            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, newPassword!.Value);
-            if (!result.Succeeded)
+            if (user is null)
             {
-                _logger.LogWarning("Falha ao alterar senha do usuario {UserId}: {Errors}", userId, string.Join("; ", result.Errors.Select(e => e.Description)));
-                return Result.Failure(UserErrors.InvalidCredentials);
+                var result = Result.Failure(UserErrors.NotFound(userId));
+                return result;
             }
-            return Result.Success();
+
+            var changeResult = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, newPassword!.Value);
+            if (!changeResult.Succeeded)
+            {
+                _logger.LogWarning("Falha ao alterar senha do usuario {UserId}: {Errors}", userId, string.Join("; ", changeResult.Errors.Select(e => e.Description)));
+                var result = Result.Failure(UserErrors.InvalidCredentials);
+                return result;
+            }
+
+            var success = Result.Success();
+            return success;
         }
 
         public async Task<Result> ForgotAsync(ForgotPasswordDTO dto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(dto.Email))
-                return Result.Failure(ContactErrors.EmailRequired);
+            {
+                var result = Result.Failure(ContactErrors.EmailRequired);
+                return result;
+            }
 
             var email = dto.Email.Trim().ToLowerInvariant();
             var user = await _userRepository.FindByEmail(email, cancellationToken);
             if (user is null)
             {
                 _logger.LogInformation("ForgotPassword para e-mail inexistente: {Email}", email);
-                return Result.Success();
+                var result = Result.Success();
+                return result;
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             _logger.LogInformation("Reset de senha solicitado para {Email}", email);
             user.RequestPasswordReset(token);
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
 
         public async Task<Result> ResetAsync(ResetPasswordDTO dto, CancellationToken cancellationToken = default)
         {
             if (!TryBuildPasswordPair(dto.NewPassword, dto.ConfirmPassword, out var newPassword, out var buildError) || buildError is not null)
-                return Result.Failure(buildError!);
+            {
+                var result = Result.Failure(buildError!);
+                return result;
+            }
 
             var email = dto.Email.Trim().ToLowerInvariant();
             var user = await _userRepository.FindByEmail(email, cancellationToken);
-            if (user is null) return Result.Failure(UserErrors.PasswordResetInvalid);
-
-            var result = await _userManager.ResetPasswordAsync(user, dto.Token, newPassword!.Value);
-            if (!result.Succeeded)
+            if (user is null)
             {
-                _logger.LogWarning("Falha no reset de senha para {Email}: {Errors}", email, string.Join("; ", result.Errors.Select(e => e.Description)));
-                return Result.Failure(UserErrors.PasswordResetInvalid);
+                var result = Result.Failure(UserErrors.PasswordResetInvalid);
+                return result;
             }
 
-            await _tokenRevocationService.RevokeAllForUserAsync(user.Id.Value, cancellationToken);
-            return Result.Success();
+            var resetResult = await _userManager.ResetPasswordAsync(user, dto.Token, newPassword!.Value);
+            if (!resetResult.Succeeded)
+            {
+                _logger.LogWarning("Falha no reset de senha para {Email}: {Errors}", email, string.Join("; ", resetResult.Errors.Select(e => e.Description)));
+                var result = Result.Failure(UserErrors.PasswordResetInvalid);
+                return result;
+            }
+
+            var revokeResult = await _tokenRevocationService.RevokeAllForUserAsync(user.Id.Value, cancellationToken);
+
+            var success = Result.Success();
+            return success;
         }
 
         private static bool TryBuildPasswordPair(string candidate, string confirmation, out PasswordPolicy? policy, out Error? error)

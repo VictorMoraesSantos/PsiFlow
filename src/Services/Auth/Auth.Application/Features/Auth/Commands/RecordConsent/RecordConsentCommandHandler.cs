@@ -20,8 +20,13 @@ public sealed class RecordConsentCommandHandler : ICommandHandler<RecordConsentC
     {
         var validation = await _validator.ValidateAsync(command, cancellationToken);
         if (!validation.IsValid)
-            return Result.Failure(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
+        {
+            var failure = Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage)));
+            var failureResult = Result.Failure(failure);
+            return failureResult;
+        }
 
-        return await _consent.RecordAsync(command.UserId, command.Consent, cancellationToken);
+        var successResult = await _consent.RecordAsync(command.UserId, command.Consent, cancellationToken);
+        return successResult;
     }
 }

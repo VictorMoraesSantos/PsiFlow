@@ -19,14 +19,18 @@ namespace Auth.Application.Services
         {
             user.BeginLogin();
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
 
         public async Task<Result> AttachTenantAsync(User user, UserId tenantId, CancellationToken cancellationToken = default)
         {
             user.AttachTenant(new TenantId(tenantId));
             await _userRepository.Update(user, cancellationToken);
-            return Result.Success();
+
+            var success = Result.Success();
+            return success;
         }
     }
 }

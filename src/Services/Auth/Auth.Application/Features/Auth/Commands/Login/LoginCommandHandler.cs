@@ -34,27 +34,52 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
     {
         var validation = await _validator.ValidateAsync(command, cancellationToken);
         if (!validation.IsValid)
-            return Result.Failure<object>(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
+        {
+            var failure = Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage)));
+            var failureResult = Result.Failure<object>(failure);
+            return failureResult;
+        }
 
         var auth = await _credentials.AuthenticateAsync(command.Credentials.Email, command.Credentials.Password, cancellationToken);
-        if (!auth.IsSuccess) return Result.Failure<object>(auth.Error!);
+        if (!auth.IsSuccess)
+        {
+            var failureResult = Result.Failure<object>(auth.Error!);
+            return failureResult;
+        }
 
         var user = auth.Value!.User;
 
         if (auth.Value.RequiresMfa)
         {
             var challenge = await _mfa.StartLoginChallengeAsync(user, cancellationToken);
-            if (!challenge.IsSuccess) return Result.Failure<object>(challenge.Error!);
-            return Result.Success<object>(new MfaRequiredResponse(challenge.Value.MfaToken, challenge.Value.ChallengeId.ToString()));
+            if (!challenge.IsSuccess)
+            {
+                var failureResult = Result.Failure<object>(challenge.Error!);
+                return failureResult;
+            }
+
+            var challengeValue = challenge.Value!;
+            var mfaResponse = new MfaRequiredResponse(challengeValue.MfaToken, challengeValue.ChallengeId.ToString());
+            var successResult = Result.Success<object>(mfaResponse);
+            return successResult;
         }
 
-        await _userLifecycle.BeginLoginAsync(user, cancellationToken);
+        var beginLoginResult = await _userLifecycle.BeginLoginAsync(user, cancellationToken);
         if (user.Role == UserRole.Psychologist && user.TenantId.Value == 0)
-            await _userLifecycle.AttachTenantAsync(user, user.Id, cancellationToken);
+        {
+            var attachResult = await _userLifecycle.AttachTenantAsync(user, user.Id, cancellationToken);
+        }
 
         var tokens = await _tokens.IssueAsync(user, cancellationToken);
-        return tokens.IsSuccess
-            ? Result.Success<object>(tokens.Value!)
-            : Result.Failure<object>(tokens.Error!);
+        if (tokens.IsSuccess)
+        {
+            var successResult = Result.Success<object>(tokens.Value!);
+            return successResult;
+        }
+        else
+        {
+            var failureResult = Result.Failure<object>(tokens.Error!);
+            return failureResult;
+        }
     }
 }

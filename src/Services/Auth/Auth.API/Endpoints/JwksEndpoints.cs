@@ -8,7 +8,9 @@ namespace Auth.API.Endpoints
         {
             app.MapGet("/.well-known/jwks.json", (JwtRsaKeyProvider keyProvider) =>
             {
-                return Results.Json(new { keys = keyProvider.PublicKeys });
+                var body = new { keys = keyProvider.PublicKeys };
+                var response = Results.Json(body);
+                return response;
             }).AllowAnonymous();
 
             return app;

@@ -21,8 +21,13 @@ public sealed class RegisterCommandHandler : ICommandHandler<RegisterCommand, Re
     {
         var validation = await _validator.ValidateAsync(command, cancellationToken);
         if (!validation.IsValid)
-            return Result.Failure<RegisterResult>(Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage))));
+        {
+            var failure = Error.Failure(string.Join("; ", validation.Errors.Select(error => error.ErrorMessage)));
+            var failureResult = Result.Failure<RegisterResult>(failure);
+            return failureResult;
+        }
 
-        return await _registration.RegisterAsync(command.Data, cancellationToken);
+        var successResult = await _registration.RegisterAsync(command.Data, cancellationToken);
+        return successResult;
     }
 }

@@ -16,7 +16,8 @@ namespace Auth.Domain.ValueObjects
         {
             if (value <= 0)
                 throw new DomainException(OutboxMessageErrors.InvalidId);
-            return new OutboxMessageId(value);
+            var id = new OutboxMessageId(value);
+            return id;
         }
 
         public override string ToString() => Value.ToString();

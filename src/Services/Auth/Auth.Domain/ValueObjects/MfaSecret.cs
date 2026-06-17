@@ -17,14 +17,17 @@ namespace Auth.Domain.ValueObjects
         public static MfaSecret Generate()
         {
             var bytes = RandomNumberGenerator.GetBytes(20);
-            return new MfaSecret(EncodeBase32(bytes));
+            var encoded = EncodeBase32(bytes);
+            var secret = new MfaSecret(encoded);
+            return secret;
         }
 
         public static MfaSecret FromBase32(string base32)
         {
             if (string.IsNullOrWhiteSpace(base32))
                 throw new DomainException(MfaChallengeErrors.SecretRequired);
-            return new MfaSecret(base32.Trim());
+            var secret = new MfaSecret(base32.Trim());
+            return secret;
         }
 
         public byte[] ToBytes() => DecodeBase32(Base32);
@@ -36,13 +39,15 @@ namespace Auth.Domain.ValueObjects
 
             var issuerEncoded = Uri.EscapeDataString(issuer);
             var accountEncoded = Uri.EscapeDataString(account);
-            return $"otpauth://totp/{issuerEncoded}:{accountEncoded}?secret={Base32}&issuer={issuerEncoded}&digits={digits}&period={period}";
+            var uri = $"otpauth://totp/{issuerEncoded}:{accountEncoded}?secret={Base32}&issuer={issuerEncoded}&digits={digits}&period={period}";
+            return uri;
         }
 
         public static bool VerifyCode(string secretBase32, string code, int allowedDriftSteps = 1)
         {
             if (string.IsNullOrWhiteSpace(code) || !RegexCheck.CodeRegex.IsMatch(code))
                 return false;
+
             if (string.IsNullOrWhiteSpace(secretBase32))
                 return false;
 
@@ -50,7 +55,8 @@ namespace Auth.Domain.ValueObjects
             var currentStep = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30;
             for (var offset = -allowedDriftSteps; offset <= allowedDriftSteps; offset++)
             {
-                if (ComputeTotp(secret, currentStep + offset) == code) return true;
+                if (ComputeTotp(secret, currentStep + offset) == code)
+                    return true;
             }
             return false;
         }
@@ -67,7 +73,8 @@ namespace Auth.Domain.ValueObjects
                          | ((hash[offset + 1] & 0xff) << 16)
                          | ((hash[offset + 2] & 0xff) << 8)
                          | (hash[offset + 3] & 0xff);
-            return (binary % 1_000_000).ToString("D6");
+            var code = (binary % 1_000_000).ToString("D6");
+            return code;
         }
 
         private static string EncodeBase32(byte[] bytes)
@@ -87,7 +94,8 @@ namespace Auth.Domain.ValueObjects
                 }
             }
             if (bitsLeft > 0) output.Append(alphabet[(buffer << (5 - bitsLeft)) & 31]);
-            return output.ToString();
+            var encoded = output.ToString();
+            return encoded;
         }
 
         private static byte[] DecodeBase32(string input)
@@ -108,7 +116,8 @@ namespace Auth.Domain.ValueObjects
                     bitsLeft -= 8;
                 }
             }
-            return bytes.ToArray();
+            var result = bytes.ToArray();
+            return result;
         }
 
         private static class RegexCheck
