@@ -105,7 +105,8 @@ namespace Auth.Infrastructure
             var env = configuration["ASPNETCORE_ENVIRONMENT"]
                 ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
                 ?? Environments.Development;
-            return string.Equals(env, Environments.Development, StringComparison.OrdinalIgnoreCase);
+            var result = string.Equals(env, Environments.Development, StringComparison.OrdinalIgnoreCase);
+            return result;
         }
     }
 }

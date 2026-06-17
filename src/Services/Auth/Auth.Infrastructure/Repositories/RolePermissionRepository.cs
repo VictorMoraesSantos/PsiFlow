@@ -8,14 +8,23 @@ namespace Auth.Infrastructure.Repositories
 {
     public sealed class RolePermissionRepository(ApplicationDbContext dbContext) : IRolePermissionRepository
     {
-        public async Task<RolePermission?> GetById(int id, CancellationToken cancellationToken = default) =>
-            await dbContext.RolePermissions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        public async Task<RolePermission?> GetById(int id, CancellationToken cancellationToken = default)
+        {
+            var rolePermission = await dbContext.RolePermissions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            return rolePermission;
+        }
 
-        public async Task<IEnumerable<RolePermission?>> GetAll(CancellationToken cancellationToken = default) =>
-            await dbContext.RolePermissions.AsNoTracking().ToListAsync(cancellationToken);
+        public async Task<IEnumerable<RolePermission?>> GetAll(CancellationToken cancellationToken = default)
+        {
+            var rolePermissions = await dbContext.RolePermissions.AsNoTracking().ToListAsync(cancellationToken);
+            return rolePermissions;
+        }
 
-        public async Task<IEnumerable<RolePermission?>> Find(Expression<Func<RolePermission, bool>> predicate, CancellationToken cancellationToken = default) =>
-            await dbContext.RolePermissions.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<RolePermission?>> Find(Expression<Func<RolePermission, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            var rolePermissions = await dbContext.RolePermissions.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+            return rolePermissions;
+        }
 
         public async Task Create(RolePermission entity, CancellationToken cancellationToken = default)
         {
@@ -31,21 +40,20 @@ namespace Auth.Infrastructure.Repositories
 
         public async Task Update(RolePermission entity, CancellationToken cancellationToken = default)
         {
-            var entry = dbContext.Entry(entity);
-            if (entry.State == EntityState.Detached) dbContext.RolePermissions.Attach(entity);
-            entry.State = EntityState.Modified;
+            dbContext.RolePermissions.Update(entity);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task Delete(RolePermission entity, CancellationToken cancellationToken = default)
         {
-            var entry = dbContext.Entry(entity);
-            if (entry.State == EntityState.Detached) dbContext.RolePermissions.Attach(entity);
-            entry.State = EntityState.Deleted;
+            dbContext.RolePermissions.Remove(entity);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<string>> GetPermissionsForRoleAsync(string role, CancellationToken cancellationToken = default) =>
-            await dbContext.RolePermissions.Where(x => x.Role == role).Select(x => x.Permission).ToListAsync(cancellationToken);
+        public async Task<IReadOnlyList<string>> GetPermissionsForRoleAsync(string role, CancellationToken cancellationToken = default)
+        {
+            var permissions = await dbContext.RolePermissions.Where(x => x.Role == role).Select(x => x.Permission).ToListAsync(cancellationToken);
+            return permissions;
+        }
     }
 }

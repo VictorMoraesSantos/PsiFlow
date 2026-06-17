@@ -9,14 +9,23 @@ namespace Auth.Infrastructure.Repositories
 {
     public sealed class RefreshTokenRepository(ApplicationDbContext dbContext) : IRefreshTokenRepository
     {
-        public async Task<RefreshToken?> GetById(RefreshTokenId id, CancellationToken cancellationToken = default) =>
-            await dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        public async Task<RefreshToken?> GetById(RefreshTokenId id, CancellationToken cancellationToken = default)
+        {
+            var token = await dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            return token;
+        }
 
-        public async Task<IEnumerable<RefreshToken?>> GetAll(CancellationToken cancellationToken = default) =>
-            await dbContext.RefreshTokens.AsNoTracking().ToListAsync(cancellationToken);
+        public async Task<IEnumerable<RefreshToken?>> GetAll(CancellationToken cancellationToken = default)
+        {
+            var tokens = await dbContext.RefreshTokens.AsNoTracking().ToListAsync(cancellationToken);
+            return tokens;
+        }
 
-        public async Task<IEnumerable<RefreshToken?>> Find(Expression<Func<RefreshToken, bool>> predicate, CancellationToken cancellationToken = default) =>
-            await dbContext.RefreshTokens.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<RefreshToken?>> Find(Expression<Func<RefreshToken, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            var tokens = await dbContext.RefreshTokens.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+            return tokens;
+        }
 
         public async Task Create(RefreshToken entity, CancellationToken cancellationToken = default)
         {
@@ -42,20 +51,23 @@ namespace Auth.Infrastructure.Repositories
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public Task<RefreshToken?> GetByHashAsync(string tokenHash, CancellationToken cancellationToken = default) =>
-            dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+        public async Task<RefreshToken?> GetByHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+        {
+            var token = await dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+            return token;
+        }
 
         public async Task<IReadOnlyList<RefreshToken>> ListActiveByUserAsync(int userId, CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
-            return await dbContext.RefreshTokens
+            var active = await dbContext.RefreshTokens
                 .Where(x => x.UserId == userId && x.RevokedAt == null && x.ExpiresAt > now)
                 .ToListAsync(cancellationToken);
+            return active;
         }
 
         public async Task UpdateRange(IEnumerable<RefreshToken> tokens, CancellationToken cancellationToken = default)
         {
-
             dbContext.RefreshTokens.UpdateRange(tokens);
             await dbContext.SaveChangesAsync(cancellationToken);
         }

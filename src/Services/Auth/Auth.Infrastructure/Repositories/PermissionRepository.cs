@@ -9,14 +9,23 @@ namespace Auth.Infrastructure.Repositories
 {
     public class PermissionRepository(ApplicationDbContext dbContext) : IPermissionRepository
     {
-        public async Task<Permission?> GetById(PermissionId id, CancellationToken cancellationToken = default) =>
-            await dbContext.Permissions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        public async Task<Permission?> GetById(PermissionId id, CancellationToken cancellationToken = default)
+        {
+            var permission = await dbContext.Permissions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            return permission;
+        }
 
-        public async Task<IEnumerable<Permission?>> GetAll(CancellationToken cancellationToken = default) =>
-            await dbContext.Permissions.AsNoTracking().ToListAsync(cancellationToken);
+        public async Task<IEnumerable<Permission?>> GetAll(CancellationToken cancellationToken = default)
+        {
+            var permissions = await dbContext.Permissions.AsNoTracking().ToListAsync(cancellationToken);
+            return permissions;
+        }
 
-        public async Task<IEnumerable<Permission?>> Find(Expression<Func<Permission, bool>> predicate, CancellationToken cancellationToken = default) =>
-            await dbContext.Permissions.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<Permission?>> Find(Expression<Func<Permission, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            var permissions = await dbContext.Permissions.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+            return permissions;
+        }
 
         public async Task Create(Permission entity, CancellationToken cancellationToken = default)
         {
@@ -42,7 +51,10 @@ namespace Auth.Infrastructure.Repositories
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<Permission?> FindByClaimValue(string claimValue, CancellationToken cancellationToken = default) =>
-            await dbContext.Permissions.FirstOrDefaultAsync(x => x.ClaimValue == claimValue, cancellationToken);
+        public async Task<Permission?> FindByClaimValue(string claimValue, CancellationToken cancellationToken = default)
+        {
+            var permission = await dbContext.Permissions.FirstOrDefaultAsync(x => x.ClaimValue == claimValue, cancellationToken);
+            return permission;
+        }
     }
 }

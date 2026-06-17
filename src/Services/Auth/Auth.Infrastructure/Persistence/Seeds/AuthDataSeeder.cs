@@ -320,7 +320,8 @@ namespace Auth.Infrastructure.Persistence.Seeds
                 var p1 = cmd.CreateParameter(); p1.Value = schema; cmd.Parameters.Add(p1);
                 var p2 = cmd.CreateParameter(); p2.Value = table; cmd.Parameters.Add(p2);
                 var result = await cmd.ExecuteScalarAsync(cancellationToken);
-                return result is bool b && b;
+                var exists = result is bool b && b;
+                return exists;
             }
             finally
             {
