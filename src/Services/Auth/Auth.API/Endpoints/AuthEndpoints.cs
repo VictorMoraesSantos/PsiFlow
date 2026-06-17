@@ -67,10 +67,8 @@ namespace Auth.API.Endpoints
             group.MapPost("/logout", async (HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId))
-                {
-                    var unauthorized = Results.Unauthorized();
-                    return unauthorized;
-                }
+                    return Results.Unauthorized();
+
                 var command = new LogoutCommand(userId);
                 var result = await sender.Send(command, ct);
                 var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
@@ -80,10 +78,8 @@ namespace Auth.API.Endpoints
             group.MapGet("/me", async (HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId))
-                {
-                    var unauthorized = Results.Unauthorized();
-                    return unauthorized;
-                }
+                    return Results.Unauthorized();
+
                 var query = new MeQuery(userId);
                 var result = await sender.Send(query, ct);
                 var response = result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
@@ -93,10 +89,8 @@ namespace Auth.API.Endpoints
             group.MapPost("/consent", async (ConsentDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId))
-                {
-                    var unauthorized = Results.Unauthorized();
-                    return unauthorized;
-                }
+                    return Results.Unauthorized();
+
                 var payload = request with { IpAddress = http.Connection.RemoteIpAddress?.ToString(), UserAgent = http.Request.Headers.UserAgent.ToString() };
                 var command = new RecordConsentCommand(userId, payload);
                 var result = await sender.Send(command, ct);
@@ -107,10 +101,8 @@ namespace Auth.API.Endpoints
             group.MapPost("/change-password", async (ChangePasswordDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId))
-                {
-                    var unauthorized = Results.Unauthorized();
-                    return unauthorized;
-                }
+                    return Results.Unauthorized();
+
                 var command = new ChangePasswordCommand(userId, request);
                 var result = await sender.Send(command, ct);
                 var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
@@ -136,10 +128,8 @@ namespace Auth.API.Endpoints
             group.MapPost("/mfa/setup", async (HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId))
-                {
-                    var unauthorized = Results.Unauthorized();
-                    return unauthorized;
-                }
+                    return Results.Unauthorized();
+
                 var command = new SetupMfaCommand(userId);
                 var result = await sender.Send(command, ct);
                 var response = result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
@@ -149,10 +139,8 @@ namespace Auth.API.Endpoints
             group.MapPost("/mfa/verify", async (MfaVerifyDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId))
-                {
-                    var unauthorized = Results.Unauthorized();
-                    return unauthorized;
-                }
+                    return Results.Unauthorized();
+
                 var command = new VerifyMfaCommand(userId, request);
                 var result = await sender.Send(command, ct);
                 var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
@@ -180,10 +168,8 @@ namespace Auth.API.Endpoints
             users.MapPut("/me", async (UpdateCurrentUserProfileDTO request, HttpContext http, IUserService userService, CancellationToken ct) =>
             {
                 if (!TryGetUserId(http, out var userId))
-                {
-                    var unauthorized = Results.Unauthorized();
-                    return unauthorized;
-                }
+                    return Results.Unauthorized();
+
                 var result = await userService.UpdateCurrentUserProfileAsync(userId, request, ct);
                 var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
                 return response;
@@ -193,10 +179,7 @@ namespace Auth.API.Endpoints
             {
                 var user = await userManager.FindByIdAsync(userId.ToString());
                 if (user is null)
-                {
-                    var notFound = Results.NotFound();
-                    return notFound;
-                }
+                    return Results.NotFound();
 
                 var roles = await userManager.GetRolesAsync(user);
                 var claims = await userManager.GetClaimsAsync(user);
