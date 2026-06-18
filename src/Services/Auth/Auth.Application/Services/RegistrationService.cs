@@ -95,8 +95,8 @@ namespace Auth.Application.Services
                     _logger.LogWarning("Falha ao atribuir tenant do psychologist {UserId}: {Errors}", user.Id, string.Join("; ", tenantUpdate.Errors.Select(e => e.Description)));
             }
 
-            var addRoleResult = await _userManager.AddToRoleAsync(user, user.Role);
-            var permissionResult = await _permissionAssignmentService.AssignDefaultAsync(user, cancellationToken);
+            await _userManager.AddToRoleAsync(user, user.Role);
+            await _permissionAssignmentService.AssignDefaultAsync(user, cancellationToken);
 
             if (_authOptions.AutoConfirmEmails)
             {
@@ -110,7 +110,7 @@ namespace Auth.Application.Services
             user.RecordConsent(termsVersion, privacyVersion);
             user.RegisterUser(correlationId);
 
-            var outboxResult = await _userOutboxService.PersistEventsAsync(user, correlationId, cancellationToken);
+            await _userOutboxService.PersistEventsAsync(user, correlationId, cancellationToken);
 
             var registered = new RegisterResult(user.Id.Value, user.TenantId.Value, user.Email ?? string.Empty, user.Role);
             var success = Result.Success(registered);
