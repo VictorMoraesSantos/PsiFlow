@@ -7,7 +7,6 @@ namespace Auth.Application.Contracts
     public interface ITokenIssuanceService
     {
         Task<Result<TokenResponse>> IssueAsync(User user, CancellationToken cancellationToken = default);
-
         Task<Result<TokenResponse>> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default);
     }
 }
