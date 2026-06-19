@@ -17,7 +17,6 @@ using Auth.Application.Features.Auth.Commands.VerifyMfa;
 using Auth.Application.Features.Auth.Queries.Me;
 using Auth.Domain.Entities;
 using BuildingBlocks.CQRS.Sender;
-using BuildingBlocks.Results;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using static BuildingBlocks.Authorization.Policies;
@@ -34,9 +33,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new RegisterCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess
-                    ? Results.Created($"/v1/auth/users/{result.Value!.UserId}", result.Value)
-                    : ToProblem(result.Error!);
+                var response = Results.Created($"/v1/auth/users/{result.Value!.UserId}", result.Value);
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -44,7 +41,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new LoginCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
+                var response = Results.Ok(result.Value);
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -52,7 +49,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new CompleteMfaLoginCommand(request.MfaToken, request.Code);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
+                var response = Results.Ok(result.Value);
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -60,7 +57,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new RefreshCommand(request.RefreshToken);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
+                var response = Results.Ok(result.Value);
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -71,7 +68,7 @@ namespace Auth.API.Endpoints
 
                 var command = new LogoutCommand(userId);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).RequireAuthorization(Permissions.Auth.SessionLogout);
 
@@ -82,7 +79,7 @@ namespace Auth.API.Endpoints
 
                 var query = new MeQuery(userId);
                 var result = await sender.Send(query, ct);
-                var response = result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
+                var response = Results.Ok(result.Value);
                 return response;
             }).RequireAuthorization(Permissions.Auth.MeRead);
 
@@ -94,7 +91,7 @@ namespace Auth.API.Endpoints
                 var payload = request with { IpAddress = http.Connection.RemoteIpAddress?.ToString(), UserAgent = http.Request.Headers.UserAgent.ToString() };
                 var command = new RecordConsentCommand(userId, payload);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).RequireAuthorization(Permissions.Auth.ConsentAccept);
 
@@ -105,7 +102,7 @@ namespace Auth.API.Endpoints
 
                 var command = new ChangePasswordCommand(userId, request);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).RequireAuthorization(Permissions.Auth.PasswordChange).RequireRateLimiting("auth-sensitive");
 
@@ -113,7 +110,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new ForgotPasswordCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -121,7 +118,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new ResetPasswordCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -132,7 +129,7 @@ namespace Auth.API.Endpoints
 
                 var command = new SetupMfaCommand(userId);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.Ok(result.Value) : ToProblem(result.Error!);
+                var response = Results.Ok(result.Value);
                 return response;
             }).RequireAuthorization(Permissions.Auth.MfaSetup);
 
@@ -143,7 +140,7 @@ namespace Auth.API.Endpoints
 
                 var command = new VerifyMfaCommand(userId, request);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).RequireAuthorization(Permissions.Auth.MfaVerify).RequireRateLimiting("auth-sensitive");
 
@@ -151,7 +148,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new RequestEmailVerificationCommand(request.Email);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.Ok(new { token = result.Value }) : ToProblem(result.Error!);
+                var response = Results.Ok(new { token = result.Value });
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -159,7 +156,7 @@ namespace Auth.API.Endpoints
             {
                 var command = new VerifyEmailCommand(request.Email, request.Token);
                 var result = await sender.Send(command, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
@@ -171,7 +168,7 @@ namespace Auth.API.Endpoints
                     return Results.Unauthorized();
 
                 var result = await userService.UpdateCurrentUserProfileAsync(userId, request, ct);
-                var response = result.IsSuccess ? Results.NoContent() : ToProblem(result.Error!);
+                var response = Results.NoContent();
                 return response;
             }).RequireAuthorization(Roles.RequireAuthenticated);
 
@@ -203,21 +200,6 @@ namespace Auth.API.Endpoints
             var claim = http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? http.User.FindFirstValue("sub");
             var parsed = int.TryParse(claim, out userId);
             return parsed;
-        }
-
-        private static IResult ToProblem(Error error)
-        {
-            var status = error.Type switch
-            {
-                ErrorType.Validation => StatusCodes.Status400BadRequest,
-                ErrorType.NotFound => StatusCodes.Status404NotFound,
-                ErrorType.Conflict => StatusCodes.Status409Conflict,
-                ErrorType.Forbidden => StatusCodes.Status403Forbidden,
-                ErrorType.Failure => StatusCodes.Status400BadRequest,
-                _ => StatusCodes.Status500InternalServerError
-            };
-            var response = Results.Problem(title: "Error", detail: error.Description, statusCode: status);
-            return response;
         }
     }
 }
