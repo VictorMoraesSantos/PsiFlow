@@ -15,18 +15,18 @@ namespace Auth.Application.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly UserManager<User> _userManager;
-        private readonly ITokenRevocationService _tokenRevocationService;
+        private readonly ITokenService _tokenService;
         private readonly ILogger<PasswordService> _logger;
 
         public PasswordService(
             IUserRepository userRepository,
             UserManager<User> userManager,
-            ITokenRevocationService tokenRevocationService,
+            ITokenService tokenService,
             ILogger<PasswordService> logger)
         {
             _userRepository = userRepository;
             _userManager = userManager;
-            _tokenRevocationService = tokenRevocationService;
+            _tokenService = tokenService;
             _logger = logger;
         }
 
@@ -107,7 +107,7 @@ namespace Auth.Application.Services
                 return result;
             }
 
-            var revokeResult = await _tokenRevocationService.RevokeAllForUserAsync(user.Id.Value, cancellationToken);
+            await _tokenService.RevokeAllForUserAsync(user.Id.Value, cancellationToken);
 
             var success = Result.Success();
             return success;

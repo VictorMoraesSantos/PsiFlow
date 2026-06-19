@@ -7,9 +7,9 @@ namespace Auth.Application.Features.Auth.Commands.Refresh;
 
 public sealed class RefreshCommandHandler : ICommandHandler<RefreshCommand, TokenResponse>
 {
-    private readonly ITokenIssuanceService _tokens;
+    private readonly ITokenService _tokens;
 
-    public RefreshCommandHandler(ITokenIssuanceService tokens)
+    public RefreshCommandHandler(ITokenService tokens)
     {
         _tokens = tokens;
     }

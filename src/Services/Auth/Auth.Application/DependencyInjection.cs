@@ -29,17 +29,12 @@ namespace Auth.Application
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IUserService, UserService>();
 
-            services.AddScoped<IRegistrationService, RegistrationService>();
             services.AddScoped<ICredentialService, CredentialService>();
             services.AddScoped<IMfaService, MfaService>();
             services.AddScoped<IMfaChallengeFactory, MfaChallengeFactory>();
-            services.AddScoped<ITokenIssuanceService, TokenIssuanceService>();
-            services.AddScoped<ITokenRevocationService, TokenRevocationService>();
             services.AddScoped<IPasswordService, PasswordService>();
             services.AddScoped<IEmailVerificationService, EmailVerificationService>();
-            services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IConsentService, ConsentService>();
-            services.AddScoped<IUserLifecycleService, UserLifecycleService>();
             services.AddScoped<IPermissionAssignmentService, PermissionAssignmentService>();
             services.AddScoped<IUserOutboxService, UserOutboxService>();
 

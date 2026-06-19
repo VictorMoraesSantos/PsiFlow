@@ -7,9 +7,9 @@ namespace Auth.Application.Features.Auth.Queries.Me;
 
 public sealed class MeQueryHandler : IQueryHandler<MeQuery, MeResponse>
 {
-    private readonly IUserProfileService _profile;
+    private readonly IUserService _profile;
 
-    public MeQueryHandler(IUserProfileService profile)
+    public MeQueryHandler(IUserService profile)
     {
         _profile = profile;
     }

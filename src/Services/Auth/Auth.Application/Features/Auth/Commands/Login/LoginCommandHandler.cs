@@ -12,21 +12,21 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
 {
     private readonly ICredentialService _credentials;
     private readonly IMfaService _mfa;
-    private readonly ITokenIssuanceService _tokens;
-    private readonly IUserLifecycleService _userLifecycle;
+    private readonly ITokenService _tokens;
+    private readonly IUserService _users;
     private readonly IValidator<LoginCommand> _validator;
 
     public LoginCommandHandler(
         ICredentialService credentials,
         IMfaService mfa,
-        ITokenIssuanceService tokens,
-        IUserLifecycleService userLifecycle,
+        ITokenService tokens,
+        IUserService users,
         IValidator<LoginCommand> validator)
     {
         _credentials = credentials;
         _mfa = mfa;
         _tokens = tokens;
-        _userLifecycle = userLifecycle;
+        _users = users;
         _validator = validator;
     }
 
@@ -59,11 +59,9 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
             return successResult;
         }
 
-        var beginLoginResult = await _userLifecycle.BeginLoginAsync(user, cancellationToken);
+        await _users.BeginLoginAsync(user, cancellationToken);
         if (user.Role == UserRole.Psychologist && user.TenantId.Value == 0)
-        {
-            var attachResult = await _userLifecycle.AttachTenantAsync(user, user.Id, cancellationToken);
-        }
+            await _users.AttachTenantAsync(user, user.Id, cancellationToken);
 
         var tokens = await _tokens.IssueAsync(user, cancellationToken);
         if (tokens.IsSuccess)

@@ -1627,6 +1627,7 @@ tbody tr:last-child td { border-bottom: 0; }
   }
   .sidebar--open { transform: translateX(0); }
   .workspace { padding: var(--space-4); }
+  .topbar { position: relative; z-index: 60; }
   .topbar__menu { display: grid; }
   .hero-panel, .two-column, .two-column--reverse-weight { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }

@@ -6,9 +6,9 @@ namespace Auth.Application.Features.Auth.Commands.Logout;
 
 public sealed class LogoutCommandHandler : ICommandHandler<LogoutCommand>
 {
-    private readonly ITokenRevocationService _revocation;
+    private readonly ITokenService _revocation;
 
-    public LogoutCommandHandler(ITokenRevocationService revocation)
+    public LogoutCommandHandler(ITokenService revocation)
     {
         _revocation = revocation;
     }

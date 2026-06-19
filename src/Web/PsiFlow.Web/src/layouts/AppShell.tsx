@@ -3,7 +3,7 @@
 import { Bell, CalendarDays, FileText, HeartPulse, Home, LogOut, MessageSquareText, PanelLeft, Settings, UserRound, Video } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useApp } from '../state/AppContext';
 
@@ -35,7 +35,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [today] = useState(() => formatTopbarDate(new Date()));
   const sidebarRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  useFocusTrap(sidebarRef, isNavOpen, () => setIsNavOpen(false));
+
+  const closeSidebar = useCallback(() => {
+    setIsNavOpen(false);
+    menuButtonRef.current?.focus();
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setIsNavOpen((value) => !value);
+  }, []);
+
+  useFocusTrap(sidebarRef, isNavOpen, closeSidebar);
 
   useEffect(() => {
     if (!isNavOpen) return;
@@ -49,11 +59,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsNavOpen(false);
   }, [pathname]);
-
-  function closeSidebar() {
-    setIsNavOpen(false);
-    requestAnimationFrame(() => menuButtonRef.current?.focus());
-  }
 
   return (
     <div className="app-shell">
@@ -110,7 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-label={isNavOpen ? 'Fechar menu' : 'Abrir menu'}
             aria-expanded={isNavOpen}
             aria-controls="primary-sidebar"
-            onClick={() => setIsNavOpen((value) => !value)}
+            onClick={isNavOpen ? closeSidebar : toggleSidebar}
           >
             <PanelLeft aria-hidden="true" size={20} />
           </button>

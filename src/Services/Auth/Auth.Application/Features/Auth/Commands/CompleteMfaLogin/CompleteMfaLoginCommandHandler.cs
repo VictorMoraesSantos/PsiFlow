@@ -8,17 +8,17 @@ namespace Auth.Application.Features.Auth.Commands.CompleteMfaLogin;
 public sealed class CompleteMfaLoginCommandHandler : ICommandHandler<CompleteMfaLoginCommand, TokenResponse>
 {
     private readonly IMfaService _mfa;
-    private readonly ITokenIssuanceService _tokens;
-    private readonly IUserLifecycleService _userLifecycle;
+    private readonly ITokenService _tokens;
+    private readonly IUserService _users;
 
     public CompleteMfaLoginCommandHandler(
         IMfaService mfa,
-        ITokenIssuanceService tokens,
-        IUserLifecycleService userLifecycle)
+        ITokenService tokens,
+        IUserService users)
     {
         _mfa = mfa;
         _tokens = tokens;
-        _userLifecycle = userLifecycle;
+        _users = users;
     }
 
     public async Task<Result<TokenResponse>> Handle(CompleteMfaLoginCommand command, CancellationToken cancellationToken)
@@ -28,7 +28,7 @@ public sealed class CompleteMfaLoginCommandHandler : ICommandHandler<CompleteMfa
             return Result.Failure<TokenResponse>(mfaResult.Error!);
 
         var user = mfaResult.Value!.User;
-        var beginLoginResult = await _userLifecycle.BeginLoginAsync(user, cancellationToken);
+        var beginLoginResult = await _users.BeginLoginAsync(user, cancellationToken);
         var tokens = await _tokens.IssueAsync(user, cancellationToken);
 
         return tokens;
