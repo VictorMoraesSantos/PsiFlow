@@ -1,9 +1,7 @@
 using Auth.Application.Contracts;
-using Auth.Domain.Errors;
 using BuildingBlocks.CQRS.Handlers;
 using BuildingBlocks.Results;
 using FluentValidation;
-using System.ComponentModel.DataAnnotations;
 
 namespace Auth.Application.Features.Auth.Commands.ChangePassword;
 

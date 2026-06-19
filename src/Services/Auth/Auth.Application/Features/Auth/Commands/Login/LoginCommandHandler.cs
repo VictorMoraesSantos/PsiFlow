@@ -1,6 +1,5 @@
 using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
-using Auth.Domain.Entities;
 using Auth.Domain.ValueObjects;
 using BuildingBlocks.CQRS.Handlers;
 using BuildingBlocks.Results;

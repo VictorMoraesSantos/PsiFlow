@@ -2,7 +2,6 @@ using Auth.Application.Contracts;
 using Auth.Domain.Entities;
 using Auth.Domain.Errors;
 using Auth.Domain.Repositories;
-using Auth.Domain.ValueObjects;
 using BuildingBlocks.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;

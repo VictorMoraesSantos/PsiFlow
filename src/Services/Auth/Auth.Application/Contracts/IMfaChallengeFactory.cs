@@ -1,5 +1,4 @@
 using Auth.Domain.Entities;
-using BuildingBlocks.Results;
 
 namespace Auth.Application.Contracts
 {

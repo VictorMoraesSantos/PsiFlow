@@ -2,7 +2,6 @@ using Auth.Application.Contracts;
 using Auth.Domain.Entities;
 using Auth.Domain.Repositories;
 using Auth.Domain.ValueObjects;
-using BuildingBlocks.Results;
 
 namespace Auth.Application.Services
 {
