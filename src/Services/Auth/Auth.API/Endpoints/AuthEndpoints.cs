@@ -30,24 +30,21 @@ namespace Auth.API.Endpoints
             {
                 var command = new RegisterCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = Results.Created($"/v1/auth/users/{result.Value!.UserId}", result.Value);
-                return response;
+                return Results.Created($"/v1/auth/users/{result.Value!.UserId}", result.Value);
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/login", async (LoginDTO request, ISender sender, CancellationToken ct) =>
             {
                 var command = new LoginCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = Results.Ok(result.Value);
-                return response;
+                return Results.Ok(result.Value);
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/refresh", async (RefreshDTO request, ISender sender, CancellationToken ct) =>
             {
                 var command = new RefreshCommand(request.RefreshToken);
                 var result = await sender.Send(command, ct);
-                var response = Results.Ok(result.Value);
-                return response;
+                return Results.Ok(result.Value);
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/logout", async (HttpContext http, ISender sender, CancellationToken ct) =>
@@ -57,8 +54,7 @@ namespace Auth.API.Endpoints
 
                 var command = new LogoutCommand(userId);
                 var result = await sender.Send(command, ct);
-                var response = Results.NoContent();
-                return response;
+                return Results.NoContent();
             }).RequireAuthorization(Permissions.Auth.SessionLogout);
 
             group.MapGet("/me", async (HttpContext http, ISender sender, CancellationToken ct) =>
@@ -68,8 +64,7 @@ namespace Auth.API.Endpoints
 
                 var query = new MeQuery(userId);
                 var result = await sender.Send(query, ct);
-                var response = Results.Ok(result.Value);
-                return response;
+                return Results.Ok(result.Value);
             }).RequireAuthorization(Permissions.Auth.MeRead);
 
             group.MapPost("/consent", async (ConsentDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
@@ -80,8 +75,7 @@ namespace Auth.API.Endpoints
                 var payload = request with { IpAddress = http.Connection.RemoteIpAddress?.ToString(), UserAgent = http.Request.Headers.UserAgent.ToString() };
                 var command = new RecordConsentCommand(userId, payload);
                 var result = await sender.Send(command, ct);
-                var response = Results.NoContent();
-                return response;
+                return Results.NoContent();
             }).RequireAuthorization(Permissions.Auth.ConsentAccept);
 
             group.MapPost("/change-password", async (ChangePasswordDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
@@ -91,40 +85,35 @@ namespace Auth.API.Endpoints
 
                 var command = new ChangePasswordCommand(userId, request);
                 var result = await sender.Send(command, ct);
-                var response = Results.NoContent();
-                return response;
+                return Results.NoContent();
             }).RequireAuthorization(Permissions.Auth.PasswordChange).RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/forgot-password", async (ForgotPasswordDTO request, ISender sender, CancellationToken ct) =>
             {
                 var command = new ForgotPasswordCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = Results.NoContent();
-                return response;
+                return Results.NoContent();
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/reset-password", async (ResetPasswordDTO request, ISender sender, CancellationToken ct) =>
             {
                 var command = new ResetPasswordCommand(request);
                 var result = await sender.Send(command, ct);
-                var response = Results.NoContent();
-                return response;
+                return Results.NoContent();
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/request-email-verification", async (EmailVerificationRequest request, ISender sender, CancellationToken ct) =>
             {
                 var command = new RequestEmailVerificationCommand(request.Email);
                 var result = await sender.Send(command, ct);
-                var response = Results.Ok(new { token = result.Value });
-                return response;
+                return Results.Ok(new { token = result.Value });
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             group.MapPost("/verify-email", async (EmailVerificationConfirm request, ISender sender, CancellationToken ct) =>
             {
                 var command = new VerifyEmailCommand(request.Email, request.Token);
                 var result = await sender.Send(command, ct);
-                var response = Results.NoContent();
-                return response;
+                return Results.NoContent();
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
             var users = app.MapGroup("/v1/users").WithTags("Users");
@@ -135,8 +124,7 @@ namespace Auth.API.Endpoints
                     return Results.Unauthorized();
 
                 var result = await userService.UpdateCurrentUserProfileAsync(userId, request, ct);
-                var response = Results.NoContent();
-                return response;
+                return Results.NoContent();
             }).RequireAuthorization(Roles.RequireAuthenticated);
 
             users.MapGet("/{userId:int}/permissions", async (int userId, UserManager<User> userManager) =>
@@ -154,8 +142,7 @@ namespace Auth.API.Endpoints
                     .ToArray();
 
                 var body = new { userId, roles, permissions };
-                var response = Results.Ok(body);
-                return response;
+                return Results.Ok(body);
             }).RequireAuthorization(Permissions.Auth.UsersRead);
 
             return app;
