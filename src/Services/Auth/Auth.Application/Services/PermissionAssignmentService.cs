@@ -28,24 +28,16 @@ namespace Auth.Application.Services
             };
 
             if (permissions.Length == 0)
-            {
-                var result = Result.Success();
-                return result;
-            }
+                return Result.Success();
+
             if (permissions.Length == 1 && permissions[0] == "*")
             {
                 var addResult = await _userManager.AddClaimAsync(user, new Claim("permission", "*"));
                 if (addResult.Succeeded)
-                {
-                    var result = Result.Success();
-                    return result;
-                }
-                else
-                {
-                    var error = BuildingBlocks.Results.Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description)));
-                    var result = Result.Failure(error);
-                    return result;
-                }
+                    return Result.Success();
+
+                var error = Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description)));
+                return Result.Failure(error);
             }
 
             foreach (var permission in permissions)
@@ -53,14 +45,12 @@ namespace Auth.Application.Services
                 var addResult = await _userManager.AddClaimAsync(user, new Claim("permission", permission));
                 if (!addResult.Succeeded)
                 {
-                    var error = BuildingBlocks.Results.Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description)));
-                    var result = Result.Failure(error);
-                    return result;
+                    var error = Error.Failure(string.Join("; ", addResult.Errors.Select(e => e.Description)));
+                    return Result.Failure(error);
                 }
             }
 
-            var success = Result.Success();
-            return success;
+            return Result.Success();
         }
     }
 }

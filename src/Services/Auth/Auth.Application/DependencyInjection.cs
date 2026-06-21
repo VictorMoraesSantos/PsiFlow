@@ -36,7 +36,7 @@ namespace Auth.Application
             services.AddScoped<IEmailVerificationService, EmailVerificationService>();
             services.AddScoped<IConsentService, ConsentService>();
             services.AddScoped<IPermissionAssignmentService, PermissionAssignmentService>();
-            services.AddScoped<IUserOutboxService, UserOutboxService>();
+            services.AddScoped<IOutboxService, OutboxService>();
 
             services.AddSingleton<MfaLoginStore>();
 

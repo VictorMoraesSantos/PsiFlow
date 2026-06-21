@@ -104,16 +104,12 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             var name = new Name("Admin", "PsiFlow");
             var contact = new Contact(PermissionGroupSeed.AdminEmail, "+5511999999999");
-            var termsVersion = DocumentVersion.Create("v1", "terms");
-            var privacyVersion = DocumentVersion.Create("v1", "privacy");
             var user = User.Register(
                 name,
                 contact,
                 PermissionGroupSeed.AdminRole,
                 tenantId: null,
-                crp: null,
-                termsVersion: termsVersion,
-                privacyVersion: privacyVersion);
+                crp: null);
 
             var result = await userManager.CreateAsync(user, PermissionGroupSeed.AdminPassword);
             if (!result.Succeeded)
@@ -154,16 +150,12 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             var name = new Name("Psicologa", "Demo");
             var contact = new Contact(PermissionGroupSeed.PsychologistEmail, "+5511988887777");
-            var termsVersion = DocumentVersion.Create("v1", "terms");
-            var privacyVersion = DocumentVersion.Create("v1", "privacy");
             var user = User.Register(
                 name,
                 contact,
                 PermissionGroupSeed.PsychologistRole,
                 tenantId: null,
-                crp: "06/123456",
-                termsVersion: termsVersion,
-                privacyVersion: privacyVersion);
+                crp: "06/123456");
 
             var result = await userManager.CreateAsync(user, PermissionGroupSeed.PsychologistPassword);
             if (!result.Succeeded)
@@ -200,16 +192,12 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             var name = new Name("Paciente", "Demo");
             var contact = new Contact(PermissionGroupSeed.PatientEmail, "+5511977776666");
-            var termsVersion = DocumentVersion.Create("v1", "terms");
-            var privacyVersion = DocumentVersion.Create("v1", "privacy");
             var user = User.Register(
                 name,
                 contact,
                 PermissionGroupSeed.PatientRole,
                 tenantId: null,
-                crp: null,
-                termsVersion: termsVersion,
-                privacyVersion: privacyVersion);
+                crp: null);
 
             var result = await userManager.CreateAsync(user, PermissionGroupSeed.PatientPassword);
             if (!result.Succeeded)
@@ -284,6 +272,10 @@ namespace Auth.Infrastructure.Persistence.Seeds
 
             await context.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS is_mfa_enabled boolean NOT NULL DEFAULT false;",
+                cancellationToken);
+
+            await context.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS current_consent_id integer NULL;",
                 cancellationToken);
 
             if (await HasTableAsync(context, "auth", "consents", cancellationToken))

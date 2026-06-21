@@ -1,3 +1,4 @@
+using Auth.Domain.Events;
 using Auth.Domain.ValueObjects;
 using Core.Domain.Aggregates;
 using System.Security.Cryptography;
@@ -66,6 +67,13 @@ namespace Auth.Domain.Entities
                 ipAddress,
                 userAgent,
                 acceptedAt);
+
+            consent.AddDomainEvent(new ConsentAcceptedDomainEvent(
+                userId,
+                tenantId,
+                termsVersion.Value,
+                privacyVersion.Value,
+                acceptedAt));
 
             return consent;
         }

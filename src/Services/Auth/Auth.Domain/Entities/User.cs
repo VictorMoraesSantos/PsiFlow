@@ -19,9 +19,7 @@ namespace Auth.Domain.Entities
         public DateTime? Birthday { get; private set; }
         public DateTime? LastLoginAt { get; private set; }
         public bool IsActive { get; private set; } = true;
-        public string? ConsentTermsVersion { get; private set; }
-        public string? ConsentPrivacyVersion { get; private set; }
-        public DateTime? ConsentAcceptedAt { get; private set; }
+        public ConsentId? CurrentConsentId { get; private set; }
         public bool IsMfaEnabled { get; private set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; private set; }
@@ -35,9 +33,7 @@ namespace Auth.Domain.Entities
             Contact contact,
             string role,
             TenantId? tenantId,
-            string? crp,
-            string termsVersion,
-            string privacyVersion)
+            string? crp)
         {
             Name = name;
             Contact = contact;
@@ -49,9 +45,6 @@ namespace Auth.Domain.Entities
             Role = NormalizeRole(role);
             Crp = NormalizeCrp(crp, Role);
             TenantId = tenantId ?? new TenantId(0);
-            ConsentTermsVersion = termsVersion;
-            ConsentPrivacyVersion = privacyVersion;
-            ConsentAcceptedAt = DateTime.UtcNow;
         }
 
         public static User Register(
@@ -59,21 +52,16 @@ namespace Auth.Domain.Entities
             Contact contact,
             string role,
             TenantId? tenantId,
-            string? crp,
-            DocumentVersion termsVersion,
-            DocumentVersion privacyVersion)
+            string? crp)
         {
             var parsedRole = UserRole.Create(role);
             var parsedCrp = ValueObjects.Crp.Create(crp, parsedRole.RequiresCrp());
-
             var user = new User(
                 name,
                 contact,
                 parsedRole.Value,
                 tenantId,
-                parsedCrp.Value,
-                termsVersion.Value,
-                privacyVersion.Value);
+                parsedCrp.Value);
 
             return user;
         }
@@ -126,13 +114,35 @@ namespace Auth.Domain.Entities
             MarkAsUpdated();
         }
 
-        public void RecordConsent(DocumentVersion termsVersion, DocumentVersion privacyVersion)
+        public Consent AcceptConsent(
+            DocumentVersion termsVersion,
+            DocumentVersion privacyVersion,
+            string documentType,
+            string? ipAddress,
+            string? userAgent)
         {
-            ConsentTermsVersion = termsVersion.Value;
-            ConsentPrivacyVersion = privacyVersion.Value;
-            ConsentAcceptedAt = DateTime.UtcNow;
+            if (termsVersion is null) throw new DomainException(UserErrors.TermsNotAccepted);
+            if (privacyVersion is null) throw new DomainException(UserErrors.TermsNotAccepted);
+
+            var acceptedAt = DateTime.UtcNow;
+            var consent = Consent.Accept(
+                Id,
+                new TenantId(TenantId.Value),
+                termsVersion,
+                privacyVersion,
+                documentType,
+                ipAddress,
+                userAgent,
+                acceptedAt);
+
+            return consent;
+        }
+
+        public void LinkToConsent(ConsentId consentId)
+        {
+            if (consentId is null) throw new DomainException(UserErrors.TermsNotAccepted);
+            CurrentConsentId = consentId;
             MarkAsUpdated();
-            AddDomainEvent(new ConsentAcceptedDomainEvent(Id, TenantId, termsVersion.Value, privacyVersion.Value, ConsentAcceptedAt.Value));
         }
 
         public void Deactivate()

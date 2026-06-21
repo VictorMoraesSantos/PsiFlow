@@ -39,46 +39,30 @@ namespace Auth.Application.Services
             var challenge = await _mfaChallengeFactory.CreateLoginChallengeAsync(user, cancellationToken);
             var mfaToken = _mfaLoginStore.Create(user.Id.Value, challenge.Id.Value);
             var challengeStart = new MfaChallengeStart(challenge.Id.Value, mfaToken);
-            var result = Result.Success(challengeStart);
-            return result;
+            return Result.Success(challengeStart);
         }
 
         public async Task<Result<CompletedMfaChallenge>> CompleteLoginChallengeAsync(string mfaToken, string code, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(mfaToken) || string.IsNullOrWhiteSpace(code))
-            {
-                var result = Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
-                return result;
-            }
+                return Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
+
             if (!_mfaLoginStore.TryConsume(mfaToken, out var entry))
-            {
-                var result = Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
-                return result;
-            }
+                return Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
 
             var user = await _userRepository.GetById(new UserId(entry.UserId), cancellationToken);
             if (user is null)
-            {
-                var result = Result.Failure<CompletedMfaChallenge>(UserErrors.NotFound(entry.UserId));
-                return result;
-            }
+                return Result.Failure<CompletedMfaChallenge>(UserErrors.NotFound(entry.UserId));
 
             var challenge = await _mfaChallengeRepository.GetById(new MfaChallengeId(entry.ChallengeId), cancellationToken);
             if (challenge is null)
-            {
-                var result = Result.Failure<CompletedMfaChallenge>(UserErrors.MfaChallengeNotFound);
-                return result;
-            }
+                return Result.Failure<CompletedMfaChallenge>(UserErrors.MfaChallengeNotFound);
+
             if (!challenge.BelongsTo(user.Id.Value))
-            {
-                var result = Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
-                return result;
-            }
+                return Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
+
             if (!challenge.IsUsable(DateTime.UtcNow))
-            {
-                var result = Result.Failure<CompletedMfaChallenge>(UserErrors.MfaChallengeNotFound);
-                return result;
-            }
+                return Result.Failure<CompletedMfaChallenge>(UserErrors.MfaChallengeNotFound);
 
             try
             {
@@ -89,65 +73,45 @@ namespace Auth.Application.Services
             catch (DomainException ex)
             {
                 _logger.LogInformation("Falha ao confirmar challenge MFA: {Message}", ex.Message);
-                var result = Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
-                return result;
+                return Result.Failure<CompletedMfaChallenge>(UserErrors.MfaCodeInvalid);
             }
 
             var completed = new CompletedMfaChallenge(user);
-            var success = Result.Success(completed);
-            return success;
+            return Result.Success(completed);
         }
 
         public async Task<Result<MfaSetupResult>> SetupAsync(int userId, CancellationToken cancellationToken = default)
         {
             var user = await _userRepository.GetById(new UserId(userId), cancellationToken);
             if (user is null)
-            {
-                var result = Result.Failure<MfaSetupResult>(UserErrors.NotFound(userId));
-                return result;
-            }
+                return Result.Failure<MfaSetupResult>(UserErrors.NotFound(userId));
+
             if (!user.IsMfaEligible())
-            {
-                var result = Result.Failure<MfaSetupResult>(UserErrors.MfaNotAllowed);
-                return result;
-            }
+                return Result.Failure<MfaSetupResult>(UserErrors.MfaNotAllowed);
 
             var secret = MfaSecret.Generate();
             var qrCodeUri = secret.BuildQrCodeUri(user.Email ?? user.Id.Value.ToString());
-
             var setupChallenge = await _mfaChallengeFactory.SetupChallengeAsync(user, secret.Base32, qrCodeUri, ChallengeLifetime, cancellationToken);
-
             var setupResult = new MfaSetupResult(secret.Base32, qrCodeUri);
-            var success = Result.Success(setupResult);
-            return success;
+
+            return Result.Success(setupResult);
         }
 
         public async Task<Result> VerifyAsync(int userId, string code, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(code))
-            {
-                var result = Result.Failure(UserErrors.MfaCodeInvalid);
-                return result;
-            }
+                return Result.Failure(UserErrors.MfaCodeInvalid);
 
             var user = await _userRepository.GetById(new UserId(userId), cancellationToken);
             if (user is null)
-            {
-                var result = Result.Failure(UserErrors.NotFound(userId));
-                return result;
-            }
+                return Result.Failure(UserErrors.NotFound(userId));
+
             if (!user.IsMfaEligible())
-            {
-                var result = Result.Failure(UserErrors.MfaNotAllowed);
-                return result;
-            }
+                return Result.Failure(UserErrors.MfaNotAllowed);
 
             var challenge = await _mfaChallengeRepository.GetActiveByUser(userId, cancellationToken);
             if (challenge is null)
-            {
-                var result = Result.Failure(UserErrors.MfaChallengeNotFound);
-                return result;
-            }
+                return Result.Failure(UserErrors.MfaChallengeNotFound);
 
             try
             {
@@ -161,12 +125,10 @@ namespace Auth.Application.Services
             catch (DomainException ex)
             {
                 _logger.LogInformation("Falha ao verificar MFA: {Message}", ex.Message);
-                var result = Result.Failure(UserErrors.MfaCodeInvalid);
-                return result;
+                return Result.Failure(UserErrors.MfaCodeInvalid);
             }
 
-            var success = Result.Success();
-            return success;
+            return Result.Success();
         }
     }
 }

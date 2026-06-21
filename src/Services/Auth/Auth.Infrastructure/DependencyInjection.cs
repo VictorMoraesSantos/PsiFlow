@@ -57,12 +57,10 @@ namespace Auth.Infrastructure
             var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
             if (string.IsNullOrWhiteSpace(jwtSettings.Issuer)) jwtSettings.Issuer = "psiflow-auth";
             if (string.IsNullOrWhiteSpace(jwtSettings.Audience)) jwtSettings.Audience = "psiflow-api";
-            if (string.IsNullOrWhiteSpace(jwtSettings.KeyId)) jwtSettings.KeyId = "psiflow-auth-rsa-1";
             ApplyDevelopmentFallbacks(jwtSettings, configuration);
 
             services.AddSingleton(jwtSettings);
             services.AddSingleton<Auth.Application.Services.EncryptionService>();
-            services.AddSingleton<JwtRsaKeyProvider>();
             services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
             services.AddAuthorization();
             services.AddAuthentication(options =>
@@ -91,13 +89,16 @@ namespace Auth.Infrastructure
         }
 
         private const string DevelopmentEncryptionKey = "dev-only-jwt-encryption-key-replace-in-production-must-be-32-bytes!";
+        private const string DevelopmentJwtKey = "dev-only-jwt-signing-key-replace-in-production-must-be-at-least-32-bytes-long!";
 
         private static void ApplyDevelopmentFallbacks(JwtSettings settings, IConfiguration configuration)
         {
             if (settings is null) return;
-            if (!string.IsNullOrWhiteSpace(settings.EncryptionKey)) return;
             if (!IsDevelopmentEnvironment(configuration)) return;
-            settings.EncryptionKey = DevelopmentEncryptionKey;
+            if (string.IsNullOrWhiteSpace(settings.EncryptionKey))
+                settings.EncryptionKey = DevelopmentEncryptionKey;
+            if (string.IsNullOrWhiteSpace(settings.Key))
+                settings.Key = DevelopmentJwtKey;
         }
 
         private static bool IsDevelopmentEnvironment(IConfiguration configuration)

@@ -25,20 +25,19 @@ namespace Auth.Application.Services
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly UserManager<User> _userManager;
         private readonly JwtSettings _settings;
-        private readonly JwtRsaKeyProvider _keyProvider;
+        private readonly SymmetricSecurityKey _signingKey;
 
         public TokenService(
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
             UserManager<User> userManager,
-            JwtSettings settings,
-            JwtRsaKeyProvider keyProvider)
+            JwtSettings settings)
         {
             _userRepository = userRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _userManager = userManager;
             _settings = settings;
-            _keyProvider = keyProvider;
+            _signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Key));
         }
 
         public Result<string> GenerateToken(GenerateTokenDTO dto)
@@ -56,9 +55,7 @@ namespace Auth.Application.Services
                 };
 
                 if (dto.TenantId > 0)
-                {
                     claims.Add(new Claim("tenant_id", dto.TenantId.ToString()));
-                }
 
                 foreach (var permission in dto.Permissions ?? Array.Empty<string>())
                 {
@@ -66,9 +63,8 @@ namespace Auth.Application.Services
                     claims.Add(new Claim("permission", permission));
                 }
 
-                var creds = new SigningCredentials(_keyProvider.SigningKey, SecurityAlgorithms.RsaSha256);
+                var creds = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
                 var expires = DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes <= 0 ? 15 : _settings.ExpiryMinutes);
-
                 var token = new JwtSecurityToken(
                     issuer: _settings.Issuer,
                     audience: _settings.Audience,
@@ -76,16 +72,14 @@ namespace Auth.Application.Services
                     notBefore: DateTime.UtcNow,
                     expires: expires,
                     signingCredentials: creds);
-
                 var written = new JwtSecurityTokenHandler().WriteToken(token);
-                var result = Result.Success(written);
-                return result;
+
+                return Result.Success(written); ;
             }
             catch (Exception ex)
             {
                 var error = Error.Failure($"Falha ao gerar token: {ex.Message}");
-                var result = Result.Failure<string>(error);
-                return result;
+                return Result.Failure<string>(error);
             }
         }
 
@@ -98,6 +92,7 @@ namespace Auth.Application.Services
                 .Replace("+", "-")
                 .Replace("/", "_")
                 .TrimEnd('=');
+
             return token;
         }
 
@@ -121,21 +116,17 @@ namespace Auth.Application.Services
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = _settings.Issuer,
                     ValidAudience = _settings.Audience,
-                    IssuerSigningKey = _keyProvider.SigningKey
+                    IssuerSigningKey = _signingKey
                 };
                 var principal = new JwtSecurityTokenHandler().ValidateToken(token, validation, out var securityToken);
-                if (securityToken is not JwtSecurityToken jwt || !jwt.Header.Alg.Equals(SecurityAlgorithms.RsaSha256, StringComparison.OrdinalIgnoreCase))
-                {
-                    var result = Result.Failure<ClaimsPrincipal>(Error.Failure("Algoritmo invalido"));
-                    return result;
-                }
-                var success = Result.Success(principal);
-                return success;
+                if (securityToken is not JwtSecurityToken jwt || !jwt.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.OrdinalIgnoreCase))
+                    return Result.Failure<ClaimsPrincipal>(Error.Failure("Algoritmo invalido"));
+
+                return Result.Success(principal);
             }
             catch (Exception ex)
             {
-                var result = Result.Failure<ClaimsPrincipal>(Error.Failure($"Falha ao validar token: {ex.Message}"));
-                return result;
+                return Result.Failure<ClaimsPrincipal>(Error.Failure($"Falha ao validar token: {ex.Message}"));
             }
         }
 
@@ -158,17 +149,14 @@ namespace Auth.Application.Services
                 permissionValues);
             var tokenResult = GenerateToken(tokenDTO);
             if (!tokenResult.IsSuccess)
-            {
-                var failure = Result.Failure<TokenResponse>(tokenResult.Error!);
-                return failure;
-            }
+                return Result.Failure<TokenResponse>(tokenResult.Error!);
 
             var now = DateTime.UtcNow;
             var rawRefresh = GenerateRefreshToken();
             var refreshHash = HashToken(rawRefresh);
             var lifetime = TimeSpan.FromDays(RefreshTokenLifetimeDays);
-
             var issued = RefreshToken.Issue(user.Id, user.TenantId, refreshHash, now, lifetime, createdByIp: null, userAgent: null);
+
             await _refreshTokenRepository.Create(issued, cancellationToken);
 
             var summary = new UserSummaryDTO(user.Id.Value, user.Name.FullName, user.Email ?? string.Empty, user.Role);
@@ -177,52 +165,38 @@ namespace Auth.Application.Services
                 rawRefresh,
                 issued.ExpiresAt,
                 summary);
-            var success = Result.Success(response);
-            return success;
+
+            return Result.Success(response);
         }
 
         public async Task<Result<TokenResponse>> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
-            {
-                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
-                return failure;
-            }
+                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
 
             var hash = HashToken(refreshToken);
             var existing = await _refreshTokenRepository.GetByHashAsync(hash, cancellationToken);
             if (existing is null)
-            {
-                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
-                return failure;
-            }
+                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
             if (!existing.BelongsTo(existing.UserId.Value))
-            {
-                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
-                return failure;
-            }
+                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenInvalid);
 
             if (existing.IsRevoked())
             {
                 await RevokeFamilyAsync(existing, cancellationToken);
-                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenReused);
-                return failure;
+                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenReused);
             }
 
             if (existing.IsExpired(DateTime.UtcNow))
             {
                 existing.Revoke(DateTime.UtcNow, revokedByIp: null, replacedByTokenId: null);
                 await _refreshTokenRepository.Update(existing, cancellationToken);
-                var failure = Result.Failure<TokenResponse>(UserErrors.RefreshTokenExpired);
-                return failure;
+                return Result.Failure<TokenResponse>(UserErrors.RefreshTokenExpired);
             }
 
             var user = await _userRepository.GetById(new UserId(existing.UserId.Value), cancellationToken);
             if (user is null)
-            {
-                var failure = Result.Failure<TokenResponse>(UserErrors.NotFound(existing.UserId.Value));
-                return failure;
-            }
+                return Result.Failure<TokenResponse>(UserErrors.NotFound(existing.UserId.Value));
 
             var rotationResult = await RotateAsync(user, existing, cancellationToken);
             return rotationResult;
@@ -232,29 +206,30 @@ namespace Auth.Application.Services
         {
             var user = await _userRepository.GetById(new UserId(userId), cancellationToken);
             if (user is null)
-            {
-                var failure = Result.Failure(UserErrors.NotFound(userId));
-                return failure;
-            }
+                return Result.Failure(UserErrors.NotFound(userId));
 
             var active = await _refreshTokenRepository.ListActiveByUserAsync(userId, cancellationToken);
             var now = DateTime.UtcNow;
-            foreach (var token in active) token.Revoke(now, revokedByIp: null, replacedByTokenId: null);
+
+            foreach (var token in active)
+                token.Revoke(now, revokedByIp: null, replacedByTokenId: null);
+
             await _refreshTokenRepository.UpdateRange(active, cancellationToken);
 
-            var success = Result.Success();
-            return success;
+            return Result.Success();
         }
 
         public async Task<Result> RevokeFamilyAsync(RefreshToken reusedToken, CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
             var userTokens = await _refreshTokenRepository.ListActiveByUserAsync(reusedToken.UserId.Value, cancellationToken);
-            foreach (var token in userTokens) token.Revoke(now, revokedByIp: null, replacedByTokenId: null);
+
+            foreach (var token in userTokens)
+                token.Revoke(now, revokedByIp: null, replacedByTokenId: null);
+
             await _refreshTokenRepository.UpdateRange(userTokens, cancellationToken);
 
-            var success = Result.Success();
-            return success;
+            return Result.Success();
         }
 
         private async Task<Result<TokenResponse>> RotateAsync(User user, RefreshToken previous, CancellationToken cancellationToken)
@@ -276,17 +251,14 @@ namespace Auth.Application.Services
                 permissionValues);
             var tokenResult = GenerateToken(tokenDTO);
             if (!tokenResult.IsSuccess)
-            {
-                var failure = Result.Failure<TokenResponse>(tokenResult.Error!);
-                return failure;
-            }
+                return Result.Failure<TokenResponse>(tokenResult.Error!);
 
             var now = DateTime.UtcNow;
             var rawRefresh = GenerateRefreshToken();
             var refreshHash = HashToken(rawRefresh);
             var lifetime = TimeSpan.FromDays(RefreshTokenLifetimeDays);
-
             var replacement = previous.Rotate(refreshHash, now, lifetime);
+
             await _refreshTokenRepository.Update(previous, cancellationToken);
             await _refreshTokenRepository.Create(replacement, cancellationToken);
 
@@ -296,8 +268,8 @@ namespace Auth.Application.Services
                 rawRefresh,
                 replacement.ExpiresAt,
                 summary);
-            var success = Result.Success(response);
-            return success;
+
+            return Result.Success(response);
         }
     }
 }

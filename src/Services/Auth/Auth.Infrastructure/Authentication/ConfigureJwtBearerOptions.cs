@@ -1,12 +1,12 @@
-using Auth.Application.Services;
 using Auth.Application.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Auth.Infrastructure.Authentication
 {
-    public sealed class ConfigureJwtBearerOptions(JwtSettings settings, JwtRsaKeyProvider keyProvider) : IConfigureNamedOptions<JwtBearerOptions>
+    public sealed class ConfigureJwtBearerOptions(JwtSettings settings) : IConfigureNamedOptions<JwtBearerOptions>
     {
         public void Configure(string? name, JwtBearerOptions options)
         {
@@ -20,7 +20,7 @@ namespace Auth.Infrastructure.Authentication
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = settings.Issuer,
                 ValidAudience = settings.Audience,
-                IssuerSigningKey = keyProvider.SigningKey,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Key)),
                 ClockSkew = TimeSpan.FromSeconds(30)
             };
         }

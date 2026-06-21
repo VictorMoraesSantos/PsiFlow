@@ -22,7 +22,8 @@ namespace Auth.Application.Services
         private readonly IUserRepository _repository;
         private readonly UserManager<User> _userManager;
         private readonly IPermissionAssignmentService _permissionAssignmentService;
-        private readonly IUserOutboxService _userOutboxService;
+        private readonly IOutboxService _outboxService;
+        private readonly IConsentService _consentService;
         private readonly ILogger<UserService> _logger;
         private readonly AuthOptions _authOptions;
 
@@ -30,14 +31,16 @@ namespace Auth.Application.Services
             IUserRepository repository,
             UserManager<User> userManager,
             IPermissionAssignmentService permissionAssignmentService,
-            IUserOutboxService userOutboxService,
+            IOutboxService outboxService,
+            IConsentService consentService,
             ILogger<UserService> logger,
             IOptions<AuthOptions> authOptions)
         {
             _repository = repository;
             _userManager = userManager;
             _permissionAssignmentService = permissionAssignmentService;
-            _userOutboxService = userOutboxService;
+            _outboxService = outboxService;
+            _consentService = consentService;
             _logger = logger;
             _authOptions = authOptions.Value;
         }
@@ -55,8 +58,7 @@ namespace Auth.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao contar usuarios");
-                var failure = Result.Failure<int>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<int>(Error.Failure(ex.Message));
             }
         }
 
@@ -66,21 +68,16 @@ namespace Auth.Application.Services
             {
                 var entity = await _repository.GetById(new UserId(id), cancellationToken);
                 if (entity is null)
-                {
-                    var failure = Result.Failure<bool>(UserErrors.NotFound(id));
-                    return failure;
-                }
+                    return Result.Failure<bool>(UserErrors.NotFound(id));
 
                 entity.MarkAsDeleted();
                 await _repository.Update(entity, cancellationToken);
-                var success = Result.Success(true);
-                return success;
+                return Result.Success(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir usuario {Id}", id);
-                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<bool>(Error.Failure(ex.Message));
             }
         }
 
@@ -91,26 +88,16 @@ namespace Auth.Application.Services
                 var id = new UserId(userId);
                 var user = await _repository.GetById(id, cancellationToken);
                 if (user is null)
-                {
-                    var failure = Result.Failure(UserErrors.NotFound(userId));
-                    return failure;
-                }
+                    return Result.Failure(UserErrors.NotFound(userId));
 
                 user.Deactivate("self_delete");
                 await _repository.Update(user, cancellationToken);
-                var success = Result.Success();
-                return success;
-            }
-            catch (DomainException ex)
-            {
-                var failure = Result.Failure(Error.Failure(ex.Message));
-                return failure;
+                return Result.Success();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir usuario corrente {UserId}", userId);
-                var failure = Result.Failure(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure(Error.Failure(ex.Message));
             }
         }
 
@@ -125,14 +112,12 @@ namespace Auth.Application.Services
                     entity.MarkAsDeleted();
                     await _repository.Update(entity, cancellationToken);
                 }
-                var success = Result.Success(true);
-                return success;
+                return Result.Success(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao excluir usuarios em lote");
-                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<bool>(Error.Failure(ex.Message));
             }
         }
 
@@ -149,8 +134,7 @@ namespace Auth.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar usuarios por predicado");
-                var failure = Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
             }
         }
 
@@ -159,27 +143,19 @@ namespace Auth.Application.Services
             try
             {
                 if (string.IsNullOrWhiteSpace(email))
-                {
-                    var failure = Result.Failure<UserDTO>(ContactErrors.EmailRequired);
-                    return failure;
-                }
+                    return Result.Failure<UserDTO>(ContactErrors.EmailRequired);
 
                 var user = await _repository.FindByEmail(email, cancellationToken);
                 if (user is null)
-                {
-                    var failure = Result.Failure<UserDTO>(UserErrors.NotFound(0));
-                    return failure;
-                }
+                    return Result.Failure<UserDTO>(UserErrors.NotFound(0));
 
                 var dto = user.ToDTO();
-                var success = Result.Success(dto);
-                return success;
+                return Result.Success(dto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar usuario por e-mail {Email}", email);
-                var failure = Result.Failure<UserDTO>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<UserDTO>(Error.Failure(ex.Message));
             }
         }
 
@@ -189,14 +165,12 @@ namespace Auth.Application.Services
             {
                 var entities = await _repository.GetAll(cancellationToken);
                 var list = entities.Select(x => x is null ? null : (UserDTO?)x.ToDTO());
-                var success = Result.Success<IEnumerable<UserDTO?>>(list);
-                return success;
+                return Result.Success<IEnumerable<UserDTO?>>(list);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar usuarios");
-                var failure = Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<IEnumerable<UserDTO?>>(Error.Failure(ex.Message));
             }
         }
 
@@ -210,14 +184,12 @@ namespace Auth.Application.Services
                 var totalPages = pageSize > 0 ? (int)Math.Ceiling(total / (double)pageSize) : 0;
                 var pagination = new PaginationData(filter.Page, pageSize, total, totalPages);
                 var payload = ((IEnumerable<UserDTO>)dtos, pagination);
-                var success = Result.Success(payload);
-                return success;
+                return Result.Success(payload);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar usuarios por filtro");
-                var failure = Result.Failure<(IEnumerable<UserDTO> Items, PaginationData Pagination)>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<(IEnumerable<UserDTO> Items, PaginationData Pagination)>(Error.Failure(ex.Message));
             }
         }
 
@@ -227,22 +199,15 @@ namespace Auth.Application.Services
             {
                 var entity = await _repository.GetById(new UserId(id), cancellationToken);
                 if (entity is null)
-                {
-                    var failure = Result.Failure<UserDTO?>(UserErrors.NotFound(id));
-                    return failure;
-                }
-                else
-                {
-                    var dto = entity.ToDTO();
-                    var success = Result.Success<UserDTO?>(dto);
-                    return success;
-                }
+                    return Result.Failure<UserDTO?>(UserErrors.NotFound(id));
+
+                var dto = entity.ToDTO();
+                return Result.Success<UserDTO?>(dto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter usuario {Id}", id);
-                var failure = Result.Failure<UserDTO?>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<UserDTO?>(Error.Failure(ex.Message));
             }
         }
 
@@ -250,10 +215,7 @@ namespace Auth.Application.Services
         {
             var user = await _repository.GetById(new UserId(userId), cancellationToken);
             if (user is null)
-            {
-                var result = Result.Failure<MeResponse>(UserErrors.NotFound(userId));
-                return result;
-            }
+                return Result.Failure<MeResponse>(UserErrors.NotFound(userId));
 
             var roles = await _userManager.GetRolesAsync(user);
             var claims = await _userManager.GetClaimsAsync(user);
@@ -274,58 +236,42 @@ namespace Auth.Application.Services
                 user.IsMfaEnabled,
                 permissions,
                 roles.ToArray());
-            var success = Result.Success(response);
-            return success;
+
+            return Result.Success(response);
         }
 
         public async Task<Result<RegisterResult>> RegisterAsync(RegisterDTO dto, CancellationToken cancellationToken = default)
         {
             if (dto is null)
-            {
-                var result = Result.Failure<RegisterResult>(UserErrors.CreateError);
-                return result;
-            }
+                return Result.Failure<RegisterResult>(UserErrors.CreateError);
 
             var email = dto.Email.Trim().ToLowerInvariant();
             var existing = await _repository.FindByEmail(email, cancellationToken);
             if (existing is not null)
-            {
-                var result = Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
-                return result;
-            }
+                return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
 
             var nameResult = TryBuildName(dto);
             if (!nameResult.IsSuccess)
-            {
-                var result = Result.Failure<RegisterResult>(nameResult.Error!);
-                return result;
-            }
+                return Result.Failure<RegisterResult>(nameResult.Error!);
 
             var contact = new Contact(dto.Email, dto.Phone);
-
             var termsVersion = DocumentVersion.Create(dto.AcceptedTermsVersion, nameof(dto.AcceptedTermsVersion));
             var privacyVersion = DocumentVersion.Create(dto.AcceptedPrivacyVersion, nameof(dto.AcceptedPrivacyVersion));
             if (termsVersion is null || privacyVersion is null)
-            {
-                var result = Result.Failure<RegisterResult>(UserErrors.TermsNotAccepted);
-                return result;
-            }
+                return Result.Failure<RegisterResult>(UserErrors.TermsNotAccepted);
 
             var user = User.Register(
                 nameResult.Value!,
                 contact,
                 dto.Role,
                 tenantId: null,
-                dto.Role == UserRole.Psychologist ? dto.Crp : null,
-                termsVersion,
-                privacyVersion);
+                dto.Role == UserRole.Psychologist ? dto.Crp : null);
 
             var identity = await _userManager.CreateAsync(user, dto.Password);
             if (!identity.Succeeded)
             {
                 _logger.LogWarning("Falha ao registrar usuario {Email}: {Errors}", email, string.Join("; ", identity.Errors.Select(e => e.Description)));
-                var result = Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
-                return result;
+                return Result.Failure<RegisterResult>(UserErrors.RegistrationUnavailable);
             }
 
             if (dto.Role == UserRole.Psychologist && user.TenantId.Value == 0)
@@ -348,14 +294,20 @@ namespace Auth.Application.Services
             }
 
             var correlationId = Guid.NewGuid();
-            user.RecordConsent(termsVersion, privacyVersion);
             user.RegisterUser(correlationId);
 
-            await _userOutboxService.PersistEventsAsync(user, correlationId, cancellationToken);
+            var consentDto = new ConsentDTO("terms_privacy", dto.AcceptedTermsVersion, dto.AcceptedPrivacyVersion, null, null);
+            var consentResult = await _consentService.RecordAsync(user.Id.Value, consentDto, cancellationToken);
+            if (!consentResult.IsSuccess)
+            {
+                _logger.LogWarning("Falha ao registrar consentimento inicial do usuario {UserId}: {Error}", user.Id, consentResult.Error?.Description);
+            }
+
+            await _outboxService.PersistEventsAsync(user.Id.Value, nameof(User), user.DomainEvents, correlationId, cancellationToken);
+            user.ClearDomainEvents();
 
             var registered = new RegisterResult(user.Id.Value, user.TenantId.Value, user.Email ?? string.Empty, user.Role);
-            var success = Result.Success(registered);
-            return success;
+            return Result.Success(registered);
         }
 
         private static Result<Name> TryBuildName(RegisterDTO dto)
@@ -363,30 +315,19 @@ namespace Auth.Application.Services
             try
             {
                 if (!string.IsNullOrWhiteSpace(dto.FirstName) && !string.IsNullOrWhiteSpace(dto.LastName))
-                {
-                    var name = new Name(dto.FirstName, dto.LastName);
-                    var success = Result.Success(name);
-                    return success;
-                }
+                    return Result.Success(new Name(dto.FirstName, dto.LastName););
+
                 if (!string.IsNullOrWhiteSpace(dto.FirstName))
-                {
-                    var name = new Name(dto.FirstName);
-                    var success = Result.Success(name);
-                    return success;
-                }
+                    return Result.Success(new Name(dto.FirstName));
+
                 if (!string.IsNullOrWhiteSpace(dto.FullName))
-                {
-                    var name = new Name(dto.FullName);
-                    var success = Result.Success(name);
-                    return success;
-                }
-                var failure = Result.Failure<Name>(NameErrors.NullName);
-                return failure;
+                    return Result.Success(new Name(dto.FullName));
+
+                return Result.Failure<Name>(NameErrors.NullName);
             }
             catch (Exception)
             {
-                var failure = Result.Failure<Name>(NameErrors.NullName);
-                return failure;
+                return Result.Failure<Name>(NameErrors.NullName);
             }
         }
 
@@ -395,8 +336,7 @@ namespace Auth.Application.Services
             user.BeginLogin();
             await _repository.Update(user, cancellationToken);
 
-            var success = Result.Success();
-            return success;
+            return Result.Success();
         }
 
         public async Task<Result> AttachTenantAsync(User user, UserId tenantId, CancellationToken cancellationToken = default)
@@ -404,8 +344,7 @@ namespace Auth.Application.Services
             user.AttachTenant(new TenantId(tenantId));
             await _repository.Update(user, cancellationToken);
 
-            var success = Result.Success();
-            return success;
+            return Result.Success();
         }
 
         public async Task<Result<bool>> UpdateAsync(UpdateUserDTO dto, CancellationToken cancellationToken = default)
@@ -414,28 +353,18 @@ namespace Auth.Application.Services
             {
                 var user = await _repository.GetById(new UserId(dto.Id), cancellationToken);
                 if (user is null)
-                {
-                    var failure = Result.Failure<bool>(UserErrors.NotFound(dto.Id));
-                    return failure;
-                }
+                    return Result.Failure<bool>(UserErrors.NotFound(dto.Id));
 
                 var name = new Name(dto.FullName);
                 var contact = new Contact(dto.Email, dto.Phone);
                 user.UpdateProfile(name, contact);
                 await _repository.Update(user, cancellationToken);
-                var success = Result.Success(true);
-                return success;
-            }
-            catch (DomainException ex)
-            {
-                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Success(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar usuario {Id}", dto.Id);
-                var failure = Result.Failure<bool>(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure<bool>(Error.Failure(ex.Message));
             }
         }
 
@@ -446,28 +375,18 @@ namespace Auth.Application.Services
                 var id = new UserId(userId);
                 var user = await _repository.GetById(id, cancellationToken);
                 if (user is null)
-                {
-                    var failure = Result.Failure(UserErrors.NotFound(userId));
-                    return failure;
-                }
+                    return Result.Failure(UserErrors.NotFound(userId));
 
                 var name = new Name(dto.FullName);
                 var contact = new Contact(dto.Email, dto.Phone);
                 user.UpdateProfile(name, contact);
                 await _repository.Update(user, cancellationToken);
-                var success = Result.Success();
-                return success;
-            }
-            catch (DomainException ex)
-            {
-                var failure = Result.Failure(Error.Failure(ex.Message));
-                return failure;
+                return Result.Success();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar perfil do usuario corrente {UserId}", userId);
-                var failure = Result.Failure(Error.Failure(ex.Message));
-                return failure;
+                return Result.Failure(Error.Failure(ex.Message));
             }
         }
     }

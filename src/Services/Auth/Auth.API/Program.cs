@@ -48,5 +48,4 @@ app.MapHealthChecks("/health/live");
 app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health/startup");
 app.MapAuthEndpoints();
-app.MapJwksEndpoint();
 app.Run();

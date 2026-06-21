@@ -21,6 +21,9 @@ namespace Auth.Infrastructure.Persistence.Configuration
                     id => id.Value,
                     value => new TenantId(value));
 
+            builder.Property(x => x.CurrentConsentId)
+                .HasConversion(new NullableConsentIdConverter());
+
             builder.OwnsOne(x => x.Name, name =>
             {
                 name.Property(x => x.FirstName).HasColumnName("FirstName");
