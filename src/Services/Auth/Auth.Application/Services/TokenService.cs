@@ -66,12 +66,12 @@ namespace Auth.Application.Services
                 var creds = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
                 var expires = DateTime.UtcNow.AddMinutes(_settings.ExpiryMinutes <= 0 ? 15 : _settings.ExpiryMinutes);
                 var token = new JwtSecurityToken(
-                    issuer: _settings.Issuer,
-                    audience: _settings.Audience,
-                    claims: claims,
-                    notBefore: DateTime.UtcNow,
-                    expires: expires,
-                    signingCredentials: creds);
+                    _settings.Issuer,
+                    _settings.Audience,
+                    claims,
+                    DateTime.UtcNow,
+                    expires,
+                    creds);
                 var written = new JwtSecurityTokenHandler().WriteToken(token);
 
                 return Result.Success(written); ;

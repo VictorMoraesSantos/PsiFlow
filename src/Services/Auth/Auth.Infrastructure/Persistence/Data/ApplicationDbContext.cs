@@ -12,7 +12,6 @@ namespace Auth.Infrastructure.Persistence.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         public DbSet<Consent> Consents { get; set; }
-        public DbSet<MfaChallenge> MfaChallenges { get; set; }
         public DbSet<OutboxMessage> OutboxMessages { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<PermissionGroup> PermissionGroups { get; set; }
@@ -28,7 +27,6 @@ namespace Auth.Infrastructure.Persistence.Data
             builder.Ignore<PermissionGroupId>();
             builder.Ignore<RefreshTokenId>();
             builder.ApplyConfiguration(new ConsentConfiguration());
-            builder.ApplyConfiguration(new MfaChallengeConfiguration());
             builder.ApplyConfiguration(new OutboxMessageConfiguration());
             builder.ApplyConfiguration(new PermissionConfiguration());
             builder.ApplyConfiguration(new PermissionGroupConfiguration());

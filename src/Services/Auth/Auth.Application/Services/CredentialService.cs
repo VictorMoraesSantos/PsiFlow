@@ -24,46 +24,45 @@ namespace Auth.Application.Services
             _logger = logger;
         }
 
-        public async Task<Result<AuthenticatedUser>> AuthenticateAsync(string email, string password, CancellationToken cancellationToken = default)
+        public async Task<Result<User>> AuthenticateAsync(string email, string password, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-                return Result.Failure<AuthenticatedUser>(UserErrors.InvalidCredentials);
+                return Result.Failure<User>(UserErrors.InvalidCredentials);
 
             var normalized = email.Trim().ToLowerInvariant();
             var user = await _userRepository.FindByEmail(normalized, cancellationToken);
             if (user is null)
             {
                 _logger.LogInformation("Login falhou: usuario nao encontrado para {Email}", normalized);
-                return Result.Failure<AuthenticatedUser>(UserErrors.InvalidCredentials);
+                return Result.Failure<User>(UserErrors.InvalidCredentials);
             }
 
             if (!user.IsActive)
             {
                 _logger.LogInformation("Login falhou: usuario inativo {UserId}", user.Id);
-                return Result.Failure<AuthenticatedUser>(UserErrors.AlreadyInactive);
+                return Result.Failure<User>(UserErrors.AlreadyInactive);
             }
 
             if (!user.EmailConfirmed)
             {
                 _logger.LogInformation("Login falhou: e-mail nao confirmado {UserId}", user.Id);
-                return Result.Failure<AuthenticatedUser>(UserErrors.EmailNotConfirmed);
+                return Result.Failure<User>(UserErrors.EmailNotConfirmed);
             }
 
             var signIn = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
             if (signIn.IsLockedOut)
             {
                 _logger.LogInformation("Login falhou: conta bloqueada {UserId} ate {LockoutEnd}", user.Id, user.LockoutEnd);
-                return Result.Failure<AuthenticatedUser>(UserErrors.UserLockedOut);
+                return Result.Failure<User>(UserErrors.UserLockedOut);
             }
 
             if (!signIn.Succeeded)
             {
                 _logger.LogInformation("Login falhou: senha invalida para {UserId}", user.Id);
-                return Result.Failure<AuthenticatedUser>(UserErrors.InvalidCredentials);
+                return Result.Failure<User>(UserErrors.InvalidCredentials);
             }
 
-            var auth = new AuthenticatedUser(user, user.IsMfaEnabled);
-            return Result.Success(auth);
+            return Result.Success(user);
         }
     }
 }

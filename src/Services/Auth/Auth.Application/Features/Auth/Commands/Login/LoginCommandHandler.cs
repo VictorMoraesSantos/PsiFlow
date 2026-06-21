@@ -10,20 +10,17 @@ namespace Auth.Application.Features.Auth.Commands.Login;
 public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
 {
     private readonly ICredentialService _credentials;
-    private readonly IMfaService _mfa;
     private readonly ITokenService _tokens;
     private readonly IUserService _users;
     private readonly IValidator<LoginCommand> _validator;
 
     public LoginCommandHandler(
         ICredentialService credentials,
-        IMfaService mfa,
         ITokenService tokens,
         IUserService users,
         IValidator<LoginCommand> validator)
     {
         _credentials = credentials;
-        _mfa = mfa;
         _tokens = tokens;
         _users = users;
         _validator = validator;
@@ -43,20 +40,7 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, object>
         if (!auth.IsSuccess)
             return Result.Failure<object>(auth.Error!);
 
-        var user = auth.Value!.User;
-
-        if (auth.Value.RequiresMfa)
-        {
-            var challenge = await _mfa.StartLoginChallengeAsync(user, cancellationToken);
-            if (!challenge.IsSuccess)
-                return Result.Failure<object>(challenge.Error!);
-
-            var challengeValue = challenge.Value!;
-            var mfaResponse = new MfaRequiredResponse(challengeValue.MfaToken, challengeValue.ChallengeId.ToString());
-            var successResult = Result.Success<object>(mfaResponse);
-
-            return successResult;
-        }
+        var user = auth.Value!;
 
         await _users.BeginLoginAsync(user, cancellationToken);
         if (user.Role == UserRole.Psychologist && user.TenantId.Value == 0)

@@ -2,7 +2,6 @@ using Auth.Application.Contracts;
 using Auth.Application.DTOs.Auth;
 using Auth.Application.DTOs.Users;
 using Auth.Application.Features.Auth.Commands.ChangePassword;
-using Auth.Application.Features.Auth.Commands.CompleteMfaLogin;
 using Auth.Application.Features.Auth.Commands.ForgotPassword;
 using Auth.Application.Features.Auth.Commands.Login;
 using Auth.Application.Features.Auth.Commands.Logout;
@@ -11,9 +10,7 @@ using Auth.Application.Features.Auth.Commands.Refresh;
 using Auth.Application.Features.Auth.Commands.Register;
 using Auth.Application.Features.Auth.Commands.RequestEmailVerification;
 using Auth.Application.Features.Auth.Commands.ResetPassword;
-using Auth.Application.Features.Auth.Commands.SetupMfa;
 using Auth.Application.Features.Auth.Commands.VerifyEmail;
-using Auth.Application.Features.Auth.Commands.VerifyMfa;
 using Auth.Application.Features.Auth.Queries.Me;
 using Auth.Domain.Entities;
 using BuildingBlocks.CQRS.Sender;
@@ -40,14 +37,6 @@ namespace Auth.API.Endpoints
             group.MapPost("/login", async (LoginDTO request, ISender sender, CancellationToken ct) =>
             {
                 var command = new LoginCommand(request);
-                var result = await sender.Send(command, ct);
-                var response = Results.Ok(result.Value);
-                return response;
-            }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
-
-            group.MapPost("/mfa/complete", async (MfaCompleteRequest request, ISender sender, CancellationToken ct) =>
-            {
-                var command = new CompleteMfaLoginCommand(request.MfaToken, request.Code);
                 var result = await sender.Send(command, ct);
                 var response = Results.Ok(result.Value);
                 return response;
@@ -122,28 +111,6 @@ namespace Auth.API.Endpoints
                 return response;
             }).AllowAnonymous().RequireRateLimiting("auth-sensitive");
 
-            group.MapPost("/mfa/setup", async (HttpContext http, ISender sender, CancellationToken ct) =>
-            {
-                if (!TryGetUserId(http, out var userId))
-                    return Results.Unauthorized();
-
-                var command = new SetupMfaCommand(userId);
-                var result = await sender.Send(command, ct);
-                var response = Results.Ok(result.Value);
-                return response;
-            }).RequireAuthorization(Permissions.Auth.MfaSetup);
-
-            group.MapPost("/mfa/verify", async (MfaVerifyDTO request, HttpContext http, ISender sender, CancellationToken ct) =>
-            {
-                if (!TryGetUserId(http, out var userId))
-                    return Results.Unauthorized();
-
-                var command = new VerifyMfaCommand(userId, request);
-                var result = await sender.Send(command, ct);
-                var response = Results.NoContent();
-                return response;
-            }).RequireAuthorization(Permissions.Auth.MfaVerify).RequireRateLimiting("auth-sensitive");
-
             group.MapPost("/request-email-verification", async (EmailVerificationRequest request, ISender sender, CancellationToken ct) =>
             {
                 var command = new RequestEmailVerificationCommand(request.Email);
@@ -206,4 +173,3 @@ namespace Auth.API.Endpoints
 
 public sealed record EmailVerificationRequest(string Email);
 public sealed record EmailVerificationConfirm(string Email, string Token);
-public sealed record MfaCompleteRequest(string MfaToken, string Code);

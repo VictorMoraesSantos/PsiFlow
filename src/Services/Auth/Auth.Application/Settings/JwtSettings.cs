@@ -7,6 +7,5 @@ namespace Auth.Application.Settings
         public string Audience { get; set; } = "psiflow-api";
         public int ExpiryMinutes { get; set; } = 15;
         public int RefreshTokenExpiryDays { get; set; } = 7;
-        public string EncryptionKey { get; set; } = string.Empty;
     }
 }

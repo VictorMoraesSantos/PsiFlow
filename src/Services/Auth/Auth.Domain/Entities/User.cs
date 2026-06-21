@@ -20,7 +20,6 @@ namespace Auth.Domain.Entities
         public DateTime? LastLoginAt { get; private set; }
         public bool IsActive { get; private set; } = true;
         public ConsentId? CurrentConsentId { get; private set; }
-        public bool IsMfaEnabled { get; private set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; private set; }
         public bool IsDeleted { get; private set; }
@@ -177,20 +176,6 @@ namespace Auth.Domain.Entities
             MarkAsUpdated();
         }
 
-        public void EnableMfa()
-        {
-            if (!GetRole().AllowsMfa())
-                throw new DomainException(UserErrors.MfaNotAllowed);
-            IsMfaEnabled = true;
-            MarkAsUpdated();
-        }
-
-        public void DisableMfa()
-        {
-            IsMfaEnabled = false;
-            MarkAsUpdated();
-        }
-
         public void RequestPasswordReset(string token)
         {
             if (string.IsNullOrWhiteSpace(token))
@@ -215,8 +200,6 @@ namespace Auth.Domain.Entities
         {
             return IsActive && EmailConfirmed;
         }
-
-        public bool IsMfaEligible() => GetRole().AllowsMfa();
 
         public UserRole GetRole() => UserRole.Create(Role);
 

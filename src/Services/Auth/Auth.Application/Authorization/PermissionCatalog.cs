@@ -13,8 +13,7 @@ namespace Auth.Application.Authorization
 
         public static string[] PsychologistPermissions() => new[]
         {
-            "auth:me_read", "auth:consent_accept", "auth:password_change",
-            "auth:mfa_setup", "auth:mfa_verify", "auth:session_logout",
+            "auth:me_read", "auth:consent_accept", "auth:password_change", "auth:session_logout",
 
             "patients:create", "patients:list", "patients:read", "patients:update", "patients:deactivate",
             "patients:treatment_status_update", "patients:invite_create", "patients:invite_revoke",

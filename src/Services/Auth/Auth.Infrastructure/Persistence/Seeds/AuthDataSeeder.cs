@@ -271,10 +271,6 @@ namespace Auth.Infrastructure.Persistence.Seeds
             if (!await HasTableAsync(context, "auth", "users", cancellationToken)) return;
 
             await context.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS is_mfa_enabled boolean NOT NULL DEFAULT false;",
-                cancellationToken);
-
-            await context.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS current_consent_id integer NULL;",
                 cancellationToken);
 
@@ -285,13 +281,6 @@ namespace Auth.Infrastructure.Persistence.Seeds
                     cancellationToken);
                 await context.Database.ExecuteSqlRawAsync(
                     "ALTER TABLE auth.consents ADD COLUMN IF NOT EXISTS version varchar(64) NOT NULL DEFAULT '';",
-                    cancellationToken);
-            }
-
-            if (await HasTableAsync(context, "auth", "mfa_challenges", cancellationToken))
-            {
-                await context.Database.ExecuteSqlRawAsync(
-                    "ALTER TABLE auth.mfa_challenges ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone NOT NULL DEFAULT (NOW() + INTERVAL '10 minutes');",
                     cancellationToken);
             }
         }

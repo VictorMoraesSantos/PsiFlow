@@ -22,8 +22,6 @@ namespace BuildingBlocks.Authorization
                 public const string MeRead = Prefix + "auth:me_read";
                 public const string ConsentAccept = Prefix + "auth:consent_accept";
                 public const string PasswordChange = Prefix + "auth:password_change";
-                public const string MfaSetup = Prefix + "auth:mfa_setup";
-                public const string MfaVerify = Prefix + "auth:mfa_verify";
                 public const string SessionLogout = Prefix + "auth:session_logout";
                 public const string UsersRead = Prefix + "auth:users_read";
                 public const string UsersSuspend = Prefix + "auth:users_suspend";

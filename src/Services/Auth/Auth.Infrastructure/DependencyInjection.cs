@@ -43,7 +43,6 @@ namespace Auth.Infrastructure
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IConsentRepository, ConsentRepository>();
-            services.AddScoped<IMfaChallengeRepository, MfaChallengeRepository>();
             services.AddScoped<IOutboxRepository, OutboxRepository>();
             services.AddScoped<IPermissionRepository, PermissionRepository>();
             services.AddScoped<IPermissionGroupRepository, PermissionGroupRepository>();
@@ -60,7 +59,6 @@ namespace Auth.Infrastructure
             ApplyDevelopmentFallbacks(jwtSettings, configuration);
 
             services.AddSingleton(jwtSettings);
-            services.AddSingleton<Auth.Application.Services.EncryptionService>();
             services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
             services.AddAuthorization();
             services.AddAuthentication(options =>
@@ -88,15 +86,12 @@ namespace Auth.Infrastructure
             return services;
         }
 
-        private const string DevelopmentEncryptionKey = "dev-only-jwt-encryption-key-replace-in-production-must-be-32-bytes!";
         private const string DevelopmentJwtKey = "dev-only-jwt-signing-key-replace-in-production-must-be-at-least-32-bytes-long!";
 
         private static void ApplyDevelopmentFallbacks(JwtSettings settings, IConfiguration configuration)
         {
             if (settings is null) return;
             if (!IsDevelopmentEnvironment(configuration)) return;
-            if (string.IsNullOrWhiteSpace(settings.EncryptionKey))
-                settings.EncryptionKey = DevelopmentEncryptionKey;
             if (string.IsNullOrWhiteSpace(settings.Key))
                 settings.Key = DevelopmentJwtKey;
         }

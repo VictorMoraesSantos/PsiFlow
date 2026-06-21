@@ -233,7 +233,6 @@ namespace Auth.Application.Services
                 user.Name.FullName,
                 user.IsActive,
                 user.EmailConfirmed,
-                user.IsMfaEnabled,
                 permissions,
                 roles.ToArray());
 

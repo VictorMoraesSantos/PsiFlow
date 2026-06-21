@@ -8,7 +8,6 @@ namespace Auth.Application.DTOs.Auth
         string FullName,
         bool IsActive,
         bool EmailVerified,
-        bool MfaEnabled,
         IReadOnlyList<string> Permissions,
         IReadOnlyList<string> Roles);
 }

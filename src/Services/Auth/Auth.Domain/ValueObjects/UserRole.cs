@@ -54,7 +54,6 @@ namespace Auth.Domain.ValueObjects
         public bool IsSaasAdmin() => Value == SaasAdmin;
         public bool IsPatient() => Value == Patient;
 
-        public bool AllowsMfa() => IsPsychologist() || IsSaasAdmin();
         public bool RequiresCrp() => IsPsychologist();
 
         public static bool TryParse(string? value, out UserRole? role)
