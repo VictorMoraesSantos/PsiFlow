@@ -315,7 +315,7 @@ namespace Auth.Application.Services
             try
             {
                 if (!string.IsNullOrWhiteSpace(dto.FirstName) && !string.IsNullOrWhiteSpace(dto.LastName))
-                    return Result.Success(new Name(dto.FirstName, dto.LastName););
+                    return Result.Success(new Name(dto.FirstName, dto.LastName));
 
                 if (!string.IsNullOrWhiteSpace(dto.FirstName))
                     return Result.Success(new Name(dto.FirstName));
